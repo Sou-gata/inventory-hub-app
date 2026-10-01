@@ -1,0 +1,83 @@
+# Built application files & package outputs
+*.apk
+*.aar
+*.ap_
+*.aab
+*.dex
+
+# Java / Kotlin class files
+*.class
+
+# Build and generated directories
+build/
+**/build/
+bin/
+gen/
+out/
+
+# Gradle files and caches
+.gradle/
+
+# Local configuration & environment settings
+local.properties
+secrets.properties
+
+# Signing credentials & keystore files
+*.jks
+*.keystore
+*.key
+*.p12
+
+# Android Studio / IntelliJ IDEA configuration & cache
+*.iml
+.idea/caches/
+.idea/libraries/
+.idea/modules.xml
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+.idea/shelf/
+.idea/tasks.xml
+.idea/deploymentTargetSelector.xml
+.idea/deviceManager.xml
+.idea/planningMode.xml
+.idea/material_theme_project_new.xml
+.idea/jarRepositories.xml
+
+# Captures & Profiler data
+captures/
+*.hprof
+memory-snapshot/
+
+# External native build (NDK / C++)
+.externalNativeBuild/
+.cxx/
+cmake/
+
+# Crash logs & system logs
+*.log
+hs_err_pid*
+replay_pid*
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Scratch & temporary files
+scratch/
+*.tmp
+*.bak
+*.swp
+
+# Agents
+.agent
+.agents
+.gemini
+.gsd
+.idea
+scripts
+model_capabilities.yaml
+ONLINE_MODE_IMPLEMENTATION_PLAN.md
+SERVER_API_SPECIFICATION.md

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/sell_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg"
+    android:orientation="vertical"
+    tools:context=".activities.SellActivity">
+
+    <!-- Header container extending behind status bar -->
+    <FrameLayout
+        android:id="@+id/header_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_toolbar">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <androidx.appcompat.widget.Toolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                android:background="@android:color/transparent"
+                app:navigationIconTint="@color/white"
+                app:title="@string/title_create_sale"
+                app:titleTextColor="@color/white" />
+
+            <com.google.android.material.tabs.TabLayout
+                android:id="@+id/tab_layout_sell"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:minHeight="44dp"
+                android:background="@android:color/transparent"
+                app:tabIndicatorAnimationMode="elastic"
+                app:tabIndicatorColor="@color/white"
+                app:tabIndicatorFullWidth="false"
+                app:tabIndicatorHeight="3dp"
+                app:tabGravity="fill"
+                app:tabMode="fixed"
+                app:tabPaddingTop="0dp"
+                app:tabPaddingBottom="5dp"
+                app:tabTextAppearance="@style/TextAppearance.InventoryHub.Tab"
+                app:tabRippleColor="#33FFFFFF"
+                app:tabIconTint="@color/selector_tab_tint"
+                app:tabSelectedTextColor="@color/white"
+                app:tabTextColor="@color/selector_tab_tint" />
+
+        </LinearLayout>
+    </FrameLayout>
+
+    <!-- ViewPager2 container -->
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/view_pager_sell"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+</LinearLayout>

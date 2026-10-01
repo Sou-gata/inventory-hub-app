@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg">#0D0F14</color>
+    <color name="bg_grad_start">#0A0C12</color>
+    <color name="bg_grad_mid">#0F1420</color>
+    <color name="bg_grad_end">#111827</color>
+    <color name="card">#151821</color>
+    <color name="card2">#1E2235</color>
+    <color name="border">#252A3D</color>
+    <color name="fg">#E8EAF0</color>
+    <color name="fg_muted">#A0A8C0</color>
+    <color name="fg_dim">#6B7491</color>
+    <color name="nav_bg">#0F1119</color>
+    <color name="input_bg">#151821</color>
+    <color name="notch_bg">#0D0F14</color>
+    <color name="notch_pill">#151821</color>
+    <color name="phone_frame">#252A3D</color>
+    <color name="phone_shadow">#99000000</color>
+    <color name="phone_shadow_inset">#0DFFFFFF</color>
+    <color name="status_fg">#E8EAF0</color>
+    <color name="signal_empty">#252A3D</color>
+    <color name="home_pill">#252A3D</color>
+    <color name="alert_bg">#14EF4444</color>
+    <color name="alert_border">#33EF4444</color>
+    <color name="tag_bg">#1E2235</color>
+ 
+    <!-- Material Blue (#2979FF) Night Palette -->
+    <color name="material_blue">#5390FF</color>
+    <color name="material_blue_dark">#2979FF</color>
+    <color name="material_blue_light">#82B1FF</color>
+    <color name="focus_ring_blue">#335390FF</color>
+    <color name="toolbar_bg">#0F1E38</color>
+
+    <!-- Semantic Status Colors -->
+    <color name="status_green">#34D399</color>
+    <color name="status_green_bg">#1A34D399</color>
+    <color name="status_green_border">#3334D399</color>
+    <color name="status_orange">#FBBF24</color>
+    <color name="status_orange_bg">#1AFBBF24</color>
+    <color name="status_orange_border">#33FBBF24</color>
+    <color name="status_blue">#60A5FA</color>
+    <color name="status_blue_bg">#1A60A5FA</color>
+    <color name="status_blue_border">#3360A5FA</color>
+    <color name="status_red">#F87171</color>
+    <color name="status_red_bg">#1AF87171</color>
+    <color name="status_red_border">#33F87171</color>
+
+    <!-- Brand / Theme (#2979FF Night) -->
+    <color name="accent_teal">#5390FF</color>
+    <color name="focus_ring_teal">#335390FF</color>
+    <color name="nav_role_admin_text">#FFF8E1</color>
+    <color name="nav_role_user_text">#FFFFFF</color>
+</resources>

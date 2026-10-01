@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="8dp"
+    android:background="@drawable/bg_error_banner"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <!-- Row: Line Badge + SKU / HSN -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/text_error_line"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_tag_sku"
+            android:fontFamily="sans-serif-medium"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="2dp"
+            android:textColor="@color/error_red"
+            android:textSize="11sp"
+            tools:text="Line 4" />
+
+        <TextView
+            android:id="@+id/text_error_sku"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/bg_tag_sku"
+            android:fontFamily="sans-serif-medium"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="2dp"
+            android:textColor="@color/fg_muted"
+            android:textSize="11sp"
+            tools:text="SKU: PROD-102" />
+
+        <TextView
+            android:id="@+id/text_error_hsn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/bg_tag_sku"
+            android:fontFamily="sans-serif-medium"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="2dp"
+            android:textColor="@color/fg_dim"
+            android:textSize="11sp"
+            android:visibility="gone"
+            tools:text="HSN: 8471" />
+    </LinearLayout>
+
+    <!-- Error Description Message -->
+    <TextView
+        android:id="@+id/text_error_reason"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:fontFamily="sans-serif"
+        android:textColor="@color/fg"
+        android:textSize="13sp"
+        tools:text="Product with SKU 'PROD-102' already exists in database." />
+</LinearLayout>

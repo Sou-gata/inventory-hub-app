@@ -1,0 +1,669 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/add_buyer_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg"
+    android:orientation="vertical">
+
+    <!-- Header container extending behind status bar -->
+    <FrameLayout
+        android:id="@+id/header_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_toolbar">
+
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="@android:color/transparent"
+            app:navigationIconTint="@color/white"
+            app:title="Add Buyer"
+            app:titleTextColor="@color/white" />
+    </FrameLayout>
+
+    <!-- Scrollable Content -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scroll_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:overScrollMode="never">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="16dp"
+            android:paddingBottom="36dp">
+
+            <!-- Error Banner -->
+            <LinearLayout
+                android:id="@+id/banner_error"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/bg_error_banner"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="14dp"
+                android:paddingVertical="10dp"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_error" />
+
+                <TextView
+                    android:id="@+id/text_error"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:textColor="@color/error_red"
+                    android:textSize="13sp"
+                    tools:text="Please enter buyer name." />
+            </LinearLayout>
+
+            <!-- SECTION 1: BASIC INFORMATION -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_marginBottom="8dp"
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="0.04"
+                android:text="BASIC INFORMATION"
+                android:textColor="@color/fg_muted"
+                android:textSize="12sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                android:background="@drawable/bg_card"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <!-- Buyer Name -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="6dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="Buyer / Company Name"
+                        android:textColor="@color/fg"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="3dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="*"
+                        android:textColor="@color/error_red"
+                        android:textSize="13sp" />
+                </LinearLayout>
+
+                <EditText
+                    android:id="@+id/input_buyer_name"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:background="@drawable/bg_field_normal"
+                    android:fontFamily="sans-serif"
+                    android:hint="e.g. Metro Enterprises"
+                    android:inputType="textCapWords"
+                    android:maxLines="1"
+                    android:paddingHorizontal="14dp"
+                    android:textColor="@color/fg"
+                    android:textColorHint="@color/fg_dim"
+                    android:textSize="14sp" />
+
+                <!-- Contact Person -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:layout_marginBottom="6dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="Contact Person"
+                    android:textColor="@color/fg"
+                    android:textSize="13sp" />
+
+                <EditText
+                    android:id="@+id/input_buyer_contact_person"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:background="@drawable/bg_field_normal"
+                    android:fontFamily="sans-serif"
+                    android:hint="e.g. Rajesh Sharma"
+                    android:inputType="textCapWords"
+                    android:maxLines="1"
+                    android:paddingHorizontal="14dp"
+                    android:textColor="@color/fg"
+                    android:textColorHint="@color/fg_dim"
+                    android:textSize="14sp" />
+
+                <!-- Phone & Email (2 Columns) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:orientation="horizontal">
+
+                    <!-- Phone -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="6dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="6dp"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="Phone Number"
+                                android:textColor="@color/fg"
+                                android:textSize="13sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="3dp"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="*"
+                                android:textColor="@color/error_red"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <EditText
+                            android:id="@+id/input_buyer_phone"
+                            android:layout_width="match_parent"
+                            android:layout_height="50dp"
+                            android:background="@drawable/bg_field_normal"
+                            android:fontFamily="sans-serif"
+                            android:hint="e.g. 9876543210"
+                            android:inputType="phone"
+                            android:maxLines="1"
+                            android:paddingHorizontal="14dp"
+                            android:textColor="@color/fg"
+                            android:textColorHint="@color/fg_dim"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+
+                    <!-- Email -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="6dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="Email (Optional)"
+                            android:textColor="@color/fg"
+                            android:textSize="13sp" />
+
+                        <EditText
+                            android:id="@+id/input_buyer_email"
+                            android:layout_width="match_parent"
+                            android:layout_height="50dp"
+                            android:background="@drawable/bg_field_normal"
+                            android:fontFamily="sans-serif"
+                            android:hint="buyer@domain.com"
+                            android:inputType="textEmailAddress"
+                            android:maxLines="1"
+                            android:paddingHorizontal="14dp"
+                            android:textColor="@color/fg"
+                            android:textColorHint="@color/fg_dim"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- SECTION 2: TAX & COMPLIANCE -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_marginBottom="8dp"
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="0.04"
+                android:text="TAX &amp; IDENTIFICATION"
+                android:textColor="@color/fg_muted"
+                android:textSize="12sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                android:background="@drawable/bg_card"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <!-- GST -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="6dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="6dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="GSTIN (Optional)"
+                            android:textColor="@color/fg"
+                            android:textSize="13sp" />
+
+                        <EditText
+                            android:id="@+id/input_buyer_gst"
+                            android:layout_width="match_parent"
+                            android:layout_height="50dp"
+                            android:background="@drawable/bg_field_normal"
+                            android:fontFamily="monospace"
+                            android:hint="27AAAAA0000A1Z5"
+                            android:inputType="textCapCharacters"
+                            android:maxLines="1"
+                            android:paddingHorizontal="14dp"
+                            android:textColor="@color/fg"
+                            android:textColorHint="@color/fg_dim"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+
+                    <!-- PAN -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="6dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="PAN (Optional)"
+                            android:textColor="@color/fg"
+                            android:textSize="13sp" />
+
+                        <EditText
+                            android:id="@+id/input_buyer_pan"
+                            android:layout_width="match_parent"
+                            android:layout_height="50dp"
+                            android:background="@drawable/bg_field_normal"
+                            android:fontFamily="monospace"
+                            android:hint="ABCDE1234F"
+                            android:inputType="textCapCharacters"
+                            android:maxLines="1"
+                            android:paddingHorizontal="14dp"
+                            android:textColor="@color/fg"
+                            android:textColorHint="@color/fg_dim"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- SECTION 3: ADDRESS & LOCATION -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_marginBottom="8dp"
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="0.04"
+                android:text="ADDRESS &amp; LOCATION"
+                android:textColor="@color/fg_muted"
+                android:textSize="12sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                android:background="@drawable/bg_card"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <!-- Street Address -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="6dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="Street Address"
+                    android:textColor="@color/fg"
+                    android:textSize="13sp" />
+
+                <EditText
+                    android:id="@+id/input_buyer_address"
+                    android:layout_width="match_parent"
+                    android:layout_height="72dp"
+                    android:background="@drawable/bg_field_normal"
+                    android:fontFamily="sans-serif"
+                    android:gravity="top|start"
+                    android:hint="Premises, building, street, area..."
+                    android:inputType="textMultiLine|textCapSentences"
+                    android:padding="12dp"
+                    android:textColor="@color/fg"
+                    android:textColorHint="@color/fg_dim"
+                    android:textSize="14sp" />
+
+                <!-- City & State Code -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:orientation="horizontal">
+
+                    <!-- City -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="6dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="6dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="City"
+                            android:textColor="@color/fg"
+                            android:textSize="13sp" />
+
+                        <EditText
+                            android:id="@+id/input_buyer_city"
+                            android:layout_width="match_parent"
+                            android:layout_height="50dp"
+                            android:background="@drawable/bg_field_normal"
+                            android:fontFamily="sans-serif"
+                            android:hint="e.g. Mumbai"
+                            android:inputType="textCapWords"
+                            android:maxLines="1"
+                            android:paddingHorizontal="14dp"
+                            android:textColor="@color/fg"
+                            android:textColorHint="@color/fg_dim"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+
+                    <!-- State Code -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="6dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="State / Province"
+                            android:textColor="@color/fg"
+                            android:textSize="13sp" />
+
+                        <EditText
+                            android:id="@+id/input_buyer_state"
+                            android:layout_width="match_parent"
+                            android:layout_height="50dp"
+                            android:background="@drawable/bg_field_normal"
+                            android:fontFamily="sans-serif"
+                            android:hint="e.g. MH / Maharashtra"
+                            android:inputType="textCapWords"
+                            android:maxLines="1"
+                            android:paddingHorizontal="14dp"
+                            android:textColor="@color/fg"
+                            android:textColorHint="@color/fg_dim"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Postal Code & Country -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:orientation="horizontal">
+
+                    <!-- Postal Code -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="6dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="6dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="Postal Code"
+                            android:textColor="@color/fg"
+                            android:textSize="13sp" />
+
+                        <EditText
+                            android:id="@+id/input_buyer_postal_code"
+                            android:layout_width="match_parent"
+                            android:layout_height="50dp"
+                            android:background="@drawable/bg_field_normal"
+                            android:fontFamily="sans-serif"
+                            android:hint="e.g. 400069"
+                            android:inputType="textCapCharacters"
+                            android:maxLines="1"
+                            android:paddingHorizontal="14dp"
+                            android:textColor="@color/fg"
+                            android:textColorHint="@color/fg_dim"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+
+                    <!-- Country -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="6dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="Country"
+                            android:textColor="@color/fg"
+                            android:textSize="13sp" />
+
+                        <EditText
+                            android:id="@+id/input_buyer_country"
+                            android:layout_width="match_parent"
+                            android:layout_height="50dp"
+                            android:background="@drawable/bg_field_normal"
+                            android:fontFamily="sans-serif"
+                            android:hint="e.g. India"
+                            android:inputType="textCapWords"
+                            android:maxLines="1"
+                            android:paddingHorizontal="14dp"
+                            android:textColor="@color/fg"
+                            android:textColorHint="@color/fg_dim"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- SECTION 4: STATUS & NOTES -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_marginBottom="8dp"
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="0.04"
+                android:text="STATUS &amp; NOTES"
+                android:textColor="@color/fg_muted"
+                android:textSize="12sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                android:background="@drawable/bg_card"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <!-- Active Status Switch -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="12dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="Active Buyer Account"
+                            android:textColor="@color/fg"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/text_status_hint"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:fontFamily="sans-serif"
+                            android:text="When deactivated, this buyer is marked inactive."
+                            android:textColor="@color/fg_dim"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switch_buyer_active"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        app:useMaterialThemeColors="true" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginVertical="14dp"
+                    android:background="@color/border" />
+
+                <!-- Notes -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="6dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="Notes &amp; Remarks (Optional)"
+                    android:textColor="@color/fg"
+                    android:textSize="13sp" />
+
+                <EditText
+                    android:id="@+id/input_buyer_notes"
+                    android:layout_width="match_parent"
+                    android:layout_height="84dp"
+                    android:background="@drawable/bg_field_normal"
+                    android:fontFamily="sans-serif"
+                    android:gravity="top|start"
+                    android:hint="Any special instructions, credit preferences, delivery terms..."
+                    android:inputType="textMultiLine|textCapSentences"
+                    android:padding="12dp"
+                    android:textColor="@color/fg"
+                    android:textColorHint="@color/fg_dim"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+            <!-- Save Buyer Button -->
+            <FrameLayout
+                android:id="@+id/btn_save_buyer"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:background="@drawable/bg_button_ripple"
+                android:clickable="true"
+                android:focusable="true">
+
+                <LinearLayout
+                    android:id="@+id/container_save_idle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_check"
+                        app:tint="@color/white" />
+
+                    <TextView
+                        android:id="@+id/text_save_button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="Save Buyer"
+                        android:textColor="@color/white"
+                        android:textSize="15sp" />
+                </LinearLayout>
+
+                <ProgressBar
+                    android:id="@+id/progress_saving"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center"
+                    android:indeterminateTint="@color/white"
+                    android:visibility="gone" />
+            </FrameLayout>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+</LinearLayout>

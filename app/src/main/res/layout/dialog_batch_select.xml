@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_card"
+    android:orientation="vertical"
+    android:paddingHorizontal="20dp"
+    android:paddingTop="16dp"
+    android:paddingBottom="24dp">
+
+    <!-- Handle -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="12dp"
+        android:background="@drawable/bg_tag_sku" />
+
+    <TextView
+        android:id="@+id/tv_select_dialog_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-black"
+        android:textColor="@color/fg"
+        android:textSize="18sp"
+        tools:text="Select Batches — Paracetamol 500mg" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:layout_marginBottom="12dp"
+        android:textColor="@color/fg_dim"
+        android:textSize="12sp"
+        android:text="Choose quantities from one or more batches to add to cart" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_select_batches"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:maxHeight="320dp"
+        android:nestedScrollingEnabled="false" />
+
+    <TextView
+        android:id="@+id/tv_select_dialog_empty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="20dp"
+        android:text="No active batches available with stock > 0"
+        android:textColor="@color/fg_dim"
+        android:textSize="14sp"
+        android:visibility="gone" />
+
+    <!-- Summary line & Add to cart button -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tv_select_summary_qty"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="@color/fg"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:text="Total Qty: 0" />
+
+            <TextView
+                android:id="@+id/tv_select_summary_batches"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/fg_dim"
+                android:textSize="12sp"
+                android:text="0 batch(es) selected" />
+        </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_confirm_batch_selection"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/accent_teal"
+            android:text="Add to Cart"
+            android:textColor="@color/white" />
+    </LinearLayout>
+
+</LinearLayout>

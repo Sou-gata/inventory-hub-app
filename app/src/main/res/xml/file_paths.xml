@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <cache-path name="shared_qr" path="shared_qr/" />
+    <files-path name="bills" path="bills/" />
+    <cache-path name="bills_cache" path="bills/" />
+    <external-files-path name="external_files" path="." />
+    <external-path name="external_storage" path="." />
+</paths>

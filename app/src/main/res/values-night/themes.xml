@@ -1,0 +1,16 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.InventoryHub" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">false</item>
+        <item name="android:windowBackground">@drawable/bg</item>
+        <item name="android:colorBackground">@color/bg</item>
+        <item name="android:windowAnimationStyle">@style/Animation.SlideActivity</item>
+        <item name="colorPrimary">@color/accent_teal</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSurface">@color/card</item>
+        <item name="colorOnSurface">@color/fg</item>
+    </style>
+</resources>

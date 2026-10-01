@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/action_theme_change"
+        android:icon="@drawable/ic_sun"
+        android:title="@string/menu_theme_change" />
+
+    <item
+        android:id="@+id/action_sync_device_settings"
+        android:icon="@drawable/ic_sync"
+        android:title="@string/sync_device_settings" />
+</menu>

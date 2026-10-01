@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_home"
+            android:icon="@drawable/ic_nav_home"
+            android:title="Dashboard" />
+        <item
+            android:id="@+id/nav_inventory"
+            android:icon="@drawable/ic_nav_inventory"
+            android:title="Inventory" />
+        <item
+            android:id="@+id/nav_category"
+            android:icon="@drawable/ic_nav_category"
+            android:title="Category" />
+        <item
+            android:id="@+id/nav_buyer"
+            android:icon="@drawable/ic_nav_buyer"
+            android:title="Buyers" />
+        <item
+            android:id="@+id/nav_supplier"
+            android:icon="@drawable/ic_nav_supplier"
+            android:title="Suppliers" />
+
+        <!-- Purchase parent item (collapsible) -->
+        <item
+            android:id="@+id/nav_purchase"
+            android:icon="@drawable/ic_nav_purchase"
+            android:title="Purchase"
+            android:checkable="false" />
+
+        <!-- Submenu items nested directly under Purchase -->
+        <item
+            android:id="@+id/nav_purchase_new_order"
+            android:icon="@drawable/ic_nav_sub_new_order"
+            android:title="New Order" />
+        <item
+            android:id="@+id/nav_purchase_history"
+            android:icon="@drawable/ic_nav_sub_order_history"
+            android:title="Order History" />
+
+        <!-- Receive item -->
+        <item
+            android:id="@+id/nav_receive"
+            android:icon="@drawable/ic_nav_receive"
+            android:title="Receive" />
+
+        <!-- Sell parent item (collapsible) -->
+        <item
+            android:id="@+id/nav_sell"
+            android:icon="@drawable/ic_nav_sell"
+            android:title="Sell"
+            android:checkable="false" />
+
+        <!-- Submenu items nested directly under Sell -->
+        <item
+            android:id="@+id/nav_sell_create"
+            android:icon="@drawable/ic_nav_sub_create_sale"
+            android:title="Create" />
+        <item
+            android:id="@+id/nav_sell_history"
+            android:icon="@drawable/ic_nav_sub_order_history"
+            android:title="History" />
+
+        <item
+            android:id="@+id/nav_reports"
+            android:icon="@drawable/ic_nav_reports"
+            android:title="Reports" />
+        <item
+            android:id="@+id/nav_audit_trail"
+            android:icon="@drawable/ic_nav_audit_trail"
+            android:title="Audit Trail" />
+    </group>
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_profile"
+            android:icon="@drawable/ic_nav_user"
+            android:title="My Account" />
+        <item
+            android:id="@+id/nav_settings"
+            android:icon="@drawable/ic_nav_settings"
+            android:title="Settings" />
+        <item
+            android:id="@+id/nav_about"
+            android:icon="@drawable/ic_nav_info"
+            android:title="@string/about" />
+    </group>
+</menu>

@@ -1,0 +1,620 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_card"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="28dp">
+
+        <!-- Drag Handle -->
+        <View
+            android:layout_width="40dp"
+            android:layout_height="4dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/bg_tag_sku" />
+
+        <!-- Top Header: Title & Close Button -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="top"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="12dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/text_detail_invoice_id"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-black"
+                    android:textColor="@color/fg"
+                    android:textSize="20sp"
+                    tools:text="INV-2026-0042" />
+
+                <TextView
+                    android:id="@+id/text_detail_date_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:fontFamily="sans-serif"
+                    android:textColor="@color/fg_dim"
+                    android:textSize="13sp"
+                    tools:text="Billed on 15 Sep 2026, 12:35 PM" />
+            </LinearLayout>
+
+            <FrameLayout
+                android:id="@+id/btn_close_sell_detail"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="@drawable/bg_icon_button_ripple"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="Close"
+                    android:src="@drawable/ic_close"
+                    app:tint="@color/fg_dim" />
+            </FrameLayout>
+        </LinearLayout>
+
+        <!-- Status & Meta Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <!-- Status Badge -->
+            <LinearLayout
+                android:id="@+id/layout_detail_status_badge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_status_chip"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="4dp">
+
+                <View
+                    android:id="@+id/view_detail_status_dot"
+                    android:layout_width="6dp"
+                    android:layout_height="6dp"
+                    android:background="@drawable/bg_status_dot" />
+
+                <TextView
+                    android:id="@+id/text_detail_status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:fontFamily="sans-serif-bold"
+                    android:text="Completed"
+                    android:textColor="@color/accent_teal"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/text_detail_sale_id"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:fontFamily="sans-serif"
+                android:textColor="@color/fg_dim"
+                android:textSize="12sp"
+                tools:text="#SALE-104" />
+        </LinearLayout>
+
+        <!-- Cancellation Banner (Visible when Cancelled) -->
+        <LinearLayout
+            android:id="@+id/layout_sell_cancellation_banner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_error_banner"
+            android:orientation="vertical"
+            android:padding="12dp"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_remove_circle"
+                    app:tint="@color/status_red" />
+
+                <TextView
+                    android:id="@+id/text_sell_cancellation_title"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:fontFamily="sans-serif-black"
+                    android:letterSpacing="0.04"
+                    android:text="BILL CANCELLED"
+                    android:textColor="@color/status_red"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/text_sell_cancellation_details"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:fontFamily="sans-serif"
+                android:text="This bill was cancelled and all items were returned to inventory."
+                android:textColor="@color/status_red"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <!-- Section 1: Customer Details -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/bg_search_box"
+            android:orientation="vertical"
+            android:padding="14dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="sans-serif-black"
+                    android:letterSpacing="0.08"
+                    android:text="BUYER INFORMATION"
+                    android:textColor="@color/accent_teal"
+                    android:textSize="11sp" />
+
+                <!-- Quick Call Button -->
+                <FrameLayout
+                    android:id="@+id/btn_action_call_buyer"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:background="@drawable/bg_icon_button_ripple_teal"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="Call"
+                        android:src="@drawable/ic_phone"
+                        app:tint="@color/accent_teal" />
+                </FrameLayout>
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/text_detail_buyer_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:fontFamily="sans-serif-bold"
+                android:textColor="@color/fg"
+                android:textSize="15sp"
+                tools:text="Acme Technologies Pvt Ltd" />
+
+            <TextView
+                android:id="@+id/text_detail_buyer_contact"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:fontFamily="sans-serif"
+                android:textColor="@color/fg_dim"
+                android:textSize="12sp"
+                tools:text="Contact: John Doe" />
+
+            <TextView
+                android:id="@+id/text_detail_buyer_phone"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:fontFamily="sans-serif"
+                android:textColor="@color/fg_dim"
+                android:textSize="12sp"
+                tools:text="Phone: +91 98765 43210" />
+
+            <TextView
+                android:id="@+id/text_detail_buyer_gst"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:fontFamily="sans-serif"
+                android:textColor="@color/fg_dim"
+                android:textSize="12sp"
+                tools:text="GSTIN: 27AAAAA0000A1Z5" />
+
+            <TextView
+                android:id="@+id/text_detail_buyer_address"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:fontFamily="sans-serif"
+                android:textColor="@color/fg_dim"
+                android:textSize="12sp"
+                tools:text="Address: 42 Silicon Valley Road, Bengaluru" />
+        </LinearLayout>
+
+        <!-- Section 2: Items Sold Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="sans-serif-black"
+                android:letterSpacing="0.08"
+                android:text="ITEMS SOLD"
+                android:textColor="@color/accent_teal"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/text_detail_items_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="@color/fg_dim"
+                android:textSize="12sp"
+                tools:text="3 items" />
+        </LinearLayout>
+
+        <!-- Items Container -->
+        <LinearLayout
+            android:id="@+id/container_detail_items"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="vertical" />
+
+        <!-- Progress Indicator for Loading Items -->
+        <ProgressBar
+            android:id="@+id/progress_detail_items"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginVertical="16dp"
+            android:indeterminateTint="@color/accent_teal"
+            android:visibility="gone" />
+
+        <!-- Section 3: Financial Summary -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/bg_search_box"
+            android:orientation="vertical"
+            android:padding="14dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-black"
+                android:letterSpacing="0.08"
+                android:text="BILLING SUMMARY"
+                android:textColor="@color/accent_teal"
+                android:textSize="11sp" />
+
+            <!-- Gross Subtotal -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="sans-serif"
+                    android:text="Gross Subtotal"
+                    android:textColor="@color/fg_dim"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/text_summary_subtotal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:textColor="@color/fg"
+                    android:textSize="13sp"
+                    tools:text="₹ 15,000.00" />
+            </LinearLayout>
+
+            <!-- Discount Row -->
+            <LinearLayout
+                android:id="@+id/row_summary_discount"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/label_summary_discount"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="sans-serif"
+                    android:text="Discount"
+                    android:textColor="@color/fg_dim"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/text_summary_discount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:textColor="@color/accent_teal"
+                    android:textSize="13sp"
+                    tools:text="- ₹ 1,500.00" />
+            </LinearLayout>
+
+            <!-- CGST Row -->
+            <LinearLayout
+                android:id="@+id/row_summary_cgst"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="sans-serif"
+                    android:text="CGST"
+                    android:textColor="@color/fg_dim"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/text_summary_cgst"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:textColor="@color/fg"
+                    android:textSize="13sp"
+                    tools:text="₹ 1,215.00" />
+            </LinearLayout>
+
+            <!-- SGST Row -->
+            <LinearLayout
+                android:id="@+id/row_summary_sgst"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="sans-serif"
+                    android:text="SGST"
+                    android:textColor="@color/fg_dim"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/text_summary_sgst"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:textColor="@color/fg"
+                    android:textSize="13sp"
+                    tools:text="₹ 1,215.00" />
+            </LinearLayout>
+
+            <!-- IGST Row -->
+            <LinearLayout
+                android:id="@+id/row_summary_igst"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="sans-serif"
+                    android:text="IGST"
+                    android:textColor="@color/fg_dim"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/text_summary_igst"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:textColor="@color/fg"
+                    android:textSize="13sp"
+                    tools:text="₹ 2,430.00" />
+            </LinearLayout>
+
+            <!-- Total Tax Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="sans-serif"
+                    android:text="Total Tax (GST)"
+                    android:textColor="@color/fg_dim"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/text_summary_total_gst"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:textColor="@color/fg"
+                    android:textSize="13sp"
+                    tools:text="₹ 2,430.00" />
+            </LinearLayout>
+
+            <!-- Other Charges Row -->
+            <LinearLayout
+                android:id="@+id/row_summary_other_charges"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="sans-serif"
+                    android:text="Other / Shipping Charges"
+                    android:textColor="@color/fg_dim"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/text_summary_other_charges"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:textColor="@color/fg"
+                    android:textSize="13sp"
+                    tools:text="₹ 150.00" />
+            </LinearLayout>
+
+            <!-- Divider -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginVertical="12dp"
+                android:background="@color/border" />
+
+            <!-- Grand Total -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="sans-serif-black"
+                    android:text="Grand Total"
+                    android:textColor="@color/fg"
+                    android:textSize="16sp" />
+
+                <TextView
+                    android:id="@+id/text_summary_grand_total"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-black"
+                    android:textColor="@color/accent_teal"
+                    android:textSize="20sp"
+                    tools:text="₹ 16,080.00" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Cancel Bill Action (Visible when bill is NOT cancelled) -->
+        <Button
+            android:id="@+id/btn_cancel_sell_bill"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/bg_button_danger"
+            android:fontFamily="sans-serif-black"
+            android:text="Cancel Bill"
+            android:textAllCaps="false"
+            android:textColor="@color/status_red"
+            android:textSize="14sp" />
+
+        <!-- Re-issue Bill Action (Visible when bill IS cancelled) -->
+        <Button
+            android:id="@+id/btn_reissue_sell_bill"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/bg_button"
+            android:fontFamily="sans-serif-black"
+            android:text="Re-issue New Bill"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:textSize="14sp"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal">
+
+            <!-- Close Action Button -->
+            <Button
+                android:id="@+id/btn_detail_done"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_marginEnd="4dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_button_secondary"
+                android:fontFamily="sans-serif-bold"
+                android:text="Done"
+                android:textAllCaps="false"
+                android:textColor="@color/fg"
+                android:textSize="14sp" />
+
+            <Button
+                android:id="@+id/btn_print_sell_bill"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_button"
+                android:fontFamily="sans-serif-black"
+                android:text="Print Bill"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.core.widget.NestedScrollView>

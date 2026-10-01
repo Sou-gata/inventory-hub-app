@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:background="@color/bg"
+    android:padding="20dp">
+
+    <TextView
+        android:id="@+id/tv_payee"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="M/S. Lokenath Traders"
+        android:textColor="?attr/colorOnSurface"
+        android:textSize="19sp"
+        android:textStyle="bold" />
+
+    <!-- Amount -->
+    <TextView
+        android:id="@+id/tv_amount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:text="₹1,250.00"
+        android:textColor="?attr/colorPrimary"
+        android:textSize="28sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:text="Scan &amp; pay using any UPI app"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textSize="13sp" />
+
+    <!-- QR container -->
+    <FrameLayout
+        android:layout_width="230dp"
+        android:layout_height="230dp"
+        android:layout_marginTop="18dp"
+        android:background="@drawable/qr_frame"
+        android:padding="12dp">
+
+        <ImageView
+            android:id="@+id/iv_upi_qr"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="UPI QR Code"
+            android:scaleType="fitCenter" />
+
+    </FrameLayout>
+
+    <!-- UPI ID -->
+    <TextView
+        android:id="@+id/tv_upi_id"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="7dp"
+        android:text="example@upi"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textSize="13sp" />
+
+    <!-- Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="7dp"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_cancel"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Cancel" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_paid"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:text="Paid" />
+
+    </LinearLayout>
+
+</LinearLayout>

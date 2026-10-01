@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="10dp"
+    android:background="@drawable/bg_search_box"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <!-- Top Row: Stage Badge & Date/Time -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:id="@+id/layout_stage_badge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_status_chip"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="3dp">
+
+            <View
+                android:layout_width="6dp"
+                android:layout_height="6dp"
+                android:background="@drawable/bg_status_dot"
+                android:backgroundTint="@color/accent_teal" />
+
+            <TextView
+                android:id="@+id/text_stage_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:fontFamily="sans-serif-black"
+                android:letterSpacing="0.04"
+                android:textColor="@color/accent_teal"
+                android:textSize="11sp"
+                tools:text="STAGE 1" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/text_stage_date_time"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_weight="1"
+            android:fontFamily="sans-serif"
+            android:gravity="end"
+            android:textColor="@color/fg_dim"
+            android:textSize="11sp"
+            tools:text="23 Sep 2026, 04:30 PM" />
+    </LinearLayout>
+
+    <!-- Items Received Container -->
+    <LinearLayout
+        android:id="@+id/container_stage_items"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="vertical" />
+
+    <!-- Optional Notes -->
+    <TextView
+        android:id="@+id/text_stage_notes"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:fontFamily="sans-serif-italic"
+        android:textColor="@color/fg_muted"
+        android:textSize="11sp"
+        android:visibility="gone"
+        tools:text="Note: Box 1 delivered by local courier"
+        tools:visibility="visible" />
+
+    <!-- Bottom Action Row: Total Units & Download GRN Bill Button -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/text_stage_total_units"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:fontFamily="sans-serif-medium"
+            android:textColor="@color/fg"
+            android:textSize="12sp"
+            tools:text="Total Received: 4 Units" />
+
+        <LinearLayout
+            android:id="@+id/btn_download_stage_bill"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:background="@drawable/bg_status_chip"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:paddingHorizontal="10dp">
+
+            <ImageView
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:src="@drawable/ic_upload_file"
+                app:tint="@color/accent_teal" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:fontFamily="sans-serif-bold"
+                android:text="Download Bill"
+                android:textColor="@color/accent_teal"
+                android:textSize="11sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>

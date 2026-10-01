@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="gst_slabs">
+        <item>0%</item>
+        <item>5%</item>
+        <item>18%</item>
+        <item>40%</item>
+    </string-array>
+    <string-array name="product_status">
+        <item>Active</item>
+        <item>Inactive</item>
+    </string-array>
+    <string-array name="csv_mandatory_options">
+        <item>SKU</item>
+        <item>HSN</item>
+        <item>Both</item>
+    </string-array>
+    <string-array name="csv_mandatory_values">
+        <item>sku</item>
+        <item>hsn</item>
+        <item>both</item>
+    </string-array>
+</resources>

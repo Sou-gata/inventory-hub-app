@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="4dp"
+    android:orientation="vertical">
+
+    <!-- Item Name / Description with Serial Number -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/tv_bill_item_sl"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
+            android:fontFamily="sans-serif"
+            android:textColor="@color/black"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            tools:text="1." />
+
+        <TextView
+            android:id="@+id/tv_bill_item_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif"
+            android:textColor="@color/black"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            tools:text="Paracetamol 500mg Tablet" />
+    </LinearLayout>
+
+    <!-- 4-Column Row: SKU, Ordered, Received Now, Total Rec -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/tv_bill_item_sku"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2.1"
+            android:fontFamily="monospace"
+            android:textColor="@color/black"
+            android:textSize="10sp"
+            tools:text="SKU: PARA-500" />
+
+        <TextView
+            android:id="@+id/tv_bill_item_ordered_qty"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.8"
+            android:fontFamily="monospace"
+            android:gravity="center"
+            android:textColor="@color/black"
+            android:textSize="11sp"
+            tools:text="10" />
+
+        <TextView
+            android:id="@+id/tv_bill_item_received_now"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.9"
+            android:fontFamily="monospace"
+            android:gravity="center"
+            android:textColor="@color/black"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            tools:text="5" />
+
+        <TextView
+            android:id="@+id/tv_bill_item_total_received"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1.0"
+            android:fontFamily="monospace"
+            android:gravity="end"
+            android:textColor="@color/black"
+            android:textSize="11sp"
+            tools:text="5 / 10" />
+    </LinearLayout>
+
+</LinearLayout>

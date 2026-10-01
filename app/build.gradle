@@ -1,0 +1,104 @@
+plugins {
+    alias(libs.plugins.android.application)
+}
+
+android {
+    namespace 'in.gbtsolutions.inventoryhub'
+    compileSdk {
+        version = release(37) {
+            minorApiLevel = 1
+        }
+    }
+
+    defaultConfig {
+        applicationId "in.gbtsolutions.inventoryhub"
+        minSdk 27
+        targetSdk 36
+        versionCode 1
+        versionName "1.0.1"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        debug {
+            storeFile file("main.jks")
+            storePassword "76842828"
+            keyAlias "sougata"
+            keyPassword "76842828"
+        }
+        release {
+            storeFile file("main.jks")
+            storePassword "76842828"
+            keyAlias "sougata"
+            keyPassword "76842828"
+        }
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+        }
+        release {
+            optimization {
+                enable false
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+    buildFeatures {
+        viewBinding true
+    }
+    packagingOptions {
+        resources {
+            excludes += [
+                'META-INF/DEPENDENCIES',
+                'META-INF/LICENSE',
+                'META-INF/LICENSE.txt',
+                'META-INF/license.txt',
+                'META-INF/NOTICE',
+                'META-INF/NOTICE.txt',
+                'META-INF/notice.txt',
+                'META-INF/ASL2.0'
+            ]
+        }
+    }
+}
+
+
+
+dependencies {
+    implementation libs.activity.ktx
+    implementation libs.androidx.navigation.fragment
+    implementation libs.androidx.navigation.ui
+    implementation libs.appcompat
+    implementation libs.constraintlayout
+    implementation libs.material
+    implementation libs.androidx.drawerlayout
+
+    testImplementation libs.junit
+    androidTestImplementation libs.espresso.core
+    androidTestImplementation libs.ext.junit
+
+    implementation libs.androidx.room.runtime
+    annotationProcessor libs.androidx.room.compiler
+    implementation libs.jbcrypt
+    implementation libs.camera.core
+    implementation libs.camera.camera2
+    implementation libs.camera.lifecycle
+    implementation libs.camera.view
+    implementation libs.core
+    implementation libs.opencsv
+    implementation libs.poi.ooxml
+    implementation libs.retrofit
+    implementation libs.retrofit.converter.gson
+    implementation libs.okhttp.logging
+    implementation libs.androidx.work.runtime
+    implementation libs.photoview
+
+    compileOnly files('libs/platform_sdk_v4.1.0326.jar')
+}
