@@ -86,4 +86,17 @@
             tools:text="5 / 10" />
     </LinearLayout>
 
+    <!-- Optional Tax / GST breakdown line -->
+    <TextView
+        android:id="@+id/tv_bill_item_tax_disc"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1dp"
+        android:fontFamily="monospace"
+        android:textColor="@color/black"
+        android:textSize="9.5sp"
+        android:visibility="gone"
+        tools:text="GST: 18% (₹ 45.00)"
+        tools:visibility="visible" />
+
 </LinearLayout>

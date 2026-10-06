@@ -23,7 +23,7 @@ public class OnlineReceiveItemsRequest {
         public int productId;
 
         @SerializedName(value = "received_qty", alternate = {"receivedQty", "quantity"})
-        public int receivedQty;
+        public double receivedQty;
 
         @SerializedName(value = "batch_no", alternate = {"batchNo"})
         public String batchNo;
@@ -37,17 +37,25 @@ public class OnlineReceiveItemsRequest {
         public ReceiveItemPayload() {
         }
 
-        public ReceiveItemPayload(int productId, int receivedQty, String batchNo, String expiryDate) {
+        public ReceiveItemPayload(int productId, double receivedQty, String batchNo, String expiryDate) {
             this(null, productId, receivedQty, batchNo, expiryDate, null);
         }
 
-        public ReceiveItemPayload(Integer purchaseItemId, int productId, int receivedQty, String batchNo, String expiryDate, Double sellingPrice) {
+        public ReceiveItemPayload(int productId, int receivedQty, String batchNo, String expiryDate) {
+            this(null, productId, (double) receivedQty, batchNo, expiryDate, null);
+        }
+
+        public ReceiveItemPayload(Integer purchaseItemId, int productId, double receivedQty, String batchNo, String expiryDate, Double sellingPrice) {
             this.purchaseItemId = purchaseItemId;
             this.productId = productId;
             this.receivedQty = receivedQty;
             this.batchNo = batchNo;
             this.expiryDate = expiryDate;
             this.sellingPrice = sellingPrice;
+        }
+
+        public ReceiveItemPayload(Integer purchaseItemId, int productId, int receivedQty, String batchNo, String expiryDate, Double sellingPrice) {
+            this(purchaseItemId, productId, (double) receivedQty, batchNo, expiryDate, sellingPrice);
         }
     }
 }

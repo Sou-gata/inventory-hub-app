@@ -21,18 +21,6 @@ import in.gbtsolutions.inventoryhub.models.Suppliers;
 
 public class SupplierAdapter extends RecyclerView.Adapter<SupplierAdapter.SupplierViewHolder> {
 
-    public interface OnSupplierClickListener {
-        void onSupplierClick(@NonNull Suppliers supplier);
-    }
-
-    public interface OnSupplierEditListener {
-        void onSupplierEdit(@NonNull Suppliers supplier);
-    }
-
-    public interface OnSupplierStatusToggleListener {
-        void onSupplierStatusToggle(@NonNull Suppliers supplier);
-    }
-
     private final List<Suppliers> supplierList = new ArrayList<>();
     private OnSupplierClickListener clickListener;
     private OnSupplierEditListener editListener;
@@ -74,13 +62,7 @@ public class SupplierAdapter extends RecyclerView.Adapter<SupplierAdapter.Suppli
             public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
                 Suppliers oldSup = supplierList.get(oldItemPosition);
                 Suppliers newSup = newSuppliers.get(newItemPosition);
-                return TextUtils.equals(oldSup.supplierName, newSup.supplierName)
-                        && TextUtils.equals(oldSup.contactPerson, newSup.contactPerson)
-                        && TextUtils.equals(oldSup.phone, newSup.phone)
-                        && TextUtils.equals(oldSup.email, newSup.email)
-                        && TextUtils.equals(oldSup.city, newSup.city)
-                        && TextUtils.equals(oldSup.gst, newSup.gst)
-                        && oldSup.isActive == newSup.isActive;
+                return TextUtils.equals(oldSup.supplierName, newSup.supplierName) && TextUtils.equals(oldSup.contactPerson, newSup.contactPerson) && TextUtils.equals(oldSup.phone, newSup.phone) && TextUtils.equals(oldSup.email, newSup.email) && TextUtils.equals(oldSup.city, newSup.city) && TextUtils.equals(oldSup.gst, newSup.gst) && oldSup.isActive == newSup.isActive;
             }
         });
 
@@ -105,6 +87,18 @@ public class SupplierAdapter extends RecyclerView.Adapter<SupplierAdapter.Suppli
     @Override
     public int getItemCount() {
         return supplierList.size();
+    }
+
+    public interface OnSupplierClickListener {
+        void onSupplierClick(@NonNull Suppliers supplier);
+    }
+
+    public interface OnSupplierEditListener {
+        void onSupplierEdit(@NonNull Suppliers supplier);
+    }
+
+    public interface OnSupplierStatusToggleListener {
+        void onSupplierStatusToggle(@NonNull Suppliers supplier);
     }
 
     public class SupplierViewHolder extends RecyclerView.ViewHolder {

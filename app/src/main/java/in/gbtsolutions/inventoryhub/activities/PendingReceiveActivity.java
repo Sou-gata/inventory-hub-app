@@ -6,6 +6,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import java.io.File;
 import android.text.Editable;
+import android.text.InputFilter;
+import android.text.InputType;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
@@ -61,6 +63,9 @@ import in.gbtsolutions.inventoryhub.models.ReceiveItem;
 import in.gbtsolutions.inventoryhub.models.ReceiveRecord;
 import in.gbtsolutions.inventoryhub.models.ReceiveRecordWithItems;
 import in.gbtsolutions.inventoryhub.models.Suppliers;
+import in.gbtsolutions.inventoryhub.online.models.OnlinePendingReceiveDto;
+import in.gbtsolutions.inventoryhub.online.models.OnlineReceiveItemsRequest;
+import in.gbtsolutions.inventoryhub.online.repository.OnlinePurchaseRepository;
 import in.gbtsolutions.inventoryhub.repository.ConfigRepository;
 import in.gbtsolutions.inventoryhub.repository.PurchaseRepository;
 
@@ -159,7 +164,7 @@ public class PendingReceiveActivity extends BaseActivity implements PendingRecei
         recyclerPendingReceive.setAdapter(adapter);
     }
 
-    private final Map<Integer, in.gbtsolutions.inventoryhub.online.models.OnlinePendingReceiveDto> cachedOnlinePendingMap = new HashMap<>();
+    private final Map<Integer, OnlinePendingReceiveDto> cachedOnlinePendingMap = new HashMap<>();
 
     private void loadPendingPurchases(String query) {
         if (currentLiveData != null) {
@@ -167,13 +172,13 @@ public class PendingReceiveActivity extends BaseActivity implements PendingRecei
         }
 
         if (purchaseRepository != null && purchaseRepository.isOnlineMode()) {
-            purchaseRepository.getOnlineRepository().fetchPendingReceives(query, new in.gbtsolutions.inventoryhub.online.repository.OnlinePurchaseRepository.PendingReceivesCallback() {
+            purchaseRepository.getOnlineRepository().fetchPendingReceives(query, new OnlinePurchaseRepository.PendingReceivesCallback() {
                 @Override
-                public void onSuccess(List<in.gbtsolutions.inventoryhub.online.models.OnlinePendingReceiveDto> pendingList) {
+                public void onSuccess(List<OnlinePendingReceiveDto> pendingList) {
                     cachedOnlinePendingMap.clear();
                     List<PurchaseWithSupplier> list = new ArrayList<>();
                     if (pendingList != null) {
-                        for (in.gbtsolutions.inventoryhub.online.models.OnlinePendingReceiveDto dto : pendingList) {
+                        for (OnlinePendingReceiveDto dto : pendingList) {
                             cachedOnlinePendingMap.put(dto.purchaseId, dto);
 
                             PurchaseWithSupplier pws = new PurchaseWithSupplier();
@@ -347,7 +352,7 @@ public class PendingReceiveActivity extends BaseActivity implements PendingRecei
 
         // Map to keep track of EditText views for each purchase_item_id
         final Map<Integer, EditText> itemInputMap = new HashMap<>();
-        final Map<Integer, Integer> itemRemainingMap = new HashMap<>();
+        final Map<Integer, Double> itemRemainingMap = new HashMap<>();
         final Map<Integer, Product> itemProductMap = new HashMap<>();
         final Map<Integer, EditText> itemBatchNoMap = new HashMap<>();
         final Map<Integer, Long> itemExpiryEpochMap = new HashMap<>();
@@ -358,10 +363,10 @@ public class PendingReceiveActivity extends BaseActivity implements PendingRecei
 
         if (purchaseRepository != null && purchaseRepository.isOnlineMode()) {
             List<PurchaseItemWithProduct> onlineItems = new ArrayList<>();
-            in.gbtsolutions.inventoryhub.online.models.OnlinePendingReceiveDto pendingDto =
+            OnlinePendingReceiveDto pendingDto =
                     cachedOnlinePendingMap.get(purchase.purchaseId);
             if (pendingDto != null && pendingDto.items != null) {
-                for (in.gbtsolutions.inventoryhub.online.models.OnlinePendingReceiveDto.PendingItemDto pDto : pendingDto.items) {
+                for (OnlinePendingReceiveDto.PendingItemDto pDto : pendingDto.items) {
                     PurchaseItemWithProduct piwp = new PurchaseItemWithProduct();
                     piwp.purchaseItem = new PurchaseItem();
                     piwp.purchaseItem.purchaseItemId = pDto.productId;
@@ -523,21 +528,21 @@ public class PendingReceiveActivity extends BaseActivity implements PendingRecei
         btnReceiveAll.setOnClickListener(v -> {
             for (Map.Entry<Integer, EditText> entry : itemInputMap.entrySet()) {
                 int itemId = entry.getKey();
-                int remaining = itemRemainingMap.containsKey(itemId) ? itemRemainingMap.get(itemId) : 0;
-                entry.getValue().setText(String.valueOf(remaining));
+                double remaining = itemRemainingMap.containsKey(itemId) ? itemRemainingMap.get(itemId) : 0.0;
+                entry.getValue().setText(CommonFunctions.formatQuantity(remaining));
             }
         });
 
         // Confirm Receive Button
         btnConfirmReceive.setOnClickListener(v -> {
-            Map<Integer, Integer> receiveQtyMap = new HashMap<>();
+            Map<Integer, Double> receiveQtyMap = new HashMap<>();
             Map<Integer, PurchaseRepository.BatchReceiveInput> batchInputMap = new HashMap<>();
-            int totalToReceive = 0;
+            double totalToReceive = 0.0;
 
             for (Map.Entry<Integer, EditText> entry : itemInputMap.entrySet()) {
                 int itemId = entry.getKey();
-                int qty = parseQty(entry.getValue().getText().toString());
-                if (qty > 0) {
+                double qty = parseQty(entry.getValue().getText().toString());
+                if (qty > 0.0001) {
                     receiveQtyMap.put(itemId, qty);
                     totalToReceive += qty;
 
@@ -563,7 +568,7 @@ public class PendingReceiveActivity extends BaseActivity implements PendingRecei
                 }
             }
 
-            if (totalToReceive <= 0) {
+            if (totalToReceive <= 0.0001) {
                 Toast.makeText(this, "Please specify received quantity (> 0) for at least one item.", Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -604,7 +609,7 @@ public class PendingReceiveActivity extends BaseActivity implements PendingRecei
     private void executeReceive(
             Purchase purchase,
             Suppliers supplier,
-            Map<Integer, Integer> receiveQtyMap,
+            Map<Integer, Double> receiveQtyMap,
             Map<Integer, PurchaseRepository.BatchReceiveInput> batchInputMap,
             String notes,
             BottomSheetDialog dialog,
@@ -621,10 +626,10 @@ public class PendingReceiveActivity extends BaseActivity implements PendingRecei
         final int purchaseId = purchase.purchaseId;
 
         if (purchaseRepository != null && purchaseRepository.isOnlineMode()) {
-            List<in.gbtsolutions.inventoryhub.online.models.OnlineReceiveItemsRequest.ReceiveItemPayload> payloads = new ArrayList<>();
-            for (Map.Entry<Integer, Integer> entry : receiveQtyMap.entrySet()) {
+            List<OnlineReceiveItemsRequest.ReceiveItemPayload> payloads = new ArrayList<>();
+            for (Map.Entry<Integer, Double> entry : receiveQtyMap.entrySet()) {
                 int itemId = entry.getKey();
-                int qty = entry.getValue();
+                double qty = entry.getValue();
                 String bNo = null;
                 String expDateStr = null;
                 if (batchInputMap.containsKey(itemId)) {
@@ -636,11 +641,11 @@ public class PendingReceiveActivity extends BaseActivity implements PendingRecei
                         }
                     }
                 }
-                payloads.add(new in.gbtsolutions.inventoryhub.online.models.OnlineReceiveItemsRequest.ReceiveItemPayload(
+                payloads.add(new OnlineReceiveItemsRequest.ReceiveItemPayload(
                         itemId, qty, bNo, expDateStr));
             }
 
-            purchaseRepository.getOnlineRepository().receiveItems(purchaseId, notes, payloads, new in.gbtsolutions.inventoryhub.online.repository.OnlinePurchaseRepository.ReceiveActionCallback() {
+            purchaseRepository.getOnlineRepository().receiveItems(purchaseId, notes, payloads, new OnlinePurchaseRepository.ReceiveActionCallback() {
                 @Override
                 public void onSuccess() {
                     btnConfirmReceive.setEnabled(true);
@@ -724,7 +729,7 @@ public class PendingReceiveActivity extends BaseActivity implements PendingRecei
             ProgressBar progressItems,
             TextView textItemsCount,
             Map<Integer, EditText> itemInputMap,
-            Map<Integer, Integer> itemRemainingMap,
+            Map<Integer, Double> itemRemainingMap,
             Map<Integer, Product> itemProductMap,
             Map<Integer, EditText> itemBatchNoMap,
             Map<Integer, Long> itemExpiryEpochMap
@@ -750,9 +755,9 @@ public class PendingReceiveActivity extends BaseActivity implements PendingRecei
             if (pItem == null) continue;
 
             final int itemId = pItem.purchaseItemId;
-            int ordered = pItem.quantity;
-            int received = pItem.receivedQuantity;
-            int remaining = Math.max(0, ordered - received);
+            double ordered = pItem.quantity;
+            double received = pItem.receivedQuantity;
+            double remaining = Math.max(0.0, CommonFunctions.roundTo3Decimals(ordered - received));
 
             itemRemainingMap.put(itemId, remaining);
             if (prod != null) {
@@ -793,41 +798,50 @@ public class PendingReceiveActivity extends BaseActivity implements PendingRecei
             }
             textSku.setText(skuText.toString());
 
-            textOrderedQty.setText(String.format(Locale.getDefault(), "Ordered: %d", ordered));
-            textReceivedQty.setText(String.format(Locale.getDefault(), "Received: %d", received));
-            textRemainingQty.setText(String.format(Locale.getDefault(), "Remaining: %d", remaining));
+            String uom = (prod != null && !TextUtils.isEmpty(prod.unitOfMeasure)) ? prod.unitOfMeasure.trim() : "";
+            textOrderedQty.setText(String.format(Locale.getDefault(), "Ordered: %s %s", CommonFunctions.formatQuantity(ordered), uom).trim());
+            textReceivedQty.setText(String.format(Locale.getDefault(), "Received: %s %s", CommonFunctions.formatQuantity(received), uom).trim());
+            textRemainingQty.setText(String.format(Locale.getDefault(), "Remaining: %s %s", CommonFunctions.formatQuantity(remaining), uom).trim());
 
-            if (remaining <= 0) {
+            if (remaining <= 0.0001) {
                 textRemainingBadge.setText("Completed");
                 textRemainingBadge.setTextColor(ContextCompat.getColor(this, R.color.status_green));
                 layoutReceiveContainer.setVisibility(View.GONE);
                 layoutBatchContainer.setVisibility(View.GONE);
                 textFullyReceived.setVisibility(View.VISIBLE);
             } else {
-                textRemainingBadge.setText(String.format(Locale.getDefault(), "%d Pending", remaining));
+                textRemainingBadge.setText(String.format(Locale.getDefault(), "%s %s Pending", CommonFunctions.formatQuantity(remaining), uom).trim());
                 textRemainingBadge.setTextColor(ContextCompat.getColor(this, R.color.status_orange));
                 layoutReceiveContainer.setVisibility(View.VISIBLE);
                 textFullyReceived.setVisibility(View.GONE);
 
                 itemInputMap.put(itemId, editReceiveQty);
-                editReceiveQty.setText(String.valueOf(remaining));
+                boolean isDec = CommonFunctions.isDecimalUnit(uom);
+                if (isDec) {
+                    editReceiveQty.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+                    editReceiveQty.setFilters(new InputFilter[]{new CommonFunctions.DecimalDigitsInputFilter(6, 3)});
+                } else {
+                    editReceiveQty.setInputType(InputType.TYPE_CLASS_NUMBER);
+                    editReceiveQty.setFilters(new InputFilter[]{new InputFilter.LengthFilter(6)});
+                }
+                editReceiveQty.setText(CommonFunctions.formatQuantity(remaining));
 
                 btnQtyMinus.setOnClickListener(v -> {
-                    int currentVal = parseQty(editReceiveQty.getText().toString());
-                    if (currentVal > 0) {
-                        editReceiveQty.setText(String.valueOf(currentVal - 1));
-                    }
+                    double currentVal = parseQty(editReceiveQty.getText().toString());
+                    double step = 1.0;
+                    double newVal = Math.max(0.0, currentVal - step);
+                    editReceiveQty.setText(CommonFunctions.formatQuantity(newVal));
                 });
 
                 btnQtyPlus.setOnClickListener(v -> {
-                    int currentVal = parseQty(editReceiveQty.getText().toString());
-                    if (currentVal < remaining) {
-                        editReceiveQty.setText(String.valueOf(currentVal + 1));
-                    }
+                    double currentVal = parseQty(editReceiveQty.getText().toString());
+                    double step = 1.0;
+                    double newVal = Math.min(remaining, currentVal + step);
+                    editReceiveQty.setText(CommonFunctions.formatQuantity(newVal));
                 });
 
                 btnReceiveAllItem.setOnClickListener(v -> {
-                    editReceiveQty.setText(String.valueOf(remaining));
+                    editReceiveQty.setText(CommonFunctions.formatQuantity(remaining));
                 });
 
                 editReceiveQty.addTextChangedListener(new TextWatcher() {
@@ -839,10 +853,10 @@ public class PendingReceiveActivity extends BaseActivity implements PendingRecei
 
                     @Override
                     public void afterTextChanged(Editable s) {
-                        int entered = parseQty(s.toString());
+                        double entered = parseQty(s.toString());
                         if (entered > remaining) {
-                            editReceiveQty.setText(String.valueOf(remaining));
-                            editReceiveQty.setSelection(String.valueOf(remaining).length());
+                            editReceiveQty.setText(CommonFunctions.formatQuantity(remaining));
+                            editReceiveQty.setSelection(editReceiveQty.getText().length());
                         }
                     }
                 });
@@ -875,12 +889,12 @@ public class PendingReceiveActivity extends BaseActivity implements PendingRecei
         }
     }
 
-    private int parseQty(String text) {
-        if (TextUtils.isEmpty(text)) return 0;
+    private double parseQty(String text) {
+        if (TextUtils.isEmpty(text)) return 0.0;
         try {
-            return Math.max(0, Integer.parseInt(text.trim()));
+            return Math.max(0.0, CommonFunctions.roundTo3Decimals(Double.parseDouble(text.trim())));
         } catch (NumberFormatException e) {
-            return 0;
+            return 0.0;
         }
     }
 

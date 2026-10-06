@@ -21,12 +21,6 @@ import in.gbtsolutions.inventoryhub.R;
 
 public class SearchableDropdownAdapter<T> extends ArrayAdapter<T> implements Filterable {
 
-    public interface FilterCriterion<T> {
-        boolean matches(T item, String query);
-        String getTitle(T item);
-        String getSubtitle(T item);
-    }
-
     private final List<T> allItems = new ArrayList<>();
     private final List<T> filteredItems = new ArrayList<>();
     private final FilterCriterion<T> criterion;
@@ -143,5 +137,13 @@ public class SearchableDropdownAdapter<T> extends ArrayAdapter<T> implements Fil
                 return super.convertResultToString(resultValue);
             }
         };
+    }
+
+    public interface FilterCriterion<T> {
+        boolean matches(T item, String query);
+
+        String getTitle(T item);
+
+        String getSubtitle(T item);
     }
 }

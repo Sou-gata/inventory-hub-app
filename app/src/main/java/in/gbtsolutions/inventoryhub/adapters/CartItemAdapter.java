@@ -1,10 +1,9 @@
 package in.gbtsolutions.inventoryhub.adapters;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.text.Editable;
-import in.gbtsolutions.inventoryhub.Configurations;
-import in.gbtsolutions.inventoryhub.GlobalStore;
+import android.text.InputFilter;
+import android.text.InputType;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
@@ -23,7 +22,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import in.gbtsolutions.inventoryhub.GlobalStore;
 import in.gbtsolutions.inventoryhub.R;
+import in.gbtsolutions.inventoryhub.helpers.CommonFunctions;
 import in.gbtsolutions.inventoryhub.helpers.SellCartManager;
 import in.gbtsolutions.inventoryhub.models.CartItem;
 
@@ -61,19 +62,14 @@ public class CartItemAdapter extends RecyclerView.Adapter<CartItemAdapter.CartIt
                 CartItem oldI = cartItems.get(oldItemPosition);
                 CartItem newI = newItems.get(newItemPosition);
                 if (oldI.product == null || newI.product == null) return false;
-                return oldI.product.productId == newI.product.productId
-                        && java.util.Objects.equals(oldI.batchId, newI.batchId);
+                return oldI.product.productId == newI.product.productId && java.util.Objects.equals(oldI.batchId, newI.batchId);
             }
 
             @Override
             public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
                 CartItem oldI = cartItems.get(oldItemPosition);
                 CartItem newI = newItems.get(newItemPosition);
-                return oldI.quantity == newI.quantity
-                        && Double.compare(oldI.sellingPrice, newI.sellingPrice) == 0
-                        && Double.compare(oldI.discountValue, newI.discountValue) == 0
-                        && oldI.discountType == newI.discountType
-                        && java.util.Objects.equals(oldI.batchNo, newI.batchNo);
+                return oldI.quantity == newI.quantity && Double.compare(oldI.sellingPrice, newI.sellingPrice) == 0 && Double.compare(oldI.discountValue, newI.discountValue) == 0 && oldI.discountType == newI.discountType && java.util.Objects.equals(oldI.batchNo, newI.batchNo);
             }
         });
 
@@ -181,42 +177,55 @@ public class CartItemAdapter extends RecyclerView.Adapter<CartItemAdapter.CartIt
                 textBatchNo.setVisibility(View.GONE);
             }
 
-            editQuantity.setText(String.valueOf(item.quantity));
+            boolean isDecimal = item.product != null && CommonFunctions.isDecimalUnit(item.product.unitOfMeasure);
+            if (isDecimal) {
+                editQuantity.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+                editQuantity.setFilters(new InputFilter[]{new CommonFunctions.DecimalDigitsInputFilter(6, 3)});
+            } else {
+                editQuantity.setInputType(InputType.TYPE_CLASS_NUMBER);
+                editQuantity.setFilters(new InputFilter[]{new InputFilter.LengthFilter(6)});
+            }
+
+            editQuantity.setText(CommonFunctions.formatQuantity(item.quantity));
             editSellingPrice.setText(String.format(Locale.getDefault(), "%.2f", item.sellingPrice));
             updateTotalDisplay(item);
 
-            int maxAvail = item.batchAvailableQty;
-            if (maxAvail == Integer.MAX_VALUE && item.product != null) {
+            double maxAvail = item.batchAvailableQty;
+            if (maxAvail >= 9999999.0 && item.product != null) {
                 maxAvail = item.product.quantity;
             }
 
             boolean allowOutOfStock = GlobalStore.getInstance().isAllowOutOfStockSell();
-            final int maxAllowed = allowOutOfStock ? Integer.MAX_VALUE : maxAvail;
+            final double maxAllowed = allowOutOfStock ? Double.MAX_VALUE : maxAvail;
 
             btnQtyMinus.setOnClickListener(v -> {
-                if (item.quantity > 1) {
-                    item.quantity--;
-                    editQuantity.setText(String.valueOf(item.quantity));
-                    updateTotalDisplay(item);
-                    SellCartManager.getInstance().updateItemQuantity(item, item.quantity);
-                    if (updateListener != null) {
-                        updateListener.onCartItemUpdated();
-                    }
+                double minQty = isDecimal ? 0.001 : 1.0;
+                double step = 1.0;
+                if (item.quantity - step >= minQty - 0.0001) {
+                    item.quantity = CommonFunctions.roundTo3Decimals(item.quantity - step);
+                } else if (item.quantity > minQty) {
+                    item.quantity = minQty;
+                }
+                editQuantity.setText(CommonFunctions.formatQuantity(item.quantity));
+                updateTotalDisplay(item);
+                SellCartManager.getInstance().updateItemQuantity(item, item.quantity);
+                if (updateListener != null) {
+                    updateListener.onCartItemUpdated();
                 }
             });
 
             btnQtyPlus.setOnClickListener(v -> {
-                if (item.quantity < maxAllowed) {
-                    item.quantity++;
-                    editQuantity.setText(String.valueOf(item.quantity));
+                double step = 1.0;
+                if (item.quantity + step <= maxAllowed + 0.0001) {
+                    item.quantity = CommonFunctions.roundTo3Decimals(Math.min(maxAllowed, item.quantity + step));
+                    editQuantity.setText(CommonFunctions.formatQuantity(item.quantity));
                     updateTotalDisplay(item);
                     SellCartManager.getInstance().updateItemQuantity(item, item.quantity);
                     if (updateListener != null) {
                         updateListener.onCartItemUpdated();
                     }
                 } else {
-                    android.widget.Toast.makeText(itemView.getContext(),
-                            "Maximum available is " + maxAllowed, android.widget.Toast.LENGTH_SHORT).show();
+                    android.widget.Toast.makeText(itemView.getContext(), "Maximum available is " + CommonFunctions.formatQuantity(maxAllowed), android.widget.Toast.LENGTH_SHORT).show();
                 }
             });
 
@@ -229,15 +238,15 @@ public class CartItemAdapter extends RecyclerView.Adapter<CartItemAdapter.CartIt
                 public void onTextChanged(CharSequence s, int start, int before, int count) {
                     if (s != null && s.length() > 0) {
                         try {
-                            int q = Integer.parseInt(s.toString().trim());
+                            double q = Double.parseDouble(s.toString().trim());
+                            q = CommonFunctions.roundTo3Decimals(q);
                             if (q > maxAllowed) {
                                 q = maxAllowed;
-                                android.widget.Toast.makeText(itemView.getContext(),
-                                        "Maximum available is " + maxAllowed, android.widget.Toast.LENGTH_SHORT).show();
-                                editQuantity.setText(String.valueOf(q));
+                                android.widget.Toast.makeText(itemView.getContext(), "Maximum available is " + CommonFunctions.formatQuantity(maxAllowed), android.widget.Toast.LENGTH_SHORT).show();
+                                editQuantity.setText(CommonFunctions.formatQuantity(q));
                                 editQuantity.setSelection(editQuantity.getText().length());
                             }
-                            if (q > 0) {
+                            if (q > 0.0001) {
                                 item.quantity = q;
                                 updateTotalDisplay(item);
                                 SellCartManager.getInstance().updateItemQuantity(item, item.quantity);
@@ -259,11 +268,17 @@ public class CartItemAdapter extends RecyclerView.Adapter<CartItemAdapter.CartIt
             editQuantity.setOnFocusChangeListener((v, hasFocus) -> {
                 if (!hasFocus) {
                     String str = editQuantity.getText().toString().trim();
-                    if (TextUtils.isEmpty(str) || "0".equals(str)) {
-                        item.quantity = 1;
-                        editQuantity.setText("1");
+                    double val = 0.0;
+                    try {
+                        val = Double.parseDouble(str);
+                    } catch (NumberFormatException ignored) {
+                    }
+                    double minQty = isDecimal ? 0.001 : 1.0;
+                    if (val < minQty) {
+                        item.quantity = 1.0;
+                        editQuantity.setText(CommonFunctions.formatQuantity(item.quantity));
                         updateTotalDisplay(item);
-                        SellCartManager.getInstance().updateItemQuantity(item, 1);
+                        SellCartManager.getInstance().updateItemQuantity(item, item.quantity);
                         if (updateListener != null) {
                             updateListener.onCartItemUpdated();
                         }

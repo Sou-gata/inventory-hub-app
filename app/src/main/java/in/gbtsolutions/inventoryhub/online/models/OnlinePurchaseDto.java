@@ -38,7 +38,7 @@ public class OnlinePurchaseDto {
         public int productId;
 
         @SerializedName("quantity")
-        public int quantity;
+        public double quantity;
 
         @SerializedName(value = "unitPrice", alternate = {"unit_price", "purchase_price"})
         public double unitPrice;

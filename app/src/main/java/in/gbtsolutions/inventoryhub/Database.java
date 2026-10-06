@@ -5,7 +5,6 @@ import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
-import androidx.room.migration.Migration;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 
 import in.gbtsolutions.inventoryhub.dao.AuditTrailDao;
@@ -22,6 +21,7 @@ import in.gbtsolutions.inventoryhub.dao.ReceiveRecordDao;
 import in.gbtsolutions.inventoryhub.dao.SaleDao;
 import in.gbtsolutions.inventoryhub.dao.SaleItemDao;
 import in.gbtsolutions.inventoryhub.dao.SupplierDao;
+import in.gbtsolutions.inventoryhub.dao.UnitOfMeasureDao;
 import in.gbtsolutions.inventoryhub.dao.UserDao;
 import in.gbtsolutions.inventoryhub.models.AuditTrail;
 import in.gbtsolutions.inventoryhub.models.Buyer;
@@ -37,6 +37,7 @@ import in.gbtsolutions.inventoryhub.models.ReceiveRecord;
 import in.gbtsolutions.inventoryhub.models.Sale;
 import in.gbtsolutions.inventoryhub.models.SaleItem;
 import in.gbtsolutions.inventoryhub.models.Suppliers;
+import in.gbtsolutions.inventoryhub.models.UnitOfMeasure;
 import in.gbtsolutions.inventoryhub.models.User;
 
 @androidx.room.Database(
@@ -55,37 +56,13 @@ import in.gbtsolutions.inventoryhub.models.User;
                 ReceiveRecord.class,
                 ReceiveItem.class,
                 CreditDebitNote.class,
-                AuditTrail.class
+                AuditTrail.class,
+                UnitOfMeasure.class
         },
-        version = 4,
+        version = 1,
         exportSchema = false
 )
 public abstract class Database extends RoomDatabase {
-
-    public static final Migration MIGRATION_1_2 = new Migration(1, 2) {
-        @Override
-        public void migrate(@NonNull SupportSQLiteDatabase database) {
-            database.execSQL("ALTER TABLE sales ADD COLUMN payment_method TEXT DEFAULT 'Cash'");
-        }
-    };
-
-    public static final Migration MIGRATION_2_3 = new Migration(2, 3) {
-        @Override
-        public void migrate(@NonNull SupportSQLiteDatabase database) {
-            database.execSQL("CREATE TABLE IF NOT EXISTS `audit_trails` (" +
-                    "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
-                    "`action_type` TEXT, " +
-                    "`module` TEXT, " +
-                    "`record_id` TEXT, " +
-                    "`details` TEXT, " +
-                    "`performed_by` TEXT, " +
-                    "`timestamp` INTEGER NOT NULL)");
-            database.execSQL("CREATE INDEX IF NOT EXISTS `index_audit_trails_timestamp` ON `audit_trails` (`timestamp`)");
-            database.execSQL("CREATE INDEX IF NOT EXISTS `index_audit_trails_action_type` ON `audit_trails` (`action_type`)");
-            database.execSQL("CREATE INDEX IF NOT EXISTS `index_audit_trails_module` ON `audit_trails` (`module`)");
-        }
-    };
-
     private static volatile Database INSTANCE;
 
     public static Database getInstance(Context context) {
@@ -93,7 +70,6 @@ public abstract class Database extends RoomDatabase {
             synchronized (Database.class) {
                 if (INSTANCE == null) {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(), Database.class, "app_database")
-                            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                             .fallbackToDestructiveMigration()
                             .addCallback(new Callback() {
                                 @Override
@@ -155,4 +131,6 @@ public abstract class Database extends RoomDatabase {
     public abstract CreditDebitNoteDao creditDebitNoteDao();
 
     public abstract AuditTrailDao auditTrailDao();
+
+    public abstract UnitOfMeasureDao unitOfMeasureDao();
 }

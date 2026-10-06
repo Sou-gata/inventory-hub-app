@@ -22,17 +22,22 @@ public class ReceiveItem {
     public int productId;
 
     @ColumnInfo(name = "quantity_received")
-    public int quantityReceived;
+    public double quantityReceived;
 
     public ReceiveItem() {
     }
 
     @Ignore
-    public ReceiveItem(int receiveRecordId, int purchaseItemId, int productId, int quantityReceived) {
+    public ReceiveItem(int receiveRecordId, int purchaseItemId, int productId, double quantityReceived) {
         this.receiveRecordId = receiveRecordId;
         this.purchaseItemId = purchaseItemId;
         this.productId = productId;
         this.quantityReceived = quantityReceived;
+    }
+
+    @Ignore
+    public ReceiveItem(int receiveRecordId, int purchaseItemId, int productId, int quantityReceived) {
+        this(receiveRecordId, purchaseItemId, productId, (double) quantityReceived);
     }
 
     public int getReceiveItemId() { return receiveItemId; }
@@ -47,6 +52,7 @@ public class ReceiveItem {
     public int getProductId() { return productId; }
     public void setProductId(int productId) { this.productId = productId; }
 
-    public int getQuantityReceived() { return quantityReceived; }
-    public void setQuantityReceived(int quantityReceived) { this.quantityReceived = quantityReceived; }
+    public double getQuantityReceived() { return quantityReceived; }
+    public void setQuantityReceived(double quantityReceived) { this.quantityReceived = quantityReceived; }
+    public void setQuantityReceived(int quantityReceived) { this.quantityReceived = (double) quantityReceived; }
 }

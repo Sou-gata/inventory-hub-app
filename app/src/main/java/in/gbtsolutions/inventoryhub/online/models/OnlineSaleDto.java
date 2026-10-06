@@ -53,7 +53,7 @@ public class OnlineSaleDto {
         public String batchNo;
 
         @SerializedName("quantity")
-        public int quantity;
+        public double quantity;
 
         @SerializedName(value = "unitPrice", alternate = {"unit_price", "purchase_price"})
         public double unitPrice;

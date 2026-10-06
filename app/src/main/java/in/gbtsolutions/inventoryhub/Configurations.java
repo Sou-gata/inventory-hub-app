@@ -23,5 +23,6 @@ public class Configurations {
     public static final String MODE_ONLINE = "online";
     public static final String KEY_ONLINE_SERVER_URL = "online_server_url";
     public static final String DEFAULT_ONLINE_SERVER_URL = "https://imgbt.gbtsolutions.in/";
+    // public static final String DEFAULT_ONLINE_SERVER_URL = "http://192.168.0.181:3000/";
     public static final String KEY_AUTH_TOKEN = "auth_token";
 }

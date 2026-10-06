@@ -22,6 +22,7 @@ import java.util.Map;
 
 import in.gbtsolutions.inventoryhub.R;
 import in.gbtsolutions.inventoryhub.helpers.CategoryIconHelper;
+import in.gbtsolutions.inventoryhub.helpers.CommonFunctions;
 import in.gbtsolutions.inventoryhub.models.Category;
 import in.gbtsolutions.inventoryhub.models.Product;
 
@@ -29,28 +30,13 @@ public class ProductAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
     public static final int VIEW_TYPE_ITEM = 0;
     public static final int VIEW_TYPE_FOOTER = 1;
-
-    public interface OnProductClickListener {
-        void onProductClick(@NonNull Product product);
-    }
-
-    public interface OnProductEditListener {
-        void onProductEdit(@NonNull Product product);
-    }
-
-    public interface OnProductViewListener {
-        void onProductView(@NonNull Product product);
-    }
-
     private final List<Product> productList = new ArrayList<>();
     private final Map<Integer, String> categoryNames = new HashMap<>();
     private final Map<Integer, String> categoryIcons = new HashMap<>();
     private final Map<Integer, Long> earliestExpiryMap = new HashMap<>();
-
     private OnProductClickListener clickListener;
     private OnProductEditListener editListener;
     private OnProductViewListener viewListener;
-
     private boolean isFooterAdded = false;
     private boolean isRetryActive = false;
     private String retryMessage = null;
@@ -95,6 +81,38 @@ public class ProductAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
     public List<Product> getProducts() {
         return new ArrayList<>(productList);
+    }
+
+    public void setProducts(@NonNull List<Product> newProducts) {
+        isFooterAdded = false;
+        isRetryActive = false;
+        DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new DiffUtil.Callback() {
+            @Override
+            public int getOldListSize() {
+                return productList.size();
+            }
+
+            @Override
+            public int getNewListSize() {
+                return newProducts.size();
+            }
+
+            @Override
+            public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
+                return productList.get(oldItemPosition).productId == newProducts.get(newItemPosition).productId;
+            }
+
+            @Override
+            public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+                Product oldP = productList.get(oldItemPosition);
+                Product newP = newProducts.get(newItemPosition);
+                return TextUtils.equals(oldP.productName, newP.productName) && TextUtils.equals(oldP.sku, newP.sku) && TextUtils.equals(oldP.brand, newP.brand) && oldP.categoryId == newP.categoryId && Double.compare(oldP.sellingPrice, newP.sellingPrice) == 0 && Double.compare(oldP.unitPrice, newP.unitPrice) == 0 && oldP.quantity == newP.quantity && oldP.reorderLevel == newP.reorderLevel && TextUtils.equals(oldP.unitOfMeasure, newP.unitOfMeasure) && oldP.batchEnabled == newP.batchEnabled;
+            }
+        });
+
+        productList.clear();
+        productList.addAll(newProducts);
+        diffResult.dispatchUpdatesTo(this);
     }
 
     public void clearProducts() {
@@ -151,47 +169,6 @@ public class ProductAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         return isFooterAdded;
     }
 
-    public void setProducts(@NonNull List<Product> newProducts) {
-        isFooterAdded = false;
-        isRetryActive = false;
-        DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new DiffUtil.Callback() {
-            @Override
-            public int getOldListSize() {
-                return productList.size();
-            }
-
-            @Override
-            public int getNewListSize() {
-                return newProducts.size();
-            }
-
-            @Override
-            public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
-                return productList.get(oldItemPosition).productId == newProducts.get(newItemPosition).productId;
-            }
-
-            @Override
-            public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
-                Product oldP = productList.get(oldItemPosition);
-                Product newP = newProducts.get(newItemPosition);
-                return TextUtils.equals(oldP.productName, newP.productName)
-                        && TextUtils.equals(oldP.sku, newP.sku)
-                        && TextUtils.equals(oldP.brand, newP.brand)
-                        && oldP.categoryId == newP.categoryId
-                        && Double.compare(oldP.sellingPrice, newP.sellingPrice) == 0
-                        && Double.compare(oldP.unitPrice, newP.unitPrice) == 0
-                        && oldP.quantity == newP.quantity
-                        && oldP.reorderLevel == newP.reorderLevel
-                        && TextUtils.equals(oldP.unitOfMeasure, newP.unitOfMeasure)
-                        && oldP.batchEnabled == newP.batchEnabled;
-            }
-        });
-
-        productList.clear();
-        productList.addAll(newProducts);
-        diffResult.dispatchUpdatesTo(this);
-    }
-
     @Override
     public int getItemViewType(int position) {
         if (isFooterAdded && position == productList.size()) {
@@ -224,6 +201,55 @@ public class ProductAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     @Override
     public int getItemCount() {
         return isFooterAdded ? productList.size() + 1 : productList.size();
+    }
+
+    public interface OnProductClickListener {
+        void onProductClick(@NonNull Product product);
+    }
+
+    public interface OnProductEditListener {
+        void onProductEdit(@NonNull Product product);
+    }
+
+    public interface OnProductViewListener {
+        void onProductView(@NonNull Product product);
+    }
+
+    public static class FooterViewHolder extends RecyclerView.ViewHolder {
+        private final View containerLoading;
+        private final View containerRetry;
+        private final TextView textRetryMessage;
+        private final TextView btnRetryLoad;
+
+        public FooterViewHolder(@NonNull View itemView) {
+            super(itemView);
+            containerLoading = itemView.findViewById(R.id.container_loading);
+            containerRetry = itemView.findViewById(R.id.container_retry);
+            textRetryMessage = itemView.findViewById(R.id.text_retry_message);
+            btnRetryLoad = itemView.findViewById(R.id.btn_retry_load);
+        }
+
+        public void bind(boolean isRetry, String message, Runnable retryAction) {
+            if (isRetry) {
+                if (containerLoading != null) containerLoading.setVisibility(View.GONE);
+                if (containerRetry != null) {
+                    containerRetry.setVisibility(View.VISIBLE);
+                    if (textRetryMessage != null && message != null) {
+                        textRetryMessage.setText(message);
+                    }
+                    if (btnRetryLoad != null) {
+                        btnRetryLoad.setOnClickListener(v -> {
+                            if (retryAction != null) {
+                                retryAction.run();
+                            }
+                        });
+                    }
+                }
+            } else {
+                if (containerRetry != null) containerRetry.setVisibility(View.GONE);
+                if (containerLoading != null) containerLoading.setVisibility(View.VISIBLE);
+            }
+        }
     }
 
     public class ProductViewHolder extends RecyclerView.ViewHolder {
@@ -309,8 +335,9 @@ public class ProductAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
             // Stock Badge
             String uom = !TextUtils.isEmpty(product.unitOfMeasure) ? product.unitOfMeasure.trim() : "pcs";
-            int qty = product.quantity;
+            double qty = product.quantity;
             int reorder = product.reorderLevel;
+            String qtyStr = CommonFunctions.formatQuantity(qty);
 
             if (qty <= 0) {
                 layoutStockBadge.setBackgroundResource(R.drawable.bg_stock_out);
@@ -320,13 +347,13 @@ public class ProductAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 tintStatusDot(viewStockDot, redColor);
             } else if (qty <= reorder) {
                 layoutStockBadge.setBackgroundResource(R.drawable.bg_stock_low);
-                textStockStatus.setText(String.format(Locale.getDefault(), "Low Stock: %d %s left", qty, uom));
+                textStockStatus.setText(String.format(Locale.getDefault(), "Low Stock: %s %s left", qtyStr, uom));
                 int amberColor = ContextCompat.getColor(itemView.getContext(), R.color.accent_amber);
                 textStockStatus.setTextColor(amberColor);
                 tintStatusDot(viewStockDot, amberColor);
             } else {
                 layoutStockBadge.setBackgroundResource(R.drawable.bg_stock_in);
-                textStockStatus.setText(String.format(Locale.getDefault(), "In Stock (%d %s)", qty, uom));
+                textStockStatus.setText(String.format(Locale.getDefault(), "In Stock (%s %s)", qtyStr, uom));
                 int inStockColor = ContextCompat.getColor(itemView.getContext(), R.color.status_green);
                 textStockStatus.setTextColor(inStockColor);
                 tintStatusDot(viewStockDot, inStockColor);
@@ -385,43 +412,6 @@ public class ProductAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             circle.setShape(GradientDrawable.OVAL);
             circle.setColor(color);
             dot.setBackground(circle);
-        }
-    }
-
-    public static class FooterViewHolder extends RecyclerView.ViewHolder {
-        private final View containerLoading;
-        private final View containerRetry;
-        private final TextView textRetryMessage;
-        private final TextView btnRetryLoad;
-
-        public FooterViewHolder(@NonNull View itemView) {
-            super(itemView);
-            containerLoading = itemView.findViewById(R.id.container_loading);
-            containerRetry = itemView.findViewById(R.id.container_retry);
-            textRetryMessage = itemView.findViewById(R.id.text_retry_message);
-            btnRetryLoad = itemView.findViewById(R.id.btn_retry_load);
-        }
-
-        public void bind(boolean isRetry, String message, Runnable retryAction) {
-            if (isRetry) {
-                if (containerLoading != null) containerLoading.setVisibility(View.GONE);
-                if (containerRetry != null) {
-                    containerRetry.setVisibility(View.VISIBLE);
-                    if (textRetryMessage != null && message != null) {
-                        textRetryMessage.setText(message);
-                    }
-                    if (btnRetryLoad != null) {
-                        btnRetryLoad.setOnClickListener(v -> {
-                            if (retryAction != null) {
-                                retryAction.run();
-                            }
-                        });
-                    }
-                }
-            } else {
-                if (containerRetry != null) containerRetry.setVisibility(View.GONE);
-                if (containerLoading != null) containerLoading.setVisibility(View.VISIBLE);
-            }
         }
     }
 }

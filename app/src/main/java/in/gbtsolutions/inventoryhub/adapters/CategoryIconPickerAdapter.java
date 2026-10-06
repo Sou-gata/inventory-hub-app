@@ -21,10 +21,6 @@ import in.gbtsolutions.inventoryhub.helpers.CategoryIconHelper;
 
 public class CategoryIconPickerAdapter extends RecyclerView.Adapter<CategoryIconPickerAdapter.IconViewHolder> {
 
-    public interface OnIconSelectedListener {
-        void onIconSelected(@NonNull CategoryIconHelper.IconItem iconItem);
-    }
-
     private final List<CategoryIconHelper.IconItem> iconList = new ArrayList<>();
     private String selectedKey = CategoryIconHelper.DEFAULT_ICON_KEY;
     private OnIconSelectedListener listener;
@@ -41,14 +37,14 @@ public class CategoryIconPickerAdapter extends RecyclerView.Adapter<CategoryIcon
         notifyDataSetChanged();
     }
 
-    public void setSelectedKey(@Nullable String key) {
-        this.selectedKey = CategoryIconHelper.sanitizeIconKey(key);
-        notifyDataSetChanged();
-    }
-
     @NonNull
     public String getSelectedKey() {
         return selectedKey;
+    }
+
+    public void setSelectedKey(@Nullable String key) {
+        this.selectedKey = CategoryIconHelper.sanitizeIconKey(key);
+        notifyDataSetChanged();
     }
 
     public void setOnIconSelectedListener(@Nullable OnIconSelectedListener listener) {
@@ -71,6 +67,10 @@ public class CategoryIconPickerAdapter extends RecyclerView.Adapter<CategoryIcon
     @Override
     public int getItemCount() {
         return iconList.size();
+    }
+
+    public interface OnIconSelectedListener {
+        void onIconSelected(@NonNull CategoryIconHelper.IconItem iconItem);
     }
 
     public class IconViewHolder extends RecyclerView.ViewHolder {

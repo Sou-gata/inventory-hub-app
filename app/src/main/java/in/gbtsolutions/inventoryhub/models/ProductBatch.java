@@ -32,7 +32,7 @@ public class ProductBatch {
     public String batchNo;
 
     @ColumnInfo(name = "quantity")
-    public int quantity;
+    public double quantity;
 
     @ColumnInfo(name = "purchase_price")
     public double purchasePrice;
@@ -53,7 +53,7 @@ public class ProductBatch {
     }
 
     @androidx.room.Ignore
-    public ProductBatch(int productId, String batchNo, int quantity,
+    public ProductBatch(int productId, String batchNo, double quantity,
                         double purchasePrice, double sellingPrice,
                         long expiryDate, long createdAt, long updatedAt) {
         this.productId = productId;
@@ -64,6 +64,14 @@ public class ProductBatch {
         this.expiryDate = expiryDate;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+    }
+
+    @androidx.room.Ignore
+    public ProductBatch(int productId, String batchNo, int quantity,
+                        double purchasePrice, double sellingPrice,
+                        long expiryDate, long createdAt, long updatedAt) {
+        this(productId, batchNo, (double) quantity, purchasePrice, sellingPrice,
+                expiryDate, createdAt, updatedAt);
     }
 
     public boolean isExpired() {

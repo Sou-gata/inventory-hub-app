@@ -12,6 +12,7 @@ import in.gbtsolutions.inventoryhub.models.Category;
 import in.gbtsolutions.inventoryhub.models.Config;
 import in.gbtsolutions.inventoryhub.models.Product;
 import in.gbtsolutions.inventoryhub.models.Suppliers;
+import in.gbtsolutions.inventoryhub.models.UnitOfMeasure;
 import in.gbtsolutions.inventoryhub.models.User;
 
 public class SeedDB {
@@ -33,13 +34,12 @@ public class SeedDB {
         try {
             Database db = Database.getInstance(context);
 
-            seedUsers(db);
-            seedCategoriesAndProducts(db);
-            seedBuyers(db);
-            seedSuppliers(db);
+//            seedUsers(db);
+//            seedCategoriesAndProducts(db);
+//            seedBuyers(db);
+//            seedSuppliers(db);
             seedConfigs(db);
-
-            Log.d(TAG, "Database seeding completed successfully.");
+            seedUnitsOfMeasure(db);
         } catch (Exception e) {
             Log.e(TAG, "Error seeding database: " + e.getMessage(), e);
         }
@@ -439,5 +439,24 @@ public class SeedDB {
             db.configDao().insert(new Config(Configurations.KEY_PRINT_BILL, "false"));
             Log.d(TAG, "Seeded initial configs.");
         }
+    }
+
+    public static void seedUnitsOfMeasure(Database db) {
+        String[][] defaultUnits = new String[][]{
+                {"KG", "Kilogram (Standard unit of weight)"},
+                {"Gram", "Gram (Weight measurement)"},
+                {"Liter", "Liter (Liquid volume measurement)"},
+                {"Mililiter", "Milliliter (Liquid volume measurement)"},
+                {"Pics", "Pieces / Count units"},
+                {"Packet", "Packet packaging unit"}
+        };
+        for (String[] unit : defaultUnits) {
+            UnitOfMeasure existing = db.unitOfMeasureDao().getByName(unit[0]);
+            if (existing == null) {
+                UnitOfMeasure uom = new UnitOfMeasure(unit[0], unit[1], true);
+                db.unitOfMeasureDao().insert(uom);
+            }
+        }
+        Log.d(TAG, "Seeded default units of measure.");
     }
 }

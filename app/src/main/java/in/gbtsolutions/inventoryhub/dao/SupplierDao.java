@@ -2,6 +2,7 @@ package in.gbtsolutions.inventoryhub.dao;
 
 import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
+import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.Query;
 import androidx.room.Update;
@@ -17,6 +18,9 @@ public interface SupplierDao {
 
     @Update
     void update(Suppliers supplier);
+
+    @Delete
+    void delete(Suppliers supplier);
 
     @Query("SELECT * FROM suppliers WHERE supplier_id = :supplierId")
     Suppliers getSupplierById(int supplierId);

@@ -93,7 +93,7 @@ public class ProductCsvParserTest {
         assertTrue(result.errors.isEmpty());
         assertEquals(1, result.groups.size());
         assertEquals(2, result.groups.get(0).batches.size());
-        assertEquals(50, result.groups.get(0).product.quantity);
+        assertEquals(50.0, result.groups.get(0).product.quantity, 0.001);
         assertTrue(result.groups.get(0).product.batchEnabled);
     }
 

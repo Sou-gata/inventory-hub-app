@@ -21,18 +21,6 @@ import in.gbtsolutions.inventoryhub.models.Buyer;
 
 public class BuyerAdapter extends RecyclerView.Adapter<BuyerAdapter.BuyerViewHolder> {
 
-    public interface OnBuyerClickListener {
-        void onBuyerClick(@NonNull Buyer buyer);
-    }
-
-    public interface OnBuyerEditListener {
-        void onBuyerEdit(@NonNull Buyer buyer);
-    }
-
-    public interface OnBuyerStatusToggleListener {
-        void onBuyerStatusToggle(@NonNull Buyer buyer);
-    }
-
     private final List<Buyer> buyerList = new ArrayList<>();
     private OnBuyerClickListener clickListener;
     private OnBuyerEditListener editListener;
@@ -74,13 +62,7 @@ public class BuyerAdapter extends RecyclerView.Adapter<BuyerAdapter.BuyerViewHol
             public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
                 Buyer oldBuyer = buyerList.get(oldItemPosition);
                 Buyer newBuyer = newBuyers.get(newItemPosition);
-                return TextUtils.equals(oldBuyer.buyerName, newBuyer.buyerName)
-                        && TextUtils.equals(oldBuyer.contactPerson, newBuyer.contactPerson)
-                        && TextUtils.equals(oldBuyer.phone, newBuyer.phone)
-                        && TextUtils.equals(oldBuyer.email, newBuyer.email)
-                        && TextUtils.equals(oldBuyer.city, newBuyer.city)
-                        && TextUtils.equals(oldBuyer.gst, newBuyer.gst)
-                        && oldBuyer.isActive == newBuyer.isActive;
+                return TextUtils.equals(oldBuyer.buyerName, newBuyer.buyerName) && TextUtils.equals(oldBuyer.contactPerson, newBuyer.contactPerson) && TextUtils.equals(oldBuyer.phone, newBuyer.phone) && TextUtils.equals(oldBuyer.email, newBuyer.email) && TextUtils.equals(oldBuyer.city, newBuyer.city) && TextUtils.equals(oldBuyer.gst, newBuyer.gst) && oldBuyer.isActive == newBuyer.isActive;
             }
         });
 
@@ -105,6 +87,18 @@ public class BuyerAdapter extends RecyclerView.Adapter<BuyerAdapter.BuyerViewHol
     @Override
     public int getItemCount() {
         return buyerList.size();
+    }
+
+    public interface OnBuyerClickListener {
+        void onBuyerClick(@NonNull Buyer buyer);
+    }
+
+    public interface OnBuyerEditListener {
+        void onBuyerEdit(@NonNull Buyer buyer);
+    }
+
+    public interface OnBuyerStatusToggleListener {
+        void onBuyerStatusToggle(@NonNull Buyer buyer);
     }
 
     public class BuyerViewHolder extends RecyclerView.ViewHolder {

@@ -15,20 +15,6 @@ import in.gbtsolutions.inventoryhub.R;
 
 public class ImportErrorAdapter extends RecyclerView.Adapter<ImportErrorAdapter.ErrorViewHolder> {
 
-    public static class ImportErrorItem {
-        public final String lineDisplay;
-        public final String sku;
-        public final String hsnCode;
-        public final String reason;
-
-        public ImportErrorItem(String lineDisplay, String sku, String hsnCode, String reason) {
-            this.lineDisplay = lineDisplay;
-            this.sku = sku;
-            this.hsnCode = hsnCode;
-            this.reason = reason;
-        }
-    }
-
     private final List<ImportErrorItem> items = new ArrayList<>();
 
     public void setItems(List<ImportErrorItem> newItems) {
@@ -71,6 +57,20 @@ public class ImportErrorAdapter extends RecyclerView.Adapter<ImportErrorAdapter.
     @Override
     public int getItemCount() {
         return items.size();
+    }
+
+    public static class ImportErrorItem {
+        public final String lineDisplay;
+        public final String sku;
+        public final String hsnCode;
+        public final String reason;
+
+        public ImportErrorItem(String lineDisplay, String sku, String hsnCode, String reason) {
+            this.lineDisplay = lineDisplay;
+            this.sku = sku;
+            this.hsnCode = hsnCode;
+            this.reason = reason;
+        }
     }
 
     static class ErrorViewHolder extends RecyclerView.ViewHolder {

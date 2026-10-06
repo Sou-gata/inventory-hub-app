@@ -23,15 +23,12 @@ import java.util.Map;
 
 import in.gbtsolutions.inventoryhub.R;
 import in.gbtsolutions.inventoryhub.helpers.CategoryIconHelper;
+import in.gbtsolutions.inventoryhub.helpers.CommonFunctions;
 import in.gbtsolutions.inventoryhub.helpers.SellCartManager;
 import in.gbtsolutions.inventoryhub.models.Category;
 import in.gbtsolutions.inventoryhub.models.Product;
 
 public class SellProductAdapter extends RecyclerView.Adapter<SellProductAdapter.SellProductViewHolder> {
-
-    public interface OnAddToCartClickListener {
-        void onAddToCartClick(@NonNull Product product);
-    }
 
     private final List<Product> productList = new ArrayList<>();
     private final Map<Integer, String> categoryNames = new HashMap<>();
@@ -59,6 +56,22 @@ public class SellProductAdapter extends RecyclerView.Adapter<SellProductAdapter.
         notifyItemRangeChanged(0, productList.size());
     }
 
+    public void addProducts(@NonNull List<Product> moreProducts) {
+        int startPos = productList.size();
+        productList.addAll(moreProducts);
+        notifyItemRangeInserted(startPos, moreProducts.size());
+    }
+
+    public void clearProducts() {
+        int size = productList.size();
+        productList.clear();
+        notifyDataSetChanged();
+    }
+
+    public List<Product> getProducts() {
+        return productList;
+    }
+
     public void setProducts(@NonNull List<Product> newProducts) {
         DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new DiffUtil.Callback() {
             @Override
@@ -80,36 +93,13 @@ public class SellProductAdapter extends RecyclerView.Adapter<SellProductAdapter.
             public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
                 Product oldP = productList.get(oldItemPosition);
                 Product newP = newProducts.get(newItemPosition);
-                return TextUtils.equals(oldP.productName, newP.productName)
-                        && TextUtils.equals(oldP.sku, newP.sku)
-                        && TextUtils.equals(oldP.brand, newP.brand)
-                        && oldP.categoryId == newP.categoryId
-                        && Double.compare(oldP.sellingPrice, newP.sellingPrice) == 0
-                        && oldP.quantity == newP.quantity
-                        && oldP.reorderLevel == newP.reorderLevel
-                        && TextUtils.equals(oldP.unitOfMeasure, newP.unitOfMeasure);
+                return TextUtils.equals(oldP.productName, newP.productName) && TextUtils.equals(oldP.sku, newP.sku) && TextUtils.equals(oldP.brand, newP.brand) && oldP.categoryId == newP.categoryId && Double.compare(oldP.sellingPrice, newP.sellingPrice) == 0 && oldP.quantity == newP.quantity && oldP.reorderLevel == newP.reorderLevel && TextUtils.equals(oldP.unitOfMeasure, newP.unitOfMeasure);
             }
         });
 
         productList.clear();
         productList.addAll(newProducts);
         diffResult.dispatchUpdatesTo(this);
-    }
-
-    public void addProducts(@NonNull List<Product> moreProducts) {
-        int startPos = productList.size();
-        productList.addAll(moreProducts);
-        notifyItemRangeInserted(startPos, moreProducts.size());
-    }
-
-    public void clearProducts() {
-        int size = productList.size();
-        productList.clear();
-        notifyDataSetChanged();
-    }
-
-    public List<Product> getProducts() {
-        return productList;
     }
 
     @NonNull
@@ -128,6 +118,10 @@ public class SellProductAdapter extends RecyclerView.Adapter<SellProductAdapter.
     @Override
     public int getItemCount() {
         return productList.size();
+    }
+
+    public interface OnAddToCartClickListener {
+        void onAddToCartClick(@NonNull Product product);
     }
 
     public class SellProductViewHolder extends RecyclerView.ViewHolder {
@@ -203,8 +197,9 @@ public class SellProductAdapter extends RecyclerView.Adapter<SellProductAdapter.
 
             // Stock Badge
             String uom = !TextUtils.isEmpty(product.unitOfMeasure) ? product.unitOfMeasure.trim() : "pcs";
-            int qty = product.quantity;
+            double qty = product.quantity;
             int reorder = product.reorderLevel;
+            String qtyStr = CommonFunctions.formatQuantity(qty);
 
             if (qty <= 0) {
                 layoutStockBadge.setBackgroundResource(R.drawable.bg_stock_out);
@@ -214,13 +209,13 @@ public class SellProductAdapter extends RecyclerView.Adapter<SellProductAdapter.
                 tintStatusDot(viewStockDot, redColor);
             } else if (qty <= reorder) {
                 layoutStockBadge.setBackgroundResource(R.drawable.bg_stock_low);
-                textStockStatus.setText(String.format(Locale.getDefault(), "Low Stock: %d %s left", qty, uom));
+                textStockStatus.setText(String.format(Locale.getDefault(), "Low Stock: %s %s left", qtyStr, uom));
                 int amberColor = ContextCompat.getColor(itemView.getContext(), R.color.accent_amber);
                 textStockStatus.setTextColor(amberColor);
                 tintStatusDot(viewStockDot, amberColor);
             } else {
                 layoutStockBadge.setBackgroundResource(R.drawable.bg_stock_in);
-                textStockStatus.setText(String.format(Locale.getDefault(), "In Stock (%d %s)", qty, uom));
+                textStockStatus.setText(String.format(Locale.getDefault(), "In Stock (%s %s)", qtyStr, uom));
                 int inStockColor = ContextCompat.getColor(itemView.getContext(), R.color.status_green);
                 textStockStatus.setTextColor(inStockColor);
                 tintStatusDot(viewStockDot, inStockColor);

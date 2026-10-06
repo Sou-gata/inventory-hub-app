@@ -46,7 +46,7 @@ public interface ProductBatchDao {
     List<ProductBatch> getActiveBatchesForProductSync(int productId);
 
     @Query("SELECT COALESCE(SUM(quantity), 0) FROM product_batches WHERE product_id = :productId")
-    int sumQuantityForProduct(int productId);
+    double sumQuantityForProduct(int productId);
 
     @Query("SELECT MIN(expiry_date) FROM product_batches WHERE product_id = :productId AND quantity > 0 AND expiry_date > 0")
     Long getEarliestExpiryForProduct(int productId);

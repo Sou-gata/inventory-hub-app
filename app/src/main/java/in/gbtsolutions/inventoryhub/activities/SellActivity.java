@@ -17,6 +17,7 @@ import in.gbtsolutions.inventoryhub.helpers.SellCartManager;
 
 public class SellActivity extends BaseActivity {
 
+    private final SellCartManager.OnCartChangedListener cartListener = this::updateCartBadge;
     private TabLayout tabLayout;
     private ViewPager2 viewPager;
 
@@ -66,8 +67,6 @@ public class SellActivity extends BaseActivity {
 
         updateCartBadge();
     }
-
-    private final SellCartManager.OnCartChangedListener cartListener = this::updateCartBadge;
 
     @Override
     protected void onStart() {

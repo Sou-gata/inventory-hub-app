@@ -14,6 +14,10 @@
             android:icon="@drawable/ic_nav_category"
             android:title="Category" />
         <item
+            android:id="@+id/nav_uom"
+            android:icon="@drawable/ic_nav_uom"
+            android:title="Unit of Measure" />
+        <item
             android:id="@+id/nav_buyer"
             android:icon="@drawable/ic_nav_buyer"
             android:title="Buyers" />
@@ -62,10 +66,26 @@
             android:icon="@drawable/ic_nav_sub_order_history"
             android:title="History" />
 
+        <!-- Reports parent item (collapsible) -->
         <item
             android:id="@+id/nav_reports"
             android:icon="@drawable/ic_nav_reports"
-            android:title="Reports" />
+            android:title="Reports"
+            android:checkable="false" />
+
+        <!-- Submenu items nested directly under Reports -->
+        <item
+            android:id="@+id/nav_reports_gstr1"
+            android:icon="@drawable/ic_nav_sub_gstr1"
+            android:title="GSTR-1" />
+        <item
+            android:id="@+id/nav_reports_sales_register"
+            android:icon="@drawable/ic_nav_sub_sales_register"
+            android:title="Sales Register" />
+        <item
+            android:id="@+id/nav_reports_purchase_register"
+            android:icon="@drawable/ic_nav_sub_purchase_register"
+            android:title="Purchase Register" />
         <item
             android:id="@+id/nav_audit_trail"
             android:icon="@drawable/ic_nav_audit_trail"

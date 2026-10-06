@@ -22,10 +22,6 @@ import in.gbtsolutions.inventoryhub.models.AuditTrail;
 
 public class AuditTrailAdapter extends RecyclerView.Adapter<AuditTrailAdapter.AuditTrailViewHolder> {
 
-    public interface OnAuditTrailClickListener {
-        void onAuditTrailClick(@NonNull AuditTrail auditTrail);
-    }
-
     private final List<AuditTrail> auditList = new ArrayList<>();
     private OnAuditTrailClickListener clickListener;
 
@@ -57,12 +53,7 @@ public class AuditTrailAdapter extends RecyclerView.Adapter<AuditTrailAdapter.Au
             public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
                 AuditTrail oldItem = auditList.get(oldItemPosition);
                 AuditTrail newItem = newAuditTrails.get(newItemPosition);
-                return TextUtils.equals(oldItem.actionType, newItem.actionType)
-                        && TextUtils.equals(oldItem.module, newItem.module)
-                        && TextUtils.equals(oldItem.recordId, newItem.recordId)
-                        && TextUtils.equals(oldItem.details, newItem.details)
-                        && TextUtils.equals(oldItem.performedBy, newItem.performedBy)
-                        && oldItem.timestamp == newItem.timestamp;
+                return TextUtils.equals(oldItem.actionType, newItem.actionType) && TextUtils.equals(oldItem.module, newItem.module) && TextUtils.equals(oldItem.recordId, newItem.recordId) && TextUtils.equals(oldItem.details, newItem.details) && TextUtils.equals(oldItem.performedBy, newItem.performedBy) && oldItem.timestamp == newItem.timestamp;
             }
         });
 
@@ -86,6 +77,10 @@ public class AuditTrailAdapter extends RecyclerView.Adapter<AuditTrailAdapter.Au
     @Override
     public int getItemCount() {
         return auditList.size();
+    }
+
+    public interface OnAuditTrailClickListener {
+        void onAuditTrailClick(@NonNull AuditTrail auditTrail);
     }
 
     public class AuditTrailViewHolder extends RecyclerView.ViewHolder {

@@ -43,7 +43,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:visibility="gone"
                 android:padding="12dp">
 
                 <!-- 1. DATE RANGE FILTER CARD -->

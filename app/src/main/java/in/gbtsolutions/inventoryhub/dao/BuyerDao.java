@@ -2,6 +2,7 @@ package in.gbtsolutions.inventoryhub.dao;
 
 import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
+import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.Query;
 import androidx.room.Update;
@@ -17,6 +18,9 @@ public interface BuyerDao {
 
     @Update
     void update(Buyer buyer);
+
+    @Delete
+    void delete(Buyer buyer);
 
     @Query("SELECT * FROM buyers WHERE buyer_id = :buyerId")
     Buyer getBuyerById(int buyerId);

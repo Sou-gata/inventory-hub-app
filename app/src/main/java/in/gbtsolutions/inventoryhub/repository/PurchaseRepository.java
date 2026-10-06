@@ -167,7 +167,7 @@ public class PurchaseRepository {
      */
     public void processReceive(
             int purchaseId,
-            Map<Integer, Integer> receiveQtyMap,
+            Map<Integer, Double> receiveQtyMap,
             Map<Integer, BatchReceiveInput> batchInputMap,
             String notes,
             long userId,
@@ -201,13 +201,14 @@ public class PurchaseRepository {
                     boolean anyReceivedInThisBatch = false;
 
                     for (PurchaseItem item : items) {
-                        Integer toReceive = receiveQtyMap.get(item.purchaseItemId);
-                        if (toReceive != null && toReceive > 0) {
+                        Double toReceive = receiveQtyMap.get(item.purchaseItemId);
+                        if (toReceive != null && toReceive > 0.0001) {
                             anyReceivedInThisBatch = true;
-                            int remaining = Math.max(0, item.quantity - item.receivedQuantity);
-                            int actualReceive = Math.min(toReceive, remaining);
+                            double remaining = Math.max(0.0, item.quantity - item.receivedQuantity);
+                            double actualReceive = Math.min(toReceive, remaining);
+                            actualReceive = in.gbtsolutions.inventoryhub.helpers.CommonFunctions.roundTo3Decimals(actualReceive);
 
-                            int newReceivedQty = item.receivedQuantity + actualReceive;
+                            double newReceivedQty = in.gbtsolutions.inventoryhub.helpers.CommonFunctions.roundTo3Decimals(item.receivedQuantity + actualReceive);
                             purchaseItemDao.updateReceivedQuantity(item.purchaseItemId, newReceivedQty);
                             item.setReceivedQuantity(newReceivedQty);
 
@@ -240,7 +241,7 @@ public class PurchaseRepository {
                                         }
 
                                         // Expiry matches: increase batch count
-                                        existingBatch.quantity += actualReceive;
+                                        existingBatch.quantity = in.gbtsolutions.inventoryhub.helpers.CommonFunctions.roundTo3Decimals(existingBatch.quantity + actualReceive);
                                         existingBatch.updatedAt = System.currentTimeMillis();
                                         productBatchDao.update(existingBatch);
                                     } else {
@@ -259,15 +260,15 @@ public class PurchaseRepository {
                                     }
 
                                     // Synchronize product overall quantity from batch totals
-                                    int totalBatchQty = productBatchDao.sumQuantityForProduct(item.productId);
-                                    prod.quantity = totalBatchQty;
+                                    double totalBatchQty = productBatchDao.sumQuantityForProduct(item.productId);
+                                    prod.quantity = in.gbtsolutions.inventoryhub.helpers.CommonFunctions.roundTo3Decimals(totalBatchQty);
                                     if (prod.quantity > 0) {
                                         prod.status = "In Stock";
                                     }
                                     productDao.update(prod);
                                 } else {
                                     // Not batch enabled: increase stock count directly
-                                    prod.quantity += actualReceive;
+                                    prod.quantity = in.gbtsolutions.inventoryhub.helpers.CommonFunctions.roundTo3Decimals(prod.quantity + actualReceive);
                                     if (prod.quantity > 0) {
                                         prod.status = "In Stock";
                                     }
@@ -286,10 +287,10 @@ public class PurchaseRepository {
                     boolean someReceived = false;
 
                     for (PurchaseItem item : items) {
-                        if (item.receivedQuantity < item.quantity) {
+                        if (item.quantity - item.receivedQuantity > 0.0001) {
                             allCompleted = false;
                         }
-                        if (item.receivedQuantity > 0) {
+                        if (item.receivedQuantity > 0.0001) {
                             someReceived = true;
                         }
                     }

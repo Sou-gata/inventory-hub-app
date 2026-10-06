@@ -6,14 +6,12 @@ import android.util.TypedValue;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import android.widget.FrameLayout;
 
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
@@ -93,8 +91,7 @@ public class SettingsActivity extends BaseActivity {
         dropdownMandatoryField.setDropDownBackgroundResource(R.drawable.bg_card);
         dropdownMandatoryField.setDropDownAnchor(R.id.container_mandatory_field);
 
-        int dropdownWidthPx = (int) TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP, 150, getResources().getDisplayMetrics());
+        int dropdownWidthPx = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 150, getResources().getDisplayMetrics());
         dropdownMandatoryField.setDropDownWidth(dropdownWidthPx);
 
         // Initial selection
@@ -110,7 +107,7 @@ public class SettingsActivity extends BaseActivity {
                     dropdownMandatoryField.setText(label, false);
                 }
                 GlobalStore.getInstance().setCsvMandatoryField(normalized);
-                if (!normalized.equals(sharedPreferences.getString(Configurations.KEY_CSV_MANDATORY_FIELD, Configurations.MANDATORY_FIELD_SKU))) {
+                if (!normalized.equals(sharedPreferences.getString(Configurations.KEY_CSV_MANDATORY_FIELD, Configurations.MANDATORY_FIELD_HSN))) {
                     sharedPreferences.edit().putString(Configurations.KEY_CSV_MANDATORY_FIELD, normalized).apply();
                 }
             }
@@ -247,7 +244,7 @@ public class SettingsActivity extends BaseActivity {
 
         sharedPreferences.edit().putBoolean(Configurations.KEY_SHOW_PAYMENT_METHOD_DIALOG, isChecked).apply();
         GlobalStore.getInstance().setShowPaymentMethodDialog(isChecked);
-        configRepository.set(Configurations.KEY_SHOW_PAYMENT_METHOD_DIALOG, isChecked ? "true" : "false");
+        configRepository.set(Configurations.KEY_SHOW_PAYMENT_METHOD_DIALOG, Boolean.toString(isChecked));
     }
 
     private void saveUpiId() {
@@ -366,13 +363,13 @@ public class SettingsActivity extends BaseActivity {
     private void toggleSaveBillToGallery(boolean isChecked) {
         sharedPreferences.edit().putBoolean(Configurations.KEY_SAVE_BILL_TO_GALLERY, isChecked).apply();
         GlobalStore.getInstance().setSaveBillToGallery(isChecked);
-        configRepository.set(Configurations.KEY_SAVE_BILL_TO_GALLERY, isChecked ? "true" : "false");
+        configRepository.set(Configurations.KEY_SAVE_BILL_TO_GALLERY, Boolean.toString(isChecked));
     }
 
     private void togglePrintBill(boolean isChecked) {
         sharedPreferences.edit().putBoolean(Configurations.KEY_PRINT_BILL, isChecked).apply();
         GlobalStore.getInstance().setPrintBill(isChecked);
-        configRepository.set(Configurations.KEY_PRINT_BILL, isChecked ? "true" : "false");
+        configRepository.set(Configurations.KEY_PRINT_BILL, Boolean.toString(isChecked));
     }
 
     private void setupAppearanceSetting() {
@@ -434,13 +431,10 @@ public class SettingsActivity extends BaseActivity {
                 textModeTitle.setText(isOnline ? "Online Mode (Cloud Server)" : "Offline Mode (Local Database)");
             }
             if (textModeDesc != null) {
-                textModeDesc.setText(isOnline
-                        ? "Active: All data is loaded, saved, and searched via Cloud API"
-                        : "Active: All data is saved and read from device's local database");
+                textModeDesc.setText(isOnline ? "Active: All data is loaded, saved, and searched via Cloud API" : "Active: All data is saved and read from device's local database");
             }
             if (iconModeStatus != null) {
-                iconModeStatus.setColorFilter(ContextCompat.getColor(this,
-                        isOnline ? R.color.status_green : R.color.material_blue));
+                iconModeStatus.setColorFilter(ContextCompat.getColor(this, isOnline ? R.color.status_green : R.color.material_blue));
             }
         };
 
@@ -467,17 +461,18 @@ public class SettingsActivity extends BaseActivity {
 
         if (rowTestConnection != null) {
             rowTestConnection.setOnClickListener(v -> {
-                if (progressTestConnection != null) progressTestConnection.setVisibility(View.VISIBLE);
+                if (progressTestConnection != null)
+                    progressTestConnection.setVisibility(View.VISIBLE);
                 if (textConnectionStatus != null) {
                     textConnectionStatus.setText("Connecting to server...");
                     textConnectionStatus.setTextColor(ContextCompat.getColor(SettingsActivity.this, R.color.fg_muted));
                 }
                 modeManager.testServerConnection(modeManager.getServerUrl(), (isSuccess, message) -> {
-                    if (progressTestConnection != null) progressTestConnection.setVisibility(View.GONE);
+                    if (progressTestConnection != null)
+                        progressTestConnection.setVisibility(View.GONE);
                     if (textConnectionStatus != null) {
                         textConnectionStatus.setText(message);
-                        textConnectionStatus.setTextColor(ContextCompat.getColor(SettingsActivity.this,
-                                isSuccess ? R.color.status_green : R.color.status_red));
+                        textConnectionStatus.setTextColor(ContextCompat.getColor(SettingsActivity.this, isSuccess ? R.color.status_green : R.color.status_red));
                     }
                 });
             });
@@ -494,29 +489,22 @@ public class SettingsActivity extends BaseActivity {
         }
         int pad = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 20, getResources().getDisplayMetrics());
         FrameLayout container = new FrameLayout(this);
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT);
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT);
         params.leftMargin = pad;
         params.rightMargin = pad;
         input.setLayoutParams(params);
         container.addView(input);
 
-        new MaterialAlertDialogBuilder(this)
-                .setTitle("Cloud Server Base URL")
-                .setMessage("Enter the base address for the API server (e.g. http://10.0.2.2:3000/ or https://api.inventoryhub.com/):")
-                .setView(container)
-                .setPositiveButton("Save", (dialog, which) -> {
-                    String newUrl = input.getText().toString().trim();
-                    if (!newUrl.isEmpty()) {
-                        modeManager.setServerUrl(newUrl);
-                        if (textServerUrl != null) {
-                            textServerUrl.setText(modeManager.getServerUrl());
-                        }
-                        Toast.makeText(this, "Server URL updated", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
+        new MaterialAlertDialogBuilder(this).setTitle("Cloud Server Base URL").setMessage("Enter the base address for the API server (e.g. http://10.0.2.2:3000/ or https://api.inventoryhub.com/):").setView(container).setPositiveButton("Save", (dialog, which) -> {
+            String newUrl = input.getText().toString().trim();
+            if (!newUrl.isEmpty()) {
+                modeManager.setServerUrl(newUrl);
+                if (textServerUrl != null) {
+                    textServerUrl.setText(modeManager.getServerUrl());
+                }
+                Toast.makeText(this, "Server URL updated", Toast.LENGTH_SHORT).show();
+            }
+        }).setNegativeButton("Cancel", null).show();
     }
 
     private void setupQuickLinks() {

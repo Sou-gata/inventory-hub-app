@@ -159,7 +159,7 @@ public class SaleRepository {
                             if (item.batchId != null && item.batchId > 0) {
                                 in.gbtsolutions.inventoryhub.models.ProductBatch batch = productBatchDao.getBatchById(item.batchId);
                                 if (batch != null) {
-                                    batch.quantity = Math.max(0, batch.quantity - item.quantity);
+                                    batch.quantity = Math.max(0.0, in.gbtsolutions.inventoryhub.helpers.CommonFunctions.roundTo3Decimals(batch.quantity - item.quantity));
                                     batch.updatedAt = System.currentTimeMillis();
                                     productBatchDao.update(batch);
                                 }
@@ -167,8 +167,8 @@ public class SaleRepository {
                                 // Deduct from product quantity directly if no batchId
                                 in.gbtsolutions.inventoryhub.models.Product product = productDao.getProductById(item.productId);
                                 if (product != null) {
-                                    product.quantity = Math.max(0, product.quantity - item.quantity);
-                                    if (product.quantity <= 0) {
+                                    product.quantity = Math.max(0.0, in.gbtsolutions.inventoryhub.helpers.CommonFunctions.roundTo3Decimals(product.quantity - item.quantity));
+                                    if (product.quantity <= 0.0001) {
                                         product.status = "Out of Stock";
                                     }
                                     product.updatedAt = System.currentTimeMillis();
@@ -181,11 +181,11 @@ public class SaleRepository {
                         for (Integer pid : affectedProductIds) {
                             int batchCount = productBatchDao.getAllBatchesForProductSync(pid).size();
                             if (batchCount > 0) {
-                                int totalQty = productBatchDao.sumQuantityForProduct(pid);
+                                double totalQty = productBatchDao.sumQuantityForProduct(pid);
                                 in.gbtsolutions.inventoryhub.models.Product prod = productDao.getProductById(pid);
                                 if (prod != null) {
-                                    prod.quantity = totalQty;
-                                    if (prod.quantity <= 0) {
+                                    prod.quantity = in.gbtsolutions.inventoryhub.helpers.CommonFunctions.roundTo3Decimals(totalQty);
+                                    if (prod.quantity <= 0.0001) {
                                         prod.status = "Out of Stock";
                                     } else if ("Out of Stock".equalsIgnoreCase(prod.status)) {
                                         prod.status = "Active";
@@ -236,14 +236,14 @@ public class SaleRepository {
                             if (item.batchId != null && item.batchId > 0) {
                                 in.gbtsolutions.inventoryhub.models.ProductBatch batch = productBatchDao.getBatchById(item.batchId);
                                 if (batch != null) {
-                                    batch.quantity += item.quantity;
+                                    batch.quantity = in.gbtsolutions.inventoryhub.helpers.CommonFunctions.roundTo3Decimals(batch.quantity + item.quantity);
                                     batch.updatedAt = System.currentTimeMillis();
                                     productBatchDao.update(batch);
                                 } else {
                                     in.gbtsolutions.inventoryhub.models.Product product = productDao.getProductById(item.productId);
                                     if (product != null) {
-                                        product.quantity += item.quantity;
-                                        if (product.quantity > 0 && "Out of Stock".equalsIgnoreCase(product.status)) {
+                                        product.quantity = in.gbtsolutions.inventoryhub.helpers.CommonFunctions.roundTo3Decimals(product.quantity + item.quantity);
+                                        if (product.quantity > 0.0001 && "Out of Stock".equalsIgnoreCase(product.status)) {
                                             product.status = "Active";
                                         }
                                         product.updatedAt = System.currentTimeMillis();
@@ -254,8 +254,8 @@ public class SaleRepository {
                                 // Restore product quantity directly
                                 in.gbtsolutions.inventoryhub.models.Product product = productDao.getProductById(item.productId);
                                 if (product != null) {
-                                    product.quantity += item.quantity;
-                                    if (product.quantity > 0 && "Out of Stock".equalsIgnoreCase(product.status)) {
+                                    product.quantity = in.gbtsolutions.inventoryhub.helpers.CommonFunctions.roundTo3Decimals(product.quantity + item.quantity);
+                                    if (product.quantity > 0.0001 && "Out of Stock".equalsIgnoreCase(product.status)) {
                                         product.status = "Active";
                                     }
                                     product.updatedAt = System.currentTimeMillis();
@@ -268,11 +268,11 @@ public class SaleRepository {
                         for (Integer pid : affectedProductIds) {
                             int batchCount = productBatchDao.getAllBatchesForProductSync(pid).size();
                             if (batchCount > 0) {
-                                int totalQty = productBatchDao.sumQuantityForProduct(pid);
+                                double totalQty = productBatchDao.sumQuantityForProduct(pid);
                                 in.gbtsolutions.inventoryhub.models.Product prod = productDao.getProductById(pid);
                                 if (prod != null) {
-                                    prod.quantity = totalQty;
-                                    if (prod.quantity > 0 && "Out of Stock".equalsIgnoreCase(prod.status)) {
+                                    prod.quantity = in.gbtsolutions.inventoryhub.helpers.CommonFunctions.roundTo3Decimals(totalQty);
+                                    if (prod.quantity > 0.0001 && "Out of Stock".equalsIgnoreCase(prod.status)) {
                                         prod.status = "Active";
                                     }
                                     prod.updatedAt = System.currentTimeMillis();

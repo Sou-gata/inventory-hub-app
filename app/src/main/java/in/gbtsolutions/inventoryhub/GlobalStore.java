@@ -16,7 +16,7 @@ public class GlobalStore {
 
     // Cached settings
     private boolean allowOutOfStockSell = false;
-    private String csvMandatoryField = Configurations.MANDATORY_FIELD_SKU;
+    private String csvMandatoryField = Configurations.MANDATORY_FIELD_HSN;
     private boolean showPaymentMethodDialog = false;
     private String upiId = "";
     private boolean saveBillToGallery = true;
@@ -53,7 +53,7 @@ public class GlobalStore {
         SharedPreferences prefs = context.getApplicationContext().getSharedPreferences(Configurations.PREF_NAME, Context.MODE_PRIVATE);
 
         this.allowOutOfStockSell = prefs.getBoolean(Configurations.KEY_ALLOW_OUT_OF_STOCK_SELL, false);
-        this.csvMandatoryField = prefs.getString(Configurations.KEY_CSV_MANDATORY_FIELD, Configurations.MANDATORY_FIELD_SKU);
+        this.csvMandatoryField = prefs.getString(Configurations.KEY_CSV_MANDATORY_FIELD, Configurations.MANDATORY_FIELD_HSN);
         this.showPaymentMethodDialog = prefs.getBoolean(Configurations.KEY_SHOW_PAYMENT_METHOD_DIALOG, false);
         this.upiId = prefs.getString(Configurations.KEY_UPI_ID, "");
         this.saveBillToGallery = prefs.getBoolean(Configurations.KEY_SAVE_BILL_TO_GALLERY, true);
@@ -141,7 +141,7 @@ public class GlobalStore {
     }
 
     public String getCsvMandatoryField() {
-        return csvMandatoryField != null ? csvMandatoryField : Configurations.MANDATORY_FIELD_SKU;
+        return csvMandatoryField != null ? csvMandatoryField : Configurations.MANDATORY_FIELD_HSN;
     }
 
     public void setCsvMandatoryField(String mandatoryField) {

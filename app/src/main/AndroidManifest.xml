@@ -16,6 +16,7 @@
         android:name=".InventoryHubApp"
         android:allowBackup="true"
         android:usesCleartextTraffic="true"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
@@ -52,6 +53,14 @@
             android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".activities.AddCategoryActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".activities.UnitOfMeasureActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".activities.AddUnitOfMeasureActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
         <activity
@@ -122,6 +131,14 @@
             android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".activities.ReportsActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".activities.SalesRegisterActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".activities.PurchaseRegisterActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
         <activity

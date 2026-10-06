@@ -37,40 +37,31 @@ import in.gbtsolutions.inventoryhub.R;
 import in.gbtsolutions.inventoryhub.adapters.SupplierAdapter;
 import in.gbtsolutions.inventoryhub.helpers.ThemeManager;
 import in.gbtsolutions.inventoryhub.models.Suppliers;
+import in.gbtsolutions.inventoryhub.online.repository.OnlineSupplierRepository;
 import in.gbtsolutions.inventoryhub.repository.SupplierRepository;
 
 public class SupplierActivity extends BaseActivity {
 
-    private enum FilterStatus {
-        ALL,
-        ACTIVE,
-        DEACTIVATED
-    }
-
+    private final List<Suppliers> allSuppliers = new ArrayList<>();
+    private final SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
     private NavigationView navView;
     private RecyclerView recyclerSuppliers;
     private SupplierAdapter supplierAdapter;
     private SupplierRepository supplierRepository;
-
     private View layoutEmptyState;
     private View layoutListContainer;
     private TextView textSupplierCount;
     private TextView textMetaLabel;
-
     private EditText editSearchSupplier;
     private ImageView btnClearSearch;
     private View layoutSearchEmpty;
     private TextView textSearchEmptyQuery;
     private View btnResetSearch;
-
     private TextView chipFilterAll;
     private TextView chipFilterActive;
     private TextView chipFilterDeactive;
-
-    private final List<Suppliers> allSuppliers = new ArrayList<>();
     private String currentSearchQuery = "";
     private FilterStatus currentFilter = FilterStatus.ALL;
-    private final SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -152,7 +143,8 @@ public class SupplierActivity extends BaseActivity {
         if (editSearchSupplier != null) {
             editSearchSupplier.addTextChangedListener(new TextWatcher() {
                 @Override
-                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
 
                 @Override
                 public void onTextChanged(CharSequence s, int start, int before, int count) {
@@ -165,7 +157,8 @@ public class SupplierActivity extends BaseActivity {
                 }
 
                 @Override
-                public void afterTextChanged(Editable s) {}
+                public void afterTextChanged(Editable s) {
+                }
             });
 
             editSearchSupplier.setOnEditorActionListener((v, actionId, event) -> {
@@ -207,12 +200,39 @@ public class SupplierActivity extends BaseActivity {
     }
 
     private void observeSuppliers() {
+        if (supplierRepository.isOnlineMode()) {
+            loadOnlineSuppliers();
+            return;
+        }
         supplierRepository.getAllSuppliers().observe(this, suppliers -> {
             allSuppliers.clear();
             if (suppliers != null) {
                 allSuppliers.addAll(suppliers);
             }
             applyFilters();
+        });
+    }
+
+    private void loadOnlineSuppliers() {
+        supplierRepository.fetchSuppliersOnline(new OnlineSupplierRepository.SupplierListCallback() {
+            @Override
+            public void onSuccess(List<Suppliers> suppliers) {
+                runOnUiThread(() -> {
+                    allSuppliers.clear();
+                    if (suppliers != null) {
+                        allSuppliers.addAll(suppliers);
+                    }
+                    applyFilters();
+                });
+            }
+
+            @Override
+            public void onError(String errorMessage) {
+                runOnUiThread(() -> {
+                    showToast("Failed to load suppliers: " + errorMessage);
+                    applyFilters();
+                });
+            }
         });
     }
 
@@ -322,9 +342,23 @@ public class SupplierActivity extends BaseActivity {
 
     private void toggleSupplierStatus(@NonNull Suppliers supplier) {
         boolean newStatus = !supplier.isActive;
-        supplierRepository.updateStatus(supplier.supplierId, newStatus);
-        String actionText = newStatus ? "activated" : "deactivated";
-        showToast("Supplier \"" + supplier.supplierName + "\" " + actionText);
+        supplierRepository.updateStatus(supplier.supplierId, newStatus, new SupplierRepository.SupplierActionCallback() {
+            @Override
+            public void onSuccess() {
+                runOnUiThread(() -> {
+                    String actionText = newStatus ? "activated" : "deactivated";
+                    showToast("Supplier \"" + supplier.supplierName + "\" " + actionText);
+                    if (supplierRepository.isOnlineMode()) {
+                        loadOnlineSuppliers();
+                    }
+                });
+            }
+
+            @Override
+            public void onError(String message) {
+                runOnUiThread(() -> showToast("Failed to update status: " + message));
+            }
+        });
     }
 
     private void showSupplierDetailsSheet(@NonNull Suppliers supplier) {
@@ -549,6 +583,9 @@ public class SupplierActivity extends BaseActivity {
         if (navView != null) {
             navView.setCheckedItem(R.id.nav_supplier);
         }
+        if (supplierRepository != null && supplierRepository.isOnlineMode()) {
+            loadOnlineSuppliers();
+        }
     }
 
     @Override
@@ -582,5 +619,9 @@ public class SupplierActivity extends BaseActivity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private enum FilterStatus {
+        ALL, ACTIVE, DEACTIVATED
     }
 }

@@ -70,7 +70,7 @@ public class Product {
     public double sellingPrice;
 
     @ColumnInfo(name = "quantity")
-    public int quantity;
+    public double quantity;
 
     @ColumnInfo(name = "batch_enabled")
     public boolean batchEnabled = false;
@@ -90,17 +90,28 @@ public class Product {
                    String brand, String unitOfMeasure, int reorderLevel, int reorderQuantity,
                    String status, String hsnCode, double gstPercent, double defaultMarkupPercent,
                    long createdAt, long updatedAt, double unitPrice, double sellingPrice,
-                   int quantity) {
+                   double quantity) {
         this(productName, categoryId, sku, description, brand, unitOfMeasure, reorderLevel,
                 reorderQuantity, status, hsnCode, gstPercent, defaultMarkupPercent, createdAt,
                 updatedAt, unitPrice, sellingPrice, quantity, false);
+    }
+
+    @Ignore
+    public Product(String productName, int categoryId, String sku, String description,
+                   String brand, String unitOfMeasure, int reorderLevel, int reorderQuantity,
+                   String status, String hsnCode, double gstPercent, double defaultMarkupPercent,
+                   long createdAt, long updatedAt, double unitPrice, double sellingPrice,
+                   int quantity) {
+        this(productName, categoryId, sku, description, brand, unitOfMeasure, reorderLevel,
+                reorderQuantity, status, hsnCode, gstPercent, defaultMarkupPercent, createdAt,
+                updatedAt, unitPrice, sellingPrice, (double) quantity, false);
     }
 
     public Product(String productName, int categoryId, String sku, String description,
                    String brand, String unitOfMeasure, int reorderLevel, int reorderQuantity,
                    String status, String hsnCode, double gstPercent, double defaultMarkupPercent,
                    long createdAt, long updatedAt, double unitPrice, double sellingPrice,
-                   int quantity, boolean batchEnabled) {
+                   double quantity, boolean batchEnabled) {
         this.productName = productName;
         this.categoryId = categoryId;
         this.sku = sku;
@@ -119,6 +130,17 @@ public class Product {
         this.sellingPrice = sellingPrice;
         this.quantity = quantity;
         this.batchEnabled = batchEnabled;
+    }
+
+    @Ignore
+    public Product(String productName, int categoryId, String sku, String description,
+                   String brand, String unitOfMeasure, int reorderLevel, int reorderQuantity,
+                   String status, String hsnCode, double gstPercent, double defaultMarkupPercent,
+                   long createdAt, long updatedAt, double unitPrice, double sellingPrice,
+                   int quantity, boolean batchEnabled) {
+        this(productName, categoryId, sku, description, brand, unitOfMeasure, reorderLevel,
+                reorderQuantity, status, hsnCode, gstPercent, defaultMarkupPercent,
+                createdAt, updatedAt, unitPrice, sellingPrice, (double) quantity, batchEnabled);
     }
 
     public ProductBatch getBatch() {

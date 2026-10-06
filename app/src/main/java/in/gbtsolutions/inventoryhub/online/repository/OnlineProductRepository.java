@@ -290,6 +290,40 @@ public class OnlineProductRepository {
         });
     }
 
+    public void createBatchForProduct(int productId, in.gbtsolutions.inventoryhub.models.ProductBatch batch, ProductActionCallback callback) {
+        OnlineProductDto.OnlineBatchDto batchDto = new OnlineProductDto.OnlineBatchDto(
+                null,
+                productId,
+                batch.batchNo,
+                batch.quantity,
+                batch.purchasePrice,
+                batch.sellingPrice,
+                batch.expiryDate > 0 ? batch.expiryDate : null
+        );
+        getApi().createBatchForProduct(productId, batchDto).enqueue(new Callback<ApiResponse<OnlineProductDto.OnlineBatchDto>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<OnlineProductDto.OnlineBatchDto>> call,
+                                   Response<ApiResponse<OnlineProductDto.OnlineBatchDto>> response) {
+                if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
+                    mainHandler.post(() -> {
+                        if (callback != null) callback.onSuccess(null);
+                    });
+                } else {
+                    handleActionError(response, callback, "Failed to add batch to server");
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<OnlineProductDto.OnlineBatchDto>> call, Throwable t) {
+                mainHandler.post(() -> {
+                    if (callback != null) {
+                        callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
+                    }
+                });
+            }
+        });
+    }
+
     private void handleErrorResponse(Response<?> response, PagedProductCallback callback) {
         String errorMessage = "Server error (" + response.code() + ")";
         boolean sessionExpired = false;

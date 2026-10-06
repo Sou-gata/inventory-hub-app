@@ -57,7 +57,7 @@ public class SellCartManager {
         notifyListeners();
     }
 
-    public void addBatchItem(@Nullable Product product, @Nullable ProductBatch batch, int quantity) {
+    public void addBatchItem(@Nullable Product product, @Nullable ProductBatch batch, double quantity) {
         if (product == null) {
             return;
         }
@@ -71,9 +71,9 @@ public class SellCartManager {
         if (existing != null) {
             boolean allowOutOfStock = GlobalStore.getInstance().isAllowOutOfStockSell();
             if (!allowOutOfStock && batch.quantity > 0) {
-                existing.quantity = Math.min(batch.quantity, existing.quantity + quantity);
+                existing.quantity = Math.min(batch.quantity, Math.round((existing.quantity + quantity) * 1000.0) / 1000.0);
             } else {
-                existing.quantity += quantity;
+                existing.quantity = Math.round((existing.quantity + quantity) * 1000.0) / 1000.0;
             }
             existing.sellingPrice = price;
         } else {
@@ -81,6 +81,10 @@ public class SellCartManager {
             cartItems.put(key, newItem);
         }
         notifyListeners();
+    }
+
+    public void addBatchItem(@Nullable Product product, @Nullable ProductBatch batch, int quantity) {
+        addBatchItem(product, batch, (double) quantity);
     }
 
     public void removeProduct(int productId) {
@@ -126,8 +130,8 @@ public class SellCartManager {
         return false;
     }
 
-    public int getProductQuantityInCart(int productId) {
-        int total = 0;
+    public double getProductQuantityInCart(int productId) {
+        double total = 0;
         for (CartItem item : cartItems.values()) {
             if (item.product != null && item.product.productId == productId) {
                 total += item.quantity;
@@ -136,21 +140,29 @@ public class SellCartManager {
         return total;
     }
 
-    public void updateItemQuantity(CartItem item, int quantity) {
+    public void updateItemQuantity(CartItem item, double quantity) {
         if (item == null || item.product == null) return;
         String key = buildKey(item.product.productId, item.batchId);
         CartItem target = cartItems.get(key);
         if (target != null) {
-            target.quantity = quantity;
+            target.quantity = Math.round(quantity * 1000.0) / 1000.0;
+        }
+    }
+
+    public void updateItemQuantity(CartItem item, int quantity) {
+        updateItemQuantity(item, (double) quantity);
+    }
+
+    public void updateQuantity(int productId, double quantity) {
+        String key = buildKey(productId, null);
+        CartItem item = cartItems.get(key);
+        if (item != null) {
+            item.quantity = Math.round(quantity * 1000.0) / 1000.0;
         }
     }
 
     public void updateQuantity(int productId, int quantity) {
-        String key = buildKey(productId, null);
-        CartItem item = cartItems.get(key);
-        if (item != null) {
-            item.quantity = quantity;
-        }
+        updateQuantity(productId, (double) quantity);
     }
 
     public void updateItemSellingPrice(CartItem item, double sellingPrice) {

@@ -11,7 +11,7 @@ public class CartItem {
     }
 
     public Product product;
-    public int quantity;
+    public double quantity;
     public double sellingPrice;
     public double discountValue = 0.0;
     public DiscountType discountType = DiscountType.PERCENT;
@@ -19,17 +19,17 @@ public class CartItem {
     // Batch Inventory support
     public Integer batchId = null;
     public String batchNo = null;
-    public int batchAvailableQty = Integer.MAX_VALUE;
+    public double batchAvailableQty = Double.MAX_VALUE;
 
     public CartItem(@NonNull Product product) {
         this.product = product;
-        this.quantity = 1;
+        this.quantity = 1.0;
         this.sellingPrice = product.sellingPrice;
         this.discountValue = 0.0;
         this.discountType = DiscountType.PERCENT;
     }
 
-    public CartItem(@NonNull Product product, int quantity, double sellingPrice) {
+    public CartItem(@NonNull Product product, double quantity, double sellingPrice) {
         this.product = product;
         this.quantity = quantity;
         this.sellingPrice = sellingPrice;
@@ -37,7 +37,11 @@ public class CartItem {
         this.discountType = DiscountType.PERCENT;
     }
 
-    public CartItem(@NonNull Product product, ProductBatch batch, int quantity, double sellingPrice) {
+    public CartItem(@NonNull Product product, int quantity, double sellingPrice) {
+        this(product, (double) quantity, sellingPrice);
+    }
+
+    public CartItem(@NonNull Product product, ProductBatch batch, double quantity, double sellingPrice) {
         this.product = product;
         this.quantity = quantity;
         this.sellingPrice = sellingPrice;
@@ -50,12 +54,20 @@ public class CartItem {
         }
     }
 
-    public CartItem(@NonNull Product product, int quantity, double sellingPrice, double discountValue, DiscountType discountType) {
+    public CartItem(@NonNull Product product, ProductBatch batch, int quantity, double sellingPrice) {
+        this(product, batch, (double) quantity, sellingPrice);
+    }
+
+    public CartItem(@NonNull Product product, double quantity, double sellingPrice, double discountValue, DiscountType discountType) {
         this.product = product;
         this.quantity = quantity;
         this.sellingPrice = sellingPrice;
         this.discountValue = discountValue;
         this.discountType = (discountType != null) ? discountType : DiscountType.PERCENT;
+    }
+
+    public CartItem(@NonNull Product product, int quantity, double sellingPrice, double discountValue, DiscountType discountType) {
+        this(product, (double) quantity, sellingPrice, discountValue, discountType);
     }
 
     public double getGrossPrice() {

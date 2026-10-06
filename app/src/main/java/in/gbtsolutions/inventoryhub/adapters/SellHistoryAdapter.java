@@ -26,15 +26,10 @@ import in.gbtsolutions.inventoryhub.models.SaleWithBuyer;
 
 public class SellHistoryAdapter extends RecyclerView.Adapter<SellHistoryAdapter.SaleViewHolder> {
 
-    public interface OnSaleClickListener {
-        void onSaleClick(@NonNull SaleWithBuyer item);
-    }
-
     private final List<SaleWithBuyer> salesList = new ArrayList<>();
-    private OnSaleClickListener clickListener;
-
     private final SimpleDateFormat isoDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
     private final SimpleDateFormat displayDateFormat = new SimpleDateFormat("dd MMM yyyy", Locale.getDefault());
+    private OnSaleClickListener clickListener;
 
     public SellHistoryAdapter() {
     }
@@ -69,13 +64,7 @@ public class SellHistoryAdapter extends RecyclerView.Adapter<SellHistoryAdapter.
 
                 if (oldItem.sale == null || newItem.sale == null) return false;
 
-                boolean sameSale = oldItem.sale.saleId == newItem.sale.saleId
-                        && TextUtils.equals(oldItem.sale.invoiceId, newItem.sale.invoiceId)
-                        && Double.compare(oldItem.sale.totalAmount, newItem.sale.totalAmount) == 0
-                        && TextUtils.equals(oldItem.sale.billingDate, newItem.sale.billingDate)
-                        && TextUtils.equals(oldItem.sale.status, newItem.sale.status)
-                        && TextUtils.equals(oldItem.sale.customerName, newItem.sale.customerName)
-                        && TextUtils.equals(oldItem.sale.customerPhone, newItem.sale.customerPhone);
+                boolean sameSale = oldItem.sale.saleId == newItem.sale.saleId && TextUtils.equals(oldItem.sale.invoiceId, newItem.sale.invoiceId) && Double.compare(oldItem.sale.totalAmount, newItem.sale.totalAmount) == 0 && TextUtils.equals(oldItem.sale.billingDate, newItem.sale.billingDate) && TextUtils.equals(oldItem.sale.status, newItem.sale.status) && TextUtils.equals(oldItem.sale.customerName, newItem.sale.customerName) && TextUtils.equals(oldItem.sale.customerPhone, newItem.sale.customerPhone);
 
                 String oldBuyerName = oldItem.buyer != null ? oldItem.buyer.buyerName : "";
                 String newBuyerName = newItem.buyer != null ? newItem.buyer.buyerName : "";
@@ -107,6 +96,10 @@ public class SellHistoryAdapter extends RecyclerView.Adapter<SellHistoryAdapter.
     @Override
     public int getItemCount() {
         return salesList.size();
+    }
+
+    public interface OnSaleClickListener {
+        void onSaleClick(@NonNull SaleWithBuyer item);
     }
 
     public class SaleViewHolder extends RecyclerView.ViewHolder {

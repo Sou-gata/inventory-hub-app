@@ -23,14 +23,6 @@ import in.gbtsolutions.inventoryhub.models.Category;
 
 public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.CategoryViewHolder> {
 
-    public interface OnCategoryClickListener {
-        void onCategoryClick(@NonNull Category category);
-    }
-
-    public interface OnCategoryEditListener {
-        void onCategoryEdit(@NonNull Category category);
-    }
-
     private final List<Category> categoryList = new ArrayList<>();
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
     private OnCategoryClickListener clickListener;
@@ -68,10 +60,7 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.Catego
             public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
                 Category oldCat = categoryList.get(oldItemPosition);
                 Category newCat = newCategories.get(newItemPosition);
-                return TextUtils.equals(oldCat.categoryName, newCat.categoryName)
-                        && TextUtils.equals(oldCat.description, newCat.description)
-                        && TextUtils.equals(oldCat.icon, newCat.icon)
-                        && oldCat.createdAt == newCat.createdAt;
+                return TextUtils.equals(oldCat.categoryName, newCat.categoryName) && TextUtils.equals(oldCat.description, newCat.description) && TextUtils.equals(oldCat.icon, newCat.icon) && oldCat.createdAt == newCat.createdAt;
             }
         });
 
@@ -96,6 +85,14 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.Catego
     @Override
     public int getItemCount() {
         return categoryList.size();
+    }
+
+    public interface OnCategoryClickListener {
+        void onCategoryClick(@NonNull Category category);
+    }
+
+    public interface OnCategoryEditListener {
+        void onCategoryEdit(@NonNull Category category);
     }
 
     public class CategoryViewHolder extends RecyclerView.ViewHolder {

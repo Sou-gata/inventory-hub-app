@@ -487,33 +487,61 @@
                         android:layout_weight="1"
                         android:orientation="vertical">
 
-                        <TextView
+                        <LinearLayout
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="6dp"
-                            android:fontFamily="sans-serif-medium"
-                            android:text="Unit of Measure"
-                            android:textColor="@color/fg"
-                            android:textSize="13sp" />
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="Unit of Measure"
+                                android:textColor="@color/fg"
+                                android:textSize="13sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="3dp"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="*"
+                                android:textColor="@color/error_red"
+                                android:textSize="13sp" />
+                        </LinearLayout>
 
                         <LinearLayout
+                            android:id="@+id/container_unit_of_measure"
                             android:layout_width="match_parent"
                             android:layout_height="48dp"
                             android:background="@drawable/bg_field_normal"
+                            android:clickable="true"
+                            android:focusable="true"
                             android:gravity="center_vertical"
                             android:paddingHorizontal="14dp">
 
-                            <EditText
-                                android:id="@+id/input_unit_of_measure"
-                                android:layout_width="match_parent"
+                            <AutoCompleteTextView
+                                android:id="@+id/dropdown_unit_of_measure"
+                                android:layout_width="0dp"
                                 android:layout_height="match_parent"
+                                android:layout_weight="1"
                                 android:background="@null"
-                                android:hint="e.g. pcs, box, kg"
-                                android:inputType="text"
-                                android:maxLines="1"
+                                android:clickable="true"
+                                android:cursorVisible="false"
+                                android:focusable="false"
+                                android:hint="Select Unit"
+                                android:inputType="none"
                                 android:textColor="@color/fg"
                                 android:textColorHint="@color/fg_dim"
                                 android:textSize="14sp" />
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_arrow_drop_down"
+                                app:tint="@color/fg_muted" />
                         </LinearLayout>
                     </LinearLayout>
                 </LinearLayout>

@@ -26,13 +26,8 @@ import in.gbtsolutions.inventoryhub.models.PurchaseWithSupplier;
 
 public class PendingReceiveAdapter extends RecyclerView.Adapter<PendingReceiveAdapter.PendingReceiveViewHolder> {
 
-    public interface OnPendingPurchaseClickListener {
-        void onPurchaseClick(PurchaseWithSupplier item);
-    }
-
     private final List<PurchaseWithSupplier> purchaseList = new ArrayList<>();
     private final OnPendingPurchaseClickListener clickListener;
-
     private final SimpleDateFormat isoDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
     private final SimpleDateFormat displayDateFormat = new SimpleDateFormat("dd MMM yyyy", Locale.getDefault());
 
@@ -66,10 +61,7 @@ public class PendingReceiveAdapter extends RecyclerView.Adapter<PendingReceiveAd
                 Purchase oldP = purchaseList.get(oldItemPosition).purchase;
                 Purchase newP = newList.get(newItemPosition).purchase;
                 if (oldP == null || newP == null) return false;
-                return oldP.purchaseId == newP.purchaseId
-                        && TextUtils.equals(oldP.status, newP.status)
-                        && TextUtils.equals(oldP.updatedAt, newP.updatedAt)
-                        && Double.compare(oldP.totalAmount, newP.totalAmount) == 0;
+                return oldP.purchaseId == newP.purchaseId && TextUtils.equals(oldP.status, newP.status) && TextUtils.equals(oldP.updatedAt, newP.updatedAt) && Double.compare(oldP.totalAmount, newP.totalAmount) == 0;
             }
         });
 
@@ -95,6 +87,10 @@ public class PendingReceiveAdapter extends RecyclerView.Adapter<PendingReceiveAd
     @Override
     public int getItemCount() {
         return purchaseList.size();
+    }
+
+    public interface OnPendingPurchaseClickListener {
+        void onPurchaseClick(PurchaseWithSupplier item);
     }
 
     public class PendingReceiveViewHolder extends RecyclerView.ViewHolder {

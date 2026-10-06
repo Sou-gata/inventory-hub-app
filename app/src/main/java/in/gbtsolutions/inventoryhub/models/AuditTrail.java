@@ -28,6 +28,7 @@ public class AuditTrail {
     public static final String MODULE_PURCHASE = "Purchase";
     public static final String MODULE_USER = "User";
     public static final String MODULE_CONFIG = "Settings";
+    public static final String MODULE_UNIT_OF_MEASURE = "Unit of Measure";
 
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "id")

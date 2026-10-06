@@ -26,15 +26,10 @@ import in.gbtsolutions.inventoryhub.models.PurchaseWithSupplier;
 
 public class PurchaseHistoryAdapter extends RecyclerView.Adapter<PurchaseHistoryAdapter.PurchaseViewHolder> {
 
-    public interface OnPurchaseClickListener {
-        void onPurchaseClick(@NonNull PurchaseWithSupplier item);
-    }
-
     private final List<PurchaseWithSupplier> purchaseList = new ArrayList<>();
-    private OnPurchaseClickListener clickListener;
-
     private final SimpleDateFormat isoDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
     private final SimpleDateFormat displayDateFormat = new SimpleDateFormat("dd MMM yyyy", Locale.getDefault());
+    private OnPurchaseClickListener clickListener;
 
     public PurchaseHistoryAdapter() {
     }
@@ -46,10 +41,14 @@ public class PurchaseHistoryAdapter extends RecyclerView.Adapter<PurchaseHistory
     public void setPurchases(@NonNull List<PurchaseWithSupplier> newPurchases) {
         DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new DiffUtil.Callback() {
             @Override
-            public int getOldListSize() { return purchaseList.size(); }
+            public int getOldListSize() {
+                return purchaseList.size();
+            }
 
             @Override
-            public int getNewListSize() { return newPurchases.size(); }
+            public int getNewListSize() {
+                return newPurchases.size();
+            }
 
             @Override
             public boolean areItemsTheSame(int oldPos, int newPos) {
@@ -64,11 +63,7 @@ public class PurchaseHistoryAdapter extends RecyclerView.Adapter<PurchaseHistory
                 PurchaseWithSupplier newItem = newPurchases.get(newPos);
                 if (oldItem.purchase == null || newItem.purchase == null) return false;
 
-                boolean samePurchase = oldItem.purchase.purchaseId == newItem.purchase.purchaseId
-                        && TextUtils.equals(oldItem.purchase.invoiceId, newItem.purchase.invoiceId)
-                        && Double.compare(oldItem.purchase.totalAmount, newItem.purchase.totalAmount) == 0
-                        && TextUtils.equals(oldItem.purchase.billingDate, newItem.purchase.billingDate)
-                        && TextUtils.equals(oldItem.purchase.status, newItem.purchase.status);
+                boolean samePurchase = oldItem.purchase.purchaseId == newItem.purchase.purchaseId && TextUtils.equals(oldItem.purchase.invoiceId, newItem.purchase.invoiceId) && Double.compare(oldItem.purchase.totalAmount, newItem.purchase.totalAmount) == 0 && TextUtils.equals(oldItem.purchase.billingDate, newItem.purchase.billingDate) && TextUtils.equals(oldItem.purchase.status, newItem.purchase.status);
 
                 String oldName = oldItem.supplier != null ? oldItem.supplier.supplierName : "";
                 String newName = newItem.supplier != null ? newItem.supplier.supplierName : "";
@@ -96,6 +91,10 @@ public class PurchaseHistoryAdapter extends RecyclerView.Adapter<PurchaseHistory
     @Override
     public int getItemCount() {
         return purchaseList.size();
+    }
+
+    public interface OnPurchaseClickListener {
+        void onPurchaseClick(@NonNull PurchaseWithSupplier item);
     }
 
     public class PurchaseViewHolder extends RecyclerView.ViewHolder {

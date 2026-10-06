@@ -35,7 +35,7 @@ public interface PurchaseItemDao {
     List<PurchaseItemWithProduct> getPurchaseItemsWithProductSync(int purchaseId);
 
     @Query("UPDATE purchase_items SET received_quantity = :receivedQuantity WHERE purchase_item_id = :purchaseItemId")
-    void updateReceivedQuantity(int purchaseItemId, int receivedQuantity);
+    void updateReceivedQuantity(int purchaseItemId, double receivedQuantity);
 
     @Query("DELETE FROM purchase_items WHERE purchase_id = :purchaseId")
     void deletePurchaseItemsByPurchaseId(int purchaseId);

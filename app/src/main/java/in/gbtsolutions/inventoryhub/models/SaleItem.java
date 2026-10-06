@@ -19,7 +19,7 @@ public class SaleItem {
     public int productId;
 
     @ColumnInfo(name = "quantity")
-    public int quantity;
+    public double quantity;
 
     @ColumnInfo(name = "unit_price")
     public double unitPrice;
@@ -85,7 +85,7 @@ public class SaleItem {
     public SaleItem(
             int saleId,
             int productId,
-            int quantity,
+            double quantity,
             double unitPrice,
             double cgstRate,
             double sgstRate,
@@ -112,6 +112,26 @@ public class SaleItem {
         this.discountAmount = discountAmount;
     }
 
+    @Ignore
+    public SaleItem(
+            int saleId,
+            int productId,
+            int quantity,
+            double unitPrice,
+            double cgstRate,
+            double sgstRate,
+            double igstRate,
+            double cgstAmount,
+            double sgstAmount,
+            double igstAmount,
+            double subtotal,
+            double discountPercent,
+            double discountAmount
+    ) {
+        this(saleId, productId, (double) quantity, unitPrice, cgstRate, sgstRate, igstRate,
+                cgstAmount, sgstAmount, igstAmount, subtotal, discountPercent, discountAmount);
+    }
+
     public int getSaleItemId() {
         return saleItemId;
     }
@@ -136,12 +156,16 @@ public class SaleItem {
         this.productId = productId;
     }
 
-    public int getQuantity() {
+    public double getQuantity() {
         return quantity;
     }
 
-    public void setQuantity(int quantity) {
+    public void setQuantity(double quantity) {
         this.quantity = quantity;
+    }
+
+    public void setQuantity(int quantity) {
+        this.quantity = (double) quantity;
     }
 
     public double getUnitPrice() {

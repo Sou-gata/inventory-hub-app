@@ -52,6 +52,7 @@ import in.gbtsolutions.inventoryhub.GlobalStore;
 import in.gbtsolutions.inventoryhub.R;
 import in.gbtsolutions.inventoryhub.adapters.BatchListAdapter;
 import in.gbtsolutions.inventoryhub.helpers.BitmapHelper;
+import in.gbtsolutions.inventoryhub.helpers.CommonFunctions;
 import in.gbtsolutions.inventoryhub.helpers.ProductQRHelper;
 import in.gbtsolutions.inventoryhub.helpers.ThemeManager;
 import in.gbtsolutions.inventoryhub.models.Buyer;
@@ -64,6 +65,7 @@ import in.gbtsolutions.inventoryhub.models.Sale;
 import in.gbtsolutions.inventoryhub.models.SaleWithBuyer;
 import in.gbtsolutions.inventoryhub.models.Suppliers;
 import in.gbtsolutions.inventoryhub.models.User;
+import in.gbtsolutions.inventoryhub.online.config.AppModeManager;
 
 public class HomeActivity extends BaseActivity {
 
@@ -306,7 +308,7 @@ public class HomeActivity extends BaseActivity {
             btnHubSupplier.setOnClickListener(v -> navigateTo(SupplierActivity.class, false));
         }
         if (btnHubReports != null) {
-            btnHubReports.setOnClickListener(v -> navigateTo(ReportsActivity.class, false));
+            btnHubReports.setOnClickListener(v -> showReportsSelectionDialog());
         }
         if (btnHubSettings != null) {
             btnHubSettings.setOnClickListener(v -> navigateTo(SettingsActivity.class, false));
@@ -339,6 +341,24 @@ public class HomeActivity extends BaseActivity {
         applyTransition(this);
     }
 
+    private void showReportsSelectionDialog() {
+        String[] options = {"GSTR-1 Summary Report", "Sales Register", "Purchase Register", "Audit Trail"};
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                .setTitle("Select Report")
+                .setItems(options, (dialog, which) -> {
+                    if (which == 0) {
+                        navigateTo(ReportsActivity.class, false);
+                    } else if (which == 1) {
+                        navigateTo(SalesRegisterActivity.class, false);
+                    } else if (which == 2) {
+                        navigateTo(PurchaseRegisterActivity.class, false);
+                    } else if (which == 3) {
+                        navigateTo(AuditTrailActivity.class, false);
+                    }
+                })
+                .show();
+    }
+
     private void updateDashboardDate() {
         Calendar calendar = Calendar.getInstance();
         SimpleDateFormat dateFormat = new SimpleDateFormat("EEEE, dd MMM yyyy", Locale.getDefault());
@@ -369,7 +389,7 @@ public class HomeActivity extends BaseActivity {
         // 2. Products (Valuation & Total Units)
         db.productDao().getAllProducts().observe(this, products -> {
             int productCount = products != null ? products.size() : 0;
-            int totalUnits = 0;
+            double totalUnits = 0.0;
             double totalValuation = 0.0;
 
             if (products != null) {
@@ -383,7 +403,7 @@ public class HomeActivity extends BaseActivity {
                 tvKpiValuation.setText(formatCurrency(totalValuation));
             }
             if (tvKpiUnits != null) {
-                tvKpiUnits.setText(String.format(Locale.getDefault(), "%,d units in stock", totalUnits));
+                tvKpiUnits.setText(String.format(Locale.getDefault(), "%s units in stock", CommonFunctions.formatQuantity(totalUnits)));
             }
             if (tvHubProductsCount != null) {
                 tvHubProductsCount.setText(productCount + (productCount == 1 ? " Product" : " Products"));
@@ -524,7 +544,7 @@ public class HomeActivity extends BaseActivity {
                 iconContainer.setBackgroundResource(R.drawable.bg_stock_out);
                 ivIcon.setColorFilter(ContextCompat.getColor(this, R.color.status_red));
             } else {
-                tvBadge.setText(product.quantity + " left");
+                tvBadge.setText(CommonFunctions.formatQuantity(product.quantity) + " left");
                 tvBadge.setBackgroundResource(R.drawable.bg_stock_low);
                 tvBadge.setTextColor(ContextCompat.getColor(this, R.color.status_orange));
                 iconContainer.setBackgroundResource(R.drawable.bg_stock_low);
@@ -850,7 +870,7 @@ public class HomeActivity extends BaseActivity {
         }
 
         String uom = !TextUtils.isEmpty(product.unitOfMeasure) ? product.unitOfMeasure : "pcs";
-        int qty = product.quantity;
+        double qty = product.quantity;
         int reorder = product.reorderLevel;
 
         if (stockBadge != null && textStockStatus != null && stockDot != null) {
@@ -862,7 +882,7 @@ public class HomeActivity extends BaseActivity {
                 tintCircle(stockDot, redColor);
             } else if (qty <= reorder) {
                 stockBadge.setBackgroundResource(R.drawable.bg_stock_low);
-                textStockStatus.setText(String.format(Locale.getDefault(), "Low Stock: %d %s left", qty, uom));
+                textStockStatus.setText(String.format(Locale.getDefault(), "Low Stock: %s %s left", CommonFunctions.formatQuantity(qty), uom));
                 int amberColor = ContextCompat.getColor(this, R.color.accent_amber);
                 textStockStatus.setTextColor(amberColor);
                 tintCircle(stockDot, amberColor);
@@ -882,7 +902,7 @@ public class HomeActivity extends BaseActivity {
             textUnitPrice.setText(String.format(Locale.getDefault(), "₹ %,.2f", product.unitPrice));
         }
         if (textQuantity != null) {
-            textQuantity.setText(String.format(Locale.getDefault(), "%d %s", qty, uom));
+            textQuantity.setText(String.format(Locale.getDefault(), "%s %s", CommonFunctions.formatQuantity(qty), uom));
         }
 
         if (textReorder != null) {
@@ -929,7 +949,7 @@ public class HomeActivity extends BaseActivity {
             List<ProductBatch> allBatchesList = new ArrayList<>();
             List<ProductBatch> activeBatchesList = new ArrayList<>();
 
-            if (in.gbtsolutions.inventoryhub.online.config.AppModeManager.getInstance(this).isOnlineMode()) {
+            if (AppModeManager.getInstance(this).isOnlineMode()) {
                 if (product.getBatches() != null && !product.getBatches().isEmpty()) {
                     allBatchesList.addAll(product.getBatches());
                     for (ProductBatch b : product.getBatches()) {
@@ -1171,7 +1191,7 @@ public class HomeActivity extends BaseActivity {
                 }
             };
 
-            if (in.gbtsolutions.inventoryhub.online.config.AppModeManager.getInstance(this).isOnlineMode()) {
+            if (AppModeManager.getInstance(this).isOnlineMode()) {
                 List<ProductBatch> onlineBatches = product.getBatches();
                 if ((onlineBatches == null || onlineBatches.isEmpty()) && product.getBatch() != null) {
                     onlineBatches = new ArrayList<>();

@@ -719,6 +719,34 @@
             android:layout_marginBottom="6dp"
             android:background="@color/black" />
 
+        <!-- Amount in Words Section -->
+        <LinearLayout
+            android:id="@+id/layout_bill_amount_words"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="6dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif"
+                android:text="AMOUNT IN WORDS:"
+                android:textColor="@color/black"
+                android:textSize="9.5sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_bill_amount_words"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="@color/black"
+                android:textSize="10.5sp"
+                tools:text="Rupees Two Thousand Eight Hundred Thirty-Two Only" />
+        </LinearLayout>
+
         <!-- Payment Mode & Status -->
         <LinearLayout
             android:layout_width="match_parent"

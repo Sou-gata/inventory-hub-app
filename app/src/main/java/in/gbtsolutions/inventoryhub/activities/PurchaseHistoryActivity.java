@@ -6,7 +6,6 @@ import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
-import java.io.File;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
@@ -36,6 +35,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.datepicker.MaterialDatePicker;
 import com.google.android.material.navigation.NavigationView;
 
+import java.io.File;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -68,7 +68,7 @@ public class PurchaseHistoryActivity extends BaseActivity {
     private final SimpleDateFormat isoDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
     private final SimpleDateFormat displayDateFormat = new SimpleDateFormat("dd MMM yyyy", Locale.getDefault());
     private final Map<String, String> cachedCompanyConfigs = new HashMap<>();
-
+    private final Observer<List<PurchaseWithSupplier>> purchasesObserver = this::updatePurchaseList;
     // Filter views
     private View boxStartDate;
     private TextView textStartDate;
@@ -80,22 +80,20 @@ public class PurchaseHistoryActivity extends BaseActivity {
     private ImageView btnClearSearch;
     private View btnSearchSales;
     private TextView btnResetFilters;
-
     // List & summary
     private TextView textSalesCount;
     private TextView textSalesTotalSum;
     private RecyclerView recyclerHistory;
     private View layoutEmptyState;
     private Button btnEmptyReset;
-
     // Filter state (ISO yyyy-MM-dd for SQLite)
-    @Nullable private String selectedStartDate = null;
-    @Nullable private String selectedEndDate = null;
+    @Nullable
+    private String selectedStartDate = null;
+    @Nullable
+    private String selectedEndDate = null;
     private long startDateMillis = System.currentTimeMillis();
     private long endDateMillis = System.currentTimeMillis();
-
     private PurchaseHistoryAdapter adapter;
-    private final Observer<List<PurchaseWithSupplier>> purchasesObserver = this::updatePurchaseList;
     private PurchaseRepository purchaseRepository;
     private LiveData<List<PurchaseWithSupplier>> currentLiveData;
 
@@ -156,10 +154,7 @@ public class PurchaseHistoryActivity extends BaseActivity {
 
     private void setupDatePickers() {
         boxStartDate.setOnClickListener(v -> {
-            MaterialDatePicker<Long> datePicker = MaterialDatePicker.Builder.datePicker()
-                    .setTitleText("Select Start Date")
-                    .setSelection(startDateMillis)
-                    .build();
+            MaterialDatePicker<Long> datePicker = MaterialDatePicker.Builder.datePicker().setTitleText("Select Start Date").setSelection(startDateMillis).build();
 
             datePicker.addOnPositiveButtonClickListener(selection -> {
                 if (selection != null) {
@@ -192,10 +187,7 @@ public class PurchaseHistoryActivity extends BaseActivity {
         });
 
         boxEndDate.setOnClickListener(v -> {
-            MaterialDatePicker<Long> datePicker = MaterialDatePicker.Builder.datePicker()
-                    .setTitleText("Select End Date")
-                    .setSelection(endDateMillis)
-                    .build();
+            MaterialDatePicker<Long> datePicker = MaterialDatePicker.Builder.datePicker().setTitleText("Select End Date").setSelection(endDateMillis).build();
 
             datePicker.addOnPositiveButtonClickListener(selection -> {
                 if (selection != null) {
@@ -230,13 +222,19 @@ public class PurchaseHistoryActivity extends BaseActivity {
 
     private void setupSearchAndFilters() {
         editSearchBuyer.addTextChangedListener(new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 btnClearSearch.setVisibility(s != null && s.length() > 0 ? View.VISIBLE : View.GONE);
                 updateResetButtonVisibility();
             }
-            @Override public void afterTextChanged(Editable s) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+            }
         });
 
         btnClearSearch.setOnClickListener(v -> {
@@ -389,9 +387,7 @@ public class PurchaseHistoryActivity extends BaseActivity {
         Button btnDone = view.findViewById(R.id.btn_detail_done);
 
         // Populate header
-        textInvoiceId.setText(!TextUtils.isEmpty(purchase.invoiceId)
-                ? purchase.invoiceId
-                : String.format(Locale.getDefault(), "#PO-%d", purchase.purchaseId));
+        textInvoiceId.setText(!TextUtils.isEmpty(purchase.invoiceId) ? purchase.invoiceId : String.format(Locale.getDefault(), "#PO-%d", purchase.purchaseId));
         textSaleId.setText(String.format(Locale.getDefault(), "#PO-%d", purchase.purchaseId));
 
         // Status badge color coding
@@ -445,7 +441,8 @@ public class PurchaseHistoryActivity extends BaseActivity {
             try {
                 Date date = isoDateFormat.parse(purchase.billingDate);
                 if (date != null) formattedDate = displayDateFormat.format(date);
-            } catch (ParseException ignored) {}
+            } catch (ParseException ignored) {
+            }
         }
         textDateTime.setText(String.format("Purchased on %s", formattedDate != null ? formattedDate : ""));
 
@@ -568,8 +565,8 @@ public class PurchaseHistoryActivity extends BaseActivity {
                     loadedPurchaseItems.addAll(purchaseItems);
                     textItemsCount.setText(String.format(Locale.getDefault(), "%d items", purchaseItems.size()));
 
-                    int totalOrdered = 0;
-                    int totalReceived = 0;
+                    double totalOrdered = 0.0;
+                    double totalReceived = 0.0;
                     for (PurchaseItemWithProduct piwp : purchaseItems) {
                         if (piwp.purchaseItem != null) {
                             totalOrdered += piwp.purchaseItem.quantity;
@@ -578,11 +575,9 @@ public class PurchaseHistoryActivity extends BaseActivity {
                     }
 
                     if ("Partially Cancelled".equalsIgnoreCase(status)) {
-                        int totalCancelled = Math.max(0, totalOrdered - totalReceived);
+                        double totalCancelled = Math.max(0.0, totalOrdered - totalReceived);
                         String cancelDate = !TextUtils.isEmpty(purchase.updatedAt) ? purchase.updatedAt : purchase.billingDate;
-                        textCancellationDetails.setText(String.format(Locale.getDefault(),
-                                "Cancelled on %s. %d of %d units received across stages; remaining %d units were cancelled.",
-                                cancelDate != null ? cancelDate : "", totalReceived, totalOrdered, totalCancelled));
+                        textCancellationDetails.setText(String.format(Locale.getDefault(), "Cancelled on %s. %s of %s units received across stages; remaining %s units were cancelled.", cancelDate != null ? cancelDate : "", CommonFunctions.formatQuantity(totalReceived), CommonFunctions.formatQuantity(totalOrdered), CommonFunctions.formatQuantity(totalCancelled)));
                     }
 
                     LayoutInflater inflater = LayoutInflater.from(PurchaseHistoryActivity.this);
@@ -618,14 +613,15 @@ public class PurchaseHistoryActivity extends BaseActivity {
                         textQtyPrice.setText(String.format(Locale.getDefault(), "Cost Price: ₹ %,.2f", pItem.unitPrice));
                         textItemTotal.setText(String.format(Locale.getDefault(), "₹ %,.2f", pItem.subtotal));
 
-                        chipOrdered.setText(String.format(Locale.getDefault(), "Ordered: %d", pItem.quantity));
-                        chipReceived.setText(String.format(Locale.getDefault(), "Received: %d", pItem.receivedQuantity));
+                        String uom = (itemWithProd.product != null && !TextUtils.isEmpty(itemWithProd.product.unitOfMeasure)) ? itemWithProd.product.unitOfMeasure.trim() : "";
+                        chipOrdered.setText(String.format(Locale.getDefault(), "Ordered: %s %s", CommonFunctions.formatQuantity(pItem.quantity), uom).trim());
+                        chipReceived.setText(String.format(Locale.getDefault(), "Received: %s %s", CommonFunctions.formatQuantity(pItem.receivedQuantity), uom).trim());
 
-                        int remainingOrCancelled = Math.max(0, pItem.quantity - pItem.receivedQuantity);
+                        double remainingOrCancelled = Math.max(0.0, CommonFunctions.roundTo3Decimals(pItem.quantity - pItem.receivedQuantity));
                         if ("Partially Cancelled".equalsIgnoreCase(status) || "Cancelled".equalsIgnoreCase(status)) {
-                            if (remainingOrCancelled > 0) {
+                            if (remainingOrCancelled > 0.0001) {
                                 chipBalance.setVisibility(View.VISIBLE);
-                                chipBalance.setText(String.format(Locale.getDefault(), "Cancelled: %d", remainingOrCancelled));
+                                chipBalance.setText(String.format(Locale.getDefault(), "Cancelled: %s %s", CommonFunctions.formatQuantity(remainingOrCancelled), uom).trim());
                                 chipBalance.setTextColor(ContextCompat.getColor(PurchaseHistoryActivity.this, R.color.status_red));
                                 chipBalance.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(PurchaseHistoryActivity.this, R.color.status_red_bg)));
                             } else {
@@ -635,9 +631,9 @@ public class PurchaseHistoryActivity extends BaseActivity {
                                 chipBalance.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(PurchaseHistoryActivity.this, R.color.status_green_bg)));
                             }
                         } else if ("Partially Received".equalsIgnoreCase(status) || "Pending".equalsIgnoreCase(status)) {
-                            if (remainingOrCancelled > 0) {
+                            if (remainingOrCancelled > 0.0001) {
                                 chipBalance.setVisibility(View.VISIBLE);
-                                chipBalance.setText(String.format(Locale.getDefault(), "Pending: %d", remainingOrCancelled));
+                                chipBalance.setText(String.format(Locale.getDefault(), "Pending: %s %s", CommonFunctions.formatQuantity(remainingOrCancelled), uom).trim());
                                 chipBalance.setTextColor(ContextCompat.getColor(PurchaseHistoryActivity.this, R.color.status_orange));
                                 chipBalance.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(PurchaseHistoryActivity.this, R.color.status_orange_bg)));
                             } else {
@@ -692,8 +688,7 @@ public class PurchaseHistoryActivity extends BaseActivity {
                 }
 
                 sectionStages.setVisibility(View.VISIBLE);
-                textStagesCount.setText(String.format(Locale.getDefault(), "%d stage%s",
-                        stageRecords.size(), stageRecords.size() == 1 ? "" : "s"));
+                textStagesCount.setText(String.format(Locale.getDefault(), "%d stage%s", stageRecords.size(), stageRecords.size() == 1 ? "" : "s"));
 
                 LayoutInflater inflater = LayoutInflater.from(PurchaseHistoryActivity.this);
                 SimpleDateFormat dtDisplayFormat = new SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault());
@@ -721,13 +716,14 @@ public class PurchaseHistoryActivity extends BaseActivity {
                         try {
                             Date d = parseFormat.parse(record.createdAt);
                             if (d != null) dateDisplay = dtDisplayFormat.format(d);
-                        } catch (ParseException ignored) {}
+                        } catch (ParseException ignored) {
+                        }
                     } else if (!TextUtils.isEmpty(record.receiveDate)) {
                         dateDisplay = record.receiveDate;
                     }
                     textStageDateTime.setText(dateDisplay != null ? dateDisplay : "");
 
-                    int totalStageUnits = 0;
+                    double totalStageUnits = 0.0;
                     containerStageItems.removeAllViews();
 
                     if (recWithItems.items != null) {
@@ -745,7 +741,7 @@ public class PurchaseHistoryActivity extends BaseActivity {
                             }
 
                             TextView itemRow = new TextView(PurchaseHistoryActivity.this);
-                            itemRow.setText(String.format(Locale.getDefault(), "• %d × %s", rItem.quantityReceived, prodName));
+                            itemRow.setText(String.format(Locale.getDefault(), "• %s × %s", CommonFunctions.formatQuantity(rItem.quantityReceived), prodName));
                             itemRow.setTextColor(ContextCompat.getColor(PurchaseHistoryActivity.this, R.color.fg));
                             itemRow.setTextSize(12f);
                             itemRow.setPadding(0, 2, 0, 2);
@@ -753,8 +749,7 @@ public class PurchaseHistoryActivity extends BaseActivity {
                         }
                     }
 
-                    textStageTotalUnits.setText(String.format(Locale.getDefault(), "Total Received: %d Unit%s",
-                            totalStageUnits, totalStageUnits == 1 ? "" : "s"));
+                    textStageTotalUnits.setText(String.format(Locale.getDefault(), "Total Received: %s Unit%s", CommonFunctions.formatQuantity(totalStageUnits), totalStageUnits == 1.0 ? "" : "s"));
 
                     if (!TextUtils.isEmpty(record.notes)) {
                         textStageNotes.setVisibility(View.VISIBLE);
@@ -771,22 +766,12 @@ public class PurchaseHistoryActivity extends BaseActivity {
                             @Override
                             public void onLoaded(ReceiveRecord r, List<ReceiveItem> items, Purchase p, List<PurchaseItemWithProduct> allItems) {
                                 btnDownloadBill.setEnabled(true);
-                                Bitmap billBitmap = CommonFunctions.createReceiveBillBitmap(
-                                        PurchaseHistoryActivity.this,
-                                        r,
-                                        items,
-                                        p != null ? p : purchase,
-                                        supplier,
-                                        allItems != null ? allItems : loadedPurchaseItems,
-                                        cachedCompanyConfigs
-                                );
+                                Bitmap billBitmap = CommonFunctions.createReceiveBillBitmap(PurchaseHistoryActivity.this, r, items, p != null ? p : purchase, supplier, allItems != null ? allItems : loadedPurchaseItems, cachedCompanyConfigs);
 
                                 if (billBitmap != null) {
                                     String fileName = "GRN_Stage" + currentStageNumber + "_" + r.receiveRecordId + "_" + System.currentTimeMillis() + ".png";
                                     BitmapHelper.saveBitmapToDownloads(billBitmap, PurchaseHistoryActivity.this, fileName);
-                                    Toast.makeText(PurchaseHistoryActivity.this,
-                                            String.format(Locale.getDefault(), "Stage %d GRN Bill saved to Downloads!", currentStageNumber),
-                                            Toast.LENGTH_LONG).show();
+                                    Toast.makeText(PurchaseHistoryActivity.this, String.format(Locale.getDefault(), "Stage %d GRN Bill saved to Downloads!", currentStageNumber), Toast.LENGTH_LONG).show();
                                     File pngFile = BitmapHelper.saveBitmapAsPng(PurchaseHistoryActivity.this, billBitmap, fileName);
                                     if (pngFile != null) {
                                         String title = "GRN Stage " + currentStageNumber;

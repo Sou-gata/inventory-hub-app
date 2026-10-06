@@ -37,6 +37,7 @@ import in.gbtsolutions.inventoryhub.R;
 import in.gbtsolutions.inventoryhub.adapters.BuyerAdapter;
 import in.gbtsolutions.inventoryhub.helpers.ThemeManager;
 import in.gbtsolutions.inventoryhub.models.Buyer;
+import in.gbtsolutions.inventoryhub.online.repository.OnlineBuyerRepository;
 import in.gbtsolutions.inventoryhub.repository.BuyerRepository;
 
 public class BuyerActivity extends BaseActivity {
@@ -207,12 +208,39 @@ public class BuyerActivity extends BaseActivity {
     }
 
     private void observeBuyers() {
+        if (buyerRepository.isOnlineMode()) {
+            loadOnlineBuyers();
+            return;
+        }
         buyerRepository.getAllBuyers().observe(this, buyers -> {
             allBuyers.clear();
             if (buyers != null) {
                 allBuyers.addAll(buyers);
             }
             applyFilters();
+        });
+    }
+
+    private void loadOnlineBuyers() {
+        buyerRepository.fetchBuyersOnline(new OnlineBuyerRepository.BuyerListCallback() {
+            @Override
+            public void onSuccess(List<Buyer> buyers) {
+                runOnUiThread(() -> {
+                    allBuyers.clear();
+                    if (buyers != null) {
+                        allBuyers.addAll(buyers);
+                    }
+                    applyFilters();
+                });
+            }
+
+            @Override
+            public void onError(String errorMessage) {
+                runOnUiThread(() -> {
+                    showToast("Failed to load buyers: " + errorMessage);
+                    applyFilters();
+                });
+            }
         });
     }
 
@@ -322,9 +350,23 @@ public class BuyerActivity extends BaseActivity {
 
     private void toggleBuyerStatus(@NonNull Buyer buyer) {
         boolean newStatus = !buyer.isActive;
-        buyerRepository.updateStatus(buyer.buyerId, newStatus);
-        String actionText = newStatus ? "activated" : "deactivated";
-        showToast("Buyer \"" + buyer.buyerName + "\" " + actionText);
+        buyerRepository.updateStatus(buyer.buyerId, newStatus, new BuyerRepository.BuyerActionCallback() {
+            @Override
+            public void onSuccess() {
+                runOnUiThread(() -> {
+                    String actionText = newStatus ? "activated" : "deactivated";
+                    showToast("Buyer \"" + buyer.buyerName + "\" " + actionText);
+                    if (buyerRepository.isOnlineMode()) {
+                        loadOnlineBuyers();
+                    }
+                });
+            }
+
+            @Override
+            public void onError(String message) {
+                runOnUiThread(() -> showToast("Failed to update status: " + message));
+            }
+        });
     }
 
     private void showBuyerDetailsSheet(@NonNull Buyer buyer) {
@@ -548,6 +590,9 @@ public class BuyerActivity extends BaseActivity {
         super.onResume();
         if (navView != null) {
             navView.setCheckedItem(R.id.nav_buyer);
+        }
+        if (buyerRepository != null && buyerRepository.isOnlineMode()) {
+            loadOnlineBuyers();
         }
     }
 

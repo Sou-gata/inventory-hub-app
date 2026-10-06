@@ -46,11 +46,14 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.graphics.drawable.Drawable;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.navigation.NavigationView;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Executors;
@@ -68,7 +71,7 @@ public abstract class BaseActivity extends AppCompatActivity {
 
     private final Map<Integer, CollapsibleMenuSection> collapsibleSections = new HashMap<>();
     private final Map<Integer, CollapsibleMenuSection> childToSectionMap = new HashMap<>();
-    protected final int[] userMenus = {R.id.nav_home, R.id.nav_inventory, R.id.nav_purchase, R.id.nav_purchase_new_order, R.id.nav_purchase_history, R.id.nav_receive, R.id.nav_sell, R.id.nav_sell_create, R.id.nav_sell_history, R.id.nav_reports, R.id.nav_audit_trail, R.id.nav_profile, R.id.nav_about};
+    protected final int[] userMenus = {R.id.nav_home, R.id.nav_inventory, R.id.nav_purchase, R.id.nav_purchase_new_order, R.id.nav_purchase_history, R.id.nav_receive, R.id.nav_sell, R.id.nav_sell_create, R.id.nav_sell_history, R.id.nav_reports, R.id.nav_reports_gstr1, R.id.nav_reports_sales_register, R.id.nav_reports_purchase_register, R.id.nav_audit_trail, R.id.nav_profile, R.id.nav_about};
     @Nullable
     private NavigationView activeNavView = null;
     @Nullable
@@ -81,6 +84,8 @@ public abstract class BaseActivity extends AppCompatActivity {
     private int dimenSubmenuHeight;
     private int dimenSubmenuPaddingStart;
     private int dimenSubmenuPaddingEnd;
+    private int dimenStandardPaddingStart;
+    private int dimenStandardPaddingEnd;
     private int dimenChevronSize;
     private int dimenChevronMarginEnd;
     private boolean dimensInitialized = false;
@@ -136,6 +141,8 @@ public abstract class BaseActivity extends AppCompatActivity {
             dimenSubmenuHeight = (int) (40 * density);
             dimenSubmenuPaddingStart = (int) (52 * density);
             dimenSubmenuPaddingEnd = (int) (16 * density);
+            dimenStandardPaddingStart = (int) (24 * density);
+            dimenStandardPaddingEnd = (int) (24 * density);
             dimenChevronSize = (int) (18 * density);
             dimenChevronMarginEnd = (int) (16 * density);
             dimensInitialized = true;
@@ -148,13 +155,20 @@ public abstract class BaseActivity extends AppCompatActivity {
                     R.id.nav_purchase, R.id.nav_purchase_new_order, R.id.nav_purchase_history));
             registerCollapsibleSection(new CollapsibleMenuSection(
                     R.id.nav_sell, R.id.nav_sell_create, R.id.nav_sell_history));
+            registerCollapsibleSection(new CollapsibleMenuSection(
+                    R.id.nav_reports,
+                    R.id.nav_reports_gstr1,
+                    R.id.nav_reports_sales_register,
+                    R.id.nav_reports_purchase_register,
+                    R.id.nav_audit_trail));
         }
     }
 
     private void registerCollapsibleSection(@NonNull CollapsibleMenuSection section) {
         collapsibleSections.put(section.parentId, section);
-        childToSectionMap.put(section.firstChildId, section);
-        childToSectionMap.put(section.lastChildId, section);
+        for (int childId : section.childIds) {
+            childToSectionMap.put(childId, section);
+        }
     }
 
     @Nullable
@@ -354,13 +368,17 @@ public abstract class BaseActivity extends AppCompatActivity {
             }
         });
 
-        if (currentNavId != 0) {
-            navView.setCheckedItem(currentNavId);
-        }
-
         // Attach chevron action views to all collapsible parent items
         ensureDimensions();
         initCollapsibleSections();
+
+        if (currentNavId != 0) {
+            navView.setCheckedItem(currentNavId);
+            CollapsibleMenuSection activeSection = findSectionByChild(currentNavId);
+            if (activeSection != null) {
+                activeSection.isExpanded = true;
+            }
+        }
         for (CollapsibleMenuSection section : collapsibleSections.values()) {
             MenuItem parentItem = navView.getMenu().findItem(section.parentId);
             if (parentItem != null && parentItem.getActionView() == null) {
@@ -398,11 +416,21 @@ public abstract class BaseActivity extends AppCompatActivity {
         updateNavHeaderModeBadge(drawerLayout);
         drawerLayout.addDrawerListener(new DrawerLayout.SimpleDrawerListener() {
             @Override
+            public void onDrawerStateChanged(int newState) {
+                if (newState == DrawerLayout.STATE_DRAGGING || newState == DrawerLayout.STATE_SETTLING) {
+                    refreshAllNavigationItems(navView);
+                }
+            }
+
+            @Override
             public void onDrawerOpened(View drawerView) {
                 updateNavHeaderUser(drawerLayout);
                 updateNavHeaderModeBadge(drawerLayout);
                 if (activeNavView != null) {
                     applyMenuVisibility(activeNavView, isCurrentUserAdmin());
+                    activeNavView.post(() -> refreshAllNavigationItems(activeNavView));
+                } else {
+                    refreshAllNavigationItems(navView);
                 }
             }
         });
@@ -433,6 +461,13 @@ public abstract class BaseActivity extends AppCompatActivity {
                 }
             });
 
+            rv.addOnScrollListener(new RecyclerView.OnScrollListener() {
+                @Override
+                public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                    refreshAllNavigationItems(navView);
+                }
+            });
+
             RecyclerView.Adapter<?> adapter = rv.getAdapter();
             if (adapter != null) {
                 adapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
@@ -455,14 +490,6 @@ public abstract class BaseActivity extends AppCompatActivity {
 
             rv.post(() -> refreshAllNavigationItems(navView));
         }
-
-        // Only refresh navigation items once when the drawer finishes opening, NOT on every slide frame!
-        drawerLayout.addDrawerListener(new DrawerLayout.SimpleDrawerListener() {
-            @Override
-            public void onDrawerOpened(@NonNull View drawerView) {
-                refreshAllNavigationItems(navView);
-            }
-        });
 
         navView.setNavigationItemSelectedListener(menuItem -> {
             int id = menuItem.getItemId();
@@ -512,6 +539,41 @@ public abstract class BaseActivity extends AppCompatActivity {
                 return true;
             }
 
+            // Handle Reports child items
+            if (id == R.id.nav_reports_gstr1) {
+                drawerLayout.closeDrawer(GravityCompat.START);
+                if (!(this instanceof ReportsActivity)) {
+                    Intent intent = new Intent(this, ReportsActivity.class);
+                    startActivity(intent);
+                    applyTransition(this);
+                }
+                return true;
+            } else if (id == R.id.nav_reports_sales_register) {
+                drawerLayout.closeDrawer(GravityCompat.START);
+                if (!(this instanceof SalesRegisterActivity)) {
+                    Intent intent = new Intent(this, SalesRegisterActivity.class);
+                    startActivity(intent);
+                    applyTransition(this);
+                }
+                return true;
+            } else if (id == R.id.nav_reports_purchase_register) {
+                drawerLayout.closeDrawer(GravityCompat.START);
+                if (!(this instanceof PurchaseRegisterActivity)) {
+                    Intent intent = new Intent(this, PurchaseRegisterActivity.class);
+                    startActivity(intent);
+                    applyTransition(this);
+                }
+                return true;
+            } else if (id == R.id.nav_audit_trail) {
+                drawerLayout.closeDrawer(GravityCompat.START);
+                if (!(this instanceof AuditTrailActivity)) {
+                    Intent intent = new Intent(this, AuditTrailActivity.class);
+                    startActivity(intent);
+                    applyTransition(this);
+                }
+                return true;
+            }
+
             if (id == currentNavId) {
                 drawerLayout.closeDrawer(GravityCompat.START);
                 return true;
@@ -546,6 +608,14 @@ public abstract class BaseActivity extends AppCompatActivity {
                 drawerLayout.closeDrawer(GravityCompat.START);
                 if (!(this instanceof CategoryActivity)) {
                     Intent intent = new Intent(this, CategoryActivity.class);
+                    startActivity(intent);
+                    applyTransition(this);
+                }
+                return true;
+            } else if (id == R.id.nav_uom) {
+                drawerLayout.closeDrawer(GravityCompat.START);
+                if (!(this instanceof UnitOfMeasureActivity)) {
+                    Intent intent = new Intent(this, UnitOfMeasureActivity.class);
                     startActivity(intent);
                     applyTransition(this);
                 }
@@ -586,14 +656,6 @@ public abstract class BaseActivity extends AppCompatActivity {
                 drawerLayout.closeDrawer(GravityCompat.START);
                 if (!(this instanceof ReportsActivity)) {
                     Intent intent = new Intent(this, ReportsActivity.class);
-                    startActivity(intent);
-                    applyTransition(this);
-                }
-                return true;
-            } else if (id == R.id.nav_audit_trail) {
-                drawerLayout.closeDrawer(GravityCompat.START);
-                if (!(this instanceof AuditTrailActivity)) {
-                    Intent intent = new Intent(this, AuditTrailActivity.class);
                     startActivity(intent);
                     applyTransition(this);
                 }
@@ -673,8 +735,8 @@ public abstract class BaseActivity extends AppCompatActivity {
         if (!(itemView instanceof MenuView.ItemView)) return;
 
         // Register layout change listener once per view to re-enforce submenu styling whenever presenter rebinds
-        if (itemView.getTag(R.id.btn_nav_logout) == null) {
-            itemView.setTag(R.id.btn_nav_logout, Boolean.TRUE);
+        if (itemView.getTag(R.id.tag_nav_item_listener_added) == null) {
+            itemView.setTag(R.id.tag_nav_item_listener_added, Boolean.TRUE);
             itemView.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
                 enforceNavigationItemStyle(v);
             });
@@ -691,34 +753,50 @@ public abstract class BaseActivity extends AppCompatActivity {
 
         int id = item.getItemId();
         CollapsibleMenuSection section = findSectionByChild(id);
-        if (section != null) {
-            ensureDimensions();
-            boolean isFirst = section.isFirstChild(id);
+        ensureDimensions();
 
+        if (section != null) {
+            boolean isLast = section.isLastChild(id);
+
+            // Submenu indentation
             if (itemView.getPaddingStart() != dimenSubmenuPaddingStart || itemView.getPaddingEnd() != dimenSubmenuPaddingEnd) {
                 itemView.setPaddingRelative(dimenSubmenuPaddingStart, 0, dimenSubmenuPaddingEnd, 0);
             }
 
-            int bgRes = isFirst ? R.drawable.bg_nav_submenu_first : R.drawable.bg_nav_submenu_last;
-            Object appliedBg = itemView.getTag(R.id.drawer_layout);
-            if (!Integer.valueOf(bgRes).equals(appliedBg)) {
-                itemView.setBackgroundResource(bgRes);
-                itemView.setTag(R.id.drawer_layout, bgRes);
+            // Submenu guide rail and branch background
+            int bgRes = isLast ? R.drawable.bg_nav_submenu_last : R.drawable.bg_nav_submenu_first;
+            Drawable currentBg = itemView.getBackground();
+            Object appliedDrawable = itemView.getTag(R.id.tag_nav_item_drawable);
+            Object appliedResId = itemView.getTag(R.id.tag_nav_item_bg_res);
+
+            boolean needsBg = currentBg == null
+                    || currentBg != appliedDrawable
+                    || !Integer.valueOf(bgRes).equals(appliedResId);
+
+            if (needsBg) {
+                Drawable newBg = ContextCompat.getDrawable(this, bgRes);
+                if (newBg != null) {
+                    itemView.setBackground(newBg);
+                    itemView.setTag(R.id.tag_nav_item_drawable, newBg);
+                    itemView.setTag(R.id.tag_nav_item_bg_res, bgRes);
+                }
             }
 
-            TextView textView = (TextView) itemView.getTag(R.id.nav_header_container);
+            // Submenu text styling
+            TextView textView = (TextView) itemView.getTag(R.id.tag_nav_item_textview);
             if (textView == null) {
                 textView = findTextViewInView(itemView);
                 if (textView != null) {
-                    itemView.setTag(R.id.nav_header_container, textView);
+                    itemView.setTag(R.id.tag_nav_item_textview, textView);
                 }
             }
-            if (textView != null && itemView.getTag(R.id.nav_view) == null) {
-                textView.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 13.5f);
+            if (textView != null && !Boolean.TRUE.equals(itemView.getTag(R.id.tag_nav_item_text_styled))) {
+                textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13.5f);
                 textView.setTextColor(ContextCompat.getColorStateList(this, R.color.nav_submenu_text_color));
-                itemView.setTag(R.id.nav_view, Boolean.TRUE);
+                itemView.setTag(R.id.tag_nav_item_text_styled, Boolean.TRUE);
             }
 
+            // Submenu height and visibility (when not actively running an accordion animation)
             if (!section.isAnimating) {
                 int targetHeight = section.isExpanded ? dimenSubmenuHeight : 0;
                 ViewGroup.LayoutParams lp = itemView.getLayoutParams();
@@ -736,7 +814,34 @@ public abstract class BaseActivity extends AppCompatActivity {
                 }
             }
         } else {
-            // Reset standard items to guarantee recycling never retains submenu dimensions
+            // Reset standard items to guarantee view recycling never retains submenu properties
+            Object appliedDrawable = itemView.getTag(R.id.tag_nav_item_drawable);
+            if (appliedDrawable != null) {
+                if (itemView.getBackground() == appliedDrawable) {
+                    Drawable defaultBg = ContextCompat.getDrawable(this, R.drawable.bg_nav_item_selector);
+                    itemView.setBackground(defaultBg);
+                }
+                itemView.setTag(R.id.tag_nav_item_drawable, null);
+                itemView.setTag(R.id.tag_nav_item_bg_res, null);
+            }
+
+            if (itemView.getPaddingStart() != dimenStandardPaddingStart || itemView.getPaddingEnd() != dimenStandardPaddingEnd) {
+                itemView.setPaddingRelative(dimenStandardPaddingStart, 0, dimenStandardPaddingEnd, 0);
+            }
+
+            TextView textView = (TextView) itemView.getTag(R.id.tag_nav_item_textview);
+            if (textView == null) {
+                textView = findTextViewInView(itemView);
+                if (textView != null) {
+                    itemView.setTag(R.id.tag_nav_item_textview, textView);
+                }
+            }
+            if (textView != null && Boolean.TRUE.equals(itemView.getTag(R.id.tag_nav_item_text_styled))) {
+                textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f);
+                textView.setTextColor(ContextCompat.getColorStateList(this, R.color.nav_item_text_color));
+                itemView.setTag(R.id.tag_nav_item_text_styled, Boolean.FALSE);
+            }
+
             ViewGroup.LayoutParams lp = itemView.getLayoutParams();
             if (lp != null && lp.height != ViewGroup.LayoutParams.WRAP_CONTENT) {
                 lp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
@@ -806,60 +911,72 @@ public abstract class BaseActivity extends AppCompatActivity {
      * Smooth accordion expand/collapse animation for any collapsible section's submenu rows.
      */
     private void animateSectionSubmenu(@NonNull NavigationView navView, @NonNull CollapsibleMenuSection section, boolean expand) {
-        View firstChildView = findNavigationMenuItemView(navView, section.firstChildId);
-        View lastChildView = findNavigationMenuItemView(navView, section.lastChildId);
-
-        if (firstChildView == null && lastChildView == null) {
-            navView.post(() -> refreshAllNavigationItems(navView));
-            return;
-        }
-
         if (section.animator != null && section.animator.isRunning()) {
             section.animator.cancel();
         }
 
+        List<View> childViews = new ArrayList<>();
+        for (int cid : section.childIds) {
+            View cv = findNavigationMenuItemView(navView, cid);
+            if (cv != null) childViews.add(cv);
+        }
+
+        if (childViews.isEmpty()) {
+            refreshAllNavigationItems(navView);
+            for (int cid : section.childIds) {
+                View cv = findNavigationMenuItemView(navView, cid);
+                if (cv != null) childViews.add(cv);
+            }
+            if (childViews.isEmpty()) {
+                return;
+            }
+        }
+
+        section.isAnimating = true;
         ensureDimensions();
         final int targetHeight = dimenSubmenuHeight;
 
-        if (firstChildView != null) {
-            firstChildView.setVisibility(View.VISIBLE);
-        }
-        if (lastChildView != null) {
-            lastChildView.setVisibility(View.VISIBLE);
-        }
-
         int currentH = 0;
-        if (firstChildView != null && firstChildView.getLayoutParams() != null) {
-            currentH = firstChildView.getLayoutParams().height;
-        } else if (lastChildView != null && lastChildView.getLayoutParams() != null) {
-            currentH = lastChildView.getLayoutParams().height;
+        for (View cv : childViews) {
+            if (cv.getLayoutParams() != null && cv.getLayoutParams().height > 0) {
+                currentH = cv.getLayoutParams().height;
+                break;
+            }
         }
 
         final int startH = expand ? Math.max(0, currentH) : (currentH > 0 ? currentH : targetHeight);
         final int endH = expand ? targetHeight : 0;
         final float startAlpha = expand
-                ? (firstChildView != null ? firstChildView.getAlpha() : 0f)
-                : (firstChildView != null ? firstChildView.getAlpha() : 1f);
+                ? (!childViews.isEmpty() && currentH > 0 ? childViews.get(0).getAlpha() : 0f)
+                : (!childViews.isEmpty() ? childViews.get(0).getAlpha() : 1f);
         final float endAlpha = expand ? 1f : 0f;
 
-        section.isAnimating = true;
+        if (expand) {
+            for (View cv : childViews) {
+                cv.setVisibility(View.VISIBLE);
+                if (cv.getLayoutParams() != null) {
+                    cv.getLayoutParams().height = startH;
+                }
+                cv.setAlpha(startAlpha);
+                enforceNavigationItemStyle(cv);
+            }
+        }
+
         section.animator = ValueAnimator.ofFloat(0f, 1f);
         section.animator.setDuration(260);
         section.animator.setInterpolator(new FastOutSlowInInterpolator());
+        final List<View> finalChildViews = new ArrayList<>(childViews);
         section.animator.addUpdateListener(animation -> {
             float fraction = animation.getAnimatedFraction();
             int h = (int) (startH + (endH - startH) * fraction);
             float a = startAlpha + (endAlpha - startAlpha) * fraction;
 
-            if (firstChildView != null && firstChildView.getLayoutParams() != null) {
-                firstChildView.getLayoutParams().height = h;
-                firstChildView.setAlpha(a);
-                firstChildView.requestLayout();
-            }
-            if (lastChildView != null && lastChildView.getLayoutParams() != null) {
-                lastChildView.getLayoutParams().height = h;
-                lastChildView.setAlpha(a);
-                lastChildView.requestLayout();
+            for (View cv : finalChildViews) {
+                if (cv.getLayoutParams() != null) {
+                    cv.getLayoutParams().height = h;
+                    cv.setAlpha(a);
+                    cv.requestLayout();
+                }
             }
         });
 
@@ -868,26 +985,19 @@ public abstract class BaseActivity extends AppCompatActivity {
             public void onAnimationEnd(Animator animation) {
                 section.isAnimating = false;
                 if (!expand) {
-                    if (firstChildView != null) {
-                        firstChildView.setVisibility(View.GONE);
-                        if (firstChildView.getLayoutParams() != null) {
-                            firstChildView.getLayoutParams().height = 0;
-                        }
-                    }
-                    if (lastChildView != null) {
-                        lastChildView.setVisibility(View.GONE);
-                        if (lastChildView.getLayoutParams() != null) {
-                            lastChildView.getLayoutParams().height = 0;
+                    for (View cv : finalChildViews) {
+                        cv.setVisibility(View.GONE);
+                        if (cv.getLayoutParams() != null) {
+                            cv.getLayoutParams().height = 0;
                         }
                     }
                 } else {
-                    if (firstChildView != null && firstChildView.getLayoutParams() != null) {
-                        firstChildView.getLayoutParams().height = targetHeight;
-                        firstChildView.setAlpha(1f);
-                    }
-                    if (lastChildView != null && lastChildView.getLayoutParams() != null) {
-                        lastChildView.getLayoutParams().height = targetHeight;
-                        lastChildView.setAlpha(1f);
+                    for (View cv : finalChildViews) {
+                        if (cv.getLayoutParams() != null) {
+                            cv.getLayoutParams().height = targetHeight;
+                        }
+                        cv.setAlpha(1f);
+                        enforceNavigationItemStyle(cv);
                     }
                 }
             }
@@ -1072,7 +1182,7 @@ public abstract class BaseActivity extends AppCompatActivity {
         }
         editor.remove(Configurations.KEY_AUTH_TOKEN);
         editor.apply();
-        in.gbtsolutions.inventoryhub.online.config.AppModeManager.getInstance(this).clearAuthToken();
+        AppModeManager.getInstance(this).clearAuthToken();
         GlobalStore.getInstance().clearLoggedInUser();
 
         Intent intent = new Intent(this, LoginActivity.class);
@@ -1229,21 +1339,23 @@ public abstract class BaseActivity extends AppCompatActivity {
     // Model for collapsible drawer menu section.
     private static class CollapsibleMenuSection {
         final int parentId;
-        final int firstChildId;
-        final int lastChildId;
+        final int[] childIds;
         boolean isExpanded = false;
         boolean isAnimating = false;
         @Nullable
         ValueAnimator animator = null;
 
-        CollapsibleMenuSection(int parentId, int firstChildId, int lastChildId) {
+        CollapsibleMenuSection(int parentId, int... childIds) {
             this.parentId = parentId;
-            this.firstChildId = firstChildId;
-            this.lastChildId = lastChildId;
+            this.childIds = childIds != null ? childIds : new int[0];
         }
 
         boolean isFirstChild(int id) {
-            return id == firstChildId;
+            return childIds.length > 0 && childIds[0] == id;
+        }
+
+        boolean isLastChild(int id) {
+            return childIds.length > 0 && childIds[childIds.length - 1] == id;
         }
     }
 }

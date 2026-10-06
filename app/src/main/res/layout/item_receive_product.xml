@@ -139,14 +139,15 @@
 
             <EditText
                 android:id="@+id/edit_receive_qty"
-                android:layout_width="54dp"
+                android:layout_width="wrap_content"
+                android:minWidth="60dp"
                 android:layout_height="match_parent"
                 android:background="@android:color/transparent"
                 android:fontFamily="sans-serif-black"
                 android:gravity="center"
                 android:imeOptions="actionDone"
-                android:inputType="number"
-                android:maxLength="5"
+                android:inputType="numberDecimal"
+                android:paddingHorizontal="4dp"
                 android:text="0"
                 android:textColor="@color/accent_teal"
                 android:textSize="14sp" />

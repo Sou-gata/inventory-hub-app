@@ -19,7 +19,7 @@ public class PurchaseItem {
     public int productId;
 
     @ColumnInfo(name = "quantity")
-    public int quantity;
+    public double quantity;
 
     @ColumnInfo(name = "unit_price")
     public double unitPrice;
@@ -52,7 +52,7 @@ public class PurchaseItem {
     public double discountAmount;
 
     @ColumnInfo(name = "received_quantity", defaultValue = "0")
-    public int receivedQuantity;
+    public double receivedQuantity;
 
     @ColumnInfo(name = "updated_at", defaultValue = "0")
     public long updatedAt = System.currentTimeMillis();
@@ -64,7 +64,7 @@ public class PurchaseItem {
     public PurchaseItem(
             int purchaseId,
             int productId,
-            int quantity,
+            double quantity,
             double unitPrice,
             double cgstRate,
             double sgstRate,
@@ -91,6 +91,26 @@ public class PurchaseItem {
         this.discountAmount = discountAmount;
     }
 
+    @Ignore
+    public PurchaseItem(
+            int purchaseId,
+            int productId,
+            int quantity,
+            double unitPrice,
+            double cgstRate,
+            double sgstRate,
+            double igstRate,
+            double cgstAmount,
+            double sgstAmount,
+            double igstAmount,
+            double subtotal,
+            double discountPercent,
+            double discountAmount
+    ) {
+        this(purchaseId, productId, (double) quantity, unitPrice, cgstRate, sgstRate, igstRate,
+                cgstAmount, sgstAmount, igstAmount, subtotal, discountPercent, discountAmount);
+    }
+
     public int getPurchaseItemId() { return purchaseItemId; }
     public void setPurchaseItemId(int purchaseItemId) { this.purchaseItemId = purchaseItemId; }
 
@@ -100,8 +120,9 @@ public class PurchaseItem {
     public int getProductId() { return productId; }
     public void setProductId(int productId) { this.productId = productId; }
 
-    public int getQuantity() { return quantity; }
-    public void setQuantity(int quantity) { this.quantity = quantity; }
+    public double getQuantity() { return quantity; }
+    public void setQuantity(double quantity) { this.quantity = quantity; }
+    public void setQuantity(int quantity) { this.quantity = (double) quantity; }
 
     public double getUnitPrice() { return unitPrice; }
     public void setUnitPrice(double unitPrice) { this.unitPrice = unitPrice; }
@@ -133,6 +154,7 @@ public class PurchaseItem {
     public double getDiscountAmount() { return discountAmount; }
     public void setDiscountAmount(double discountAmount) { this.discountAmount = discountAmount; }
 
-    public int getReceivedQuantity() { return receivedQuantity; }
-    public void setReceivedQuantity(int receivedQuantity) { this.receivedQuantity = receivedQuantity; }
+    public double getReceivedQuantity() { return receivedQuantity; }
+    public void setReceivedQuantity(double receivedQuantity) { this.receivedQuantity = receivedQuantity; }
+    public void setReceivedQuantity(int receivedQuantity) { this.receivedQuantity = (double) receivedQuantity; }
 }

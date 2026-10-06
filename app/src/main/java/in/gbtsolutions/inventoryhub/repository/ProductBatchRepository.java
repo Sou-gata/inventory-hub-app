@@ -40,7 +40,7 @@ public class ProductBatchRepository {
     }
 
     public interface SyncCallback {
-        void onComplete(int newTotalQty);
+        void onComplete(double newTotalQty);
     }
 
     public ProductBatchRepository(Application application) {
@@ -146,19 +146,19 @@ public class ProductBatchRepository {
 
     public void syncProductQuantity(int productId, SyncCallback callback) {
         executorService.execute(() -> {
-            int newTotal = syncProductQuantityInternal(productId);
+            double newTotal = syncProductQuantityInternal(productId);
             if (callback != null) {
                 mainHandler.post(() -> callback.onComplete(newTotal));
             }
         });
     }
 
-    private int syncProductQuantityInternal(int productId) {
-        int totalQty = productBatchDao.sumQuantityForProduct(productId);
+    private double syncProductQuantityInternal(int productId) {
+        double totalQty = productBatchDao.sumQuantityForProduct(productId);
         Product product = productDao.getProductById(productId);
         if (product != null) {
-            product.quantity = totalQty;
-            if (product.quantity <= 0) {
+            product.quantity = in.gbtsolutions.inventoryhub.helpers.CommonFunctions.roundTo3Decimals(totalQty);
+            if (product.quantity <= 0.0001) {
                 product.status = "Out of Stock";
             } else if ("Out of Stock".equalsIgnoreCase(product.status)) {
                 product.status = "Active";

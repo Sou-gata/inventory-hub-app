@@ -100,7 +100,7 @@ public class SellDetailsFragment extends Fragment {
                                         return;
                                     }
                                     CartItem existing = SellCartManager.getInstance().getCartItem(product.productId, batch.batchId);
-                                    int currentInCart = (existing != null) ? existing.quantity : 0;
+                                    double currentInCart = (existing != null) ? existing.quantity : 0.0;
                                     if (!GlobalStore.getInstance().isAllowOutOfStockSell() && currentInCart + 1 > batch.quantity) {
                                         if (getContext() != null) {
                                             Toast.makeText(getContext(), "Insufficient stock", Toast.LENGTH_SHORT).show();
@@ -138,7 +138,7 @@ public class SellDetailsFragment extends Fragment {
                             } else {
                                 // Batch is disabled from settings (even if batch info is present in QR) -> No dialog, add directly
                                 CartItem existing = SellCartManager.getInstance().getCartItem(product.productId, null);
-                                int currentInCart = (existing != null) ? existing.quantity : 0;
+                                double currentInCart = (existing != null) ? existing.quantity : 0.0;
                                 if (!GlobalStore.getInstance().isAllowOutOfStockSell() && (product.quantity <= 0 || currentInCart + 1 > product.quantity)) {
                                     if (getContext() != null) {
                                         Toast.makeText(getContext(), "Insufficient stock", Toast.LENGTH_SHORT).show();
@@ -422,13 +422,39 @@ public class SellDetailsFragment extends Fragment {
         // Load active buyers from repository
         if (getActivity() != null) {
             BuyerRepository buyerRepository = new BuyerRepository(getActivity().getApplication());
-            buyerRepository.getActiveBuyers().observe(getViewLifecycleOwner(), buyers -> {
-                buyerList.clear();
-                if (buyers != null) {
-                    buyerList.addAll(buyers);
-                }
-                buyerAdapter.updateData(buyerList);
-            });
+            if (buyerRepository.isOnlineMode()) {
+                buyerRepository.fetchBuyersOnline(new in.gbtsolutions.inventoryhub.online.repository.OnlineBuyerRepository.BuyerListCallback() {
+                    @Override
+                    public void onSuccess(List<Buyer> buyers) {
+                        if (getActivity() != null && isAdded()) {
+                            getActivity().runOnUiThread(() -> {
+                                buyerList.clear();
+                                if (buyers != null) {
+                                    for (Buyer b : buyers) {
+                                        if (b.isActive) {
+                                            buyerList.add(b);
+                                        }
+                                    }
+                                }
+                                buyerAdapter.updateData(buyerList);
+                            });
+                        }
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        // Keep any existing data or fallback
+                    }
+                });
+            } else {
+                buyerRepository.getActiveBuyers().observe(getViewLifecycleOwner(), buyers -> {
+                    buyerList.clear();
+                    if (buyers != null) {
+                        buyerList.addAll(buyers);
+                    }
+                    buyerAdapter.updateData(buyerList);
+                });
+            }
         }
     }
 

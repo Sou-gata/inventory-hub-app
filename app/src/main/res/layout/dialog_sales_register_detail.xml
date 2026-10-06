@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_dialog_rounded"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <!-- Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:background="@drawable/bg_icon_badge_blue"
+            android:padding="5dp"
+            android:src="@drawable/ic_nav_sub_sales_register"
+            app:tint="@color/material_blue" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tv_detail_invoice_id"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-black"
+                android:textColor="@color/fg"
+                android:textSize="16sp"
+                tools:text="INV-2026-0042" />
+
+            <TextView
+                android:id="@+id/tv_detail_date_mode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:fontFamily="sans-serif"
+                android:textColor="@color/fg_dim"
+                android:textSize="11sp"
+                tools:text="15 Sep 2026 • Cash • Completed" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tv_detail_type_badge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_badge_b2b"
+            android:fontFamily="sans-serif-medium"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="3dp"
+            android:text="B2B"
+            android:textColor="@color/material_blue"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginVertical="12dp"
+        android:background="@color/border" />
+
+    <!-- Customer Information -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_field_normal"
+        android:orientation="vertical"
+        android:padding="12dp">
+
+        <TextView
+            android:id="@+id/tv_detail_customer_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:textColor="@color/fg"
+            android:textSize="14sp"
+            tools:text="Apex Retail Enterprises" />
+
+        <TextView
+            android:id="@+id/tv_detail_customer_gstin"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:fontFamily="sans-serif"
+            android:textColor="@color/fg_dim"
+            android:textSize="11sp"
+            tools:text="GSTIN: 19ABCDE1234F1Z5 • POS: West Bengal (19)" />
+
+        <TextView
+            android:id="@+id/tv_detail_customer_phone"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:fontFamily="sans-serif"
+            android:textColor="@color/fg_dim"
+            android:textSize="11sp"
+            tools:text="Phone: +91 9876543210" />
+    </LinearLayout>
+
+    <!-- Items Section Header -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="6dp"
+        android:fontFamily="sans-serif-black"
+        android:letterSpacing="0.05"
+        android:text="ITEMIZED PRODUCTS &amp; TAX"
+        android:textColor="@color/fg_muted"
+        android:textSize="10sp" />
+
+    <!-- Scrollable Items Table -->
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:maxHeight="200dp">
+
+        <TableLayout
+            android:id="@+id/table_detail_items"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:stretchColumns="0" />
+    </androidx.core.widget.NestedScrollView>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginVertical="10dp"
+        android:background="@color/border" />
+
+    <!-- Tax Breakdown Summary Card -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_field_normal"
+        android:orientation="vertical"
+        android:padding="10dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Taxable Subtotal:"
+                android:textColor="@color/fg_dim"
+                android:textSize="12sp" />
+            <TextView
+                android:id="@+id/tv_detail_taxable"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="@color/fg"
+                android:textSize="12sp"
+                tools:text="₹10,000.00" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:orientation="horizontal">
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="CGST / SGST:"
+                android:textColor="@color/fg_dim"
+                android:textSize="12sp" />
+            <TextView
+                android:id="@+id/tv_detail_cgst_sgst"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="@color/fg"
+                android:textSize="12sp"
+                tools:text="₹900.00 / ₹900.00" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/row_detail_igst"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:orientation="horizontal">
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="IGST:"
+                android:textColor="@color/fg_dim"
+                android:textSize="12sp" />
+            <TextView
+                android:id="@+id/tv_detail_igst"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="@color/fg"
+                android:textSize="12sp"
+                tools:text="₹0.00" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/row_detail_cess"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:orientation="horizontal">
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Cess:"
+                android:textColor="@color/fg_dim"
+                android:textSize="12sp" />
+            <TextView
+                android:id="@+id/tv_detail_cess"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="@color/fg"
+                android:textSize="12sp"
+                tools:text="₹0.00" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginVertical="6dp"
+            android:background="@color/border" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="sans-serif-bold"
+                android:text="Grand Invoice Total:"
+                android:textColor="@color/fg"
+                android:textSize="14sp" />
+            <TextView
+                android:id="@+id/tv_detail_total"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-black"
+                android:textColor="@color/material_blue"
+                android:textSize="15sp"
+                tools:text="₹11,800.00" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Dialog Actions -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:gravity="end"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_detail_close"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:text="Close"
+            android:textColor="@color/fg_muted" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_detail_view_bill"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_marginStart="8dp"
+            android:backgroundTint="@color/material_blue"
+            android:text="View / Print Bill"
+            android:textColor="@color/white"
+            app:cornerRadius="6dp"
+            app:icon="@drawable/ic_nav_reports"
+            app:iconSize="16dp"
+            app:iconTint="@color/white" />
+    </LinearLayout>
+</LinearLayout>

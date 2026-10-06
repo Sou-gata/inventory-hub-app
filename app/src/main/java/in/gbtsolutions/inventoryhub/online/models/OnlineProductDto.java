@@ -65,7 +65,7 @@ public class OnlineProductDto {
     public double sellingPrice = 0.0;
 
     @SerializedName(value = "quantity", alternate = {"stock", "qty", "current_stock"})
-    public int quantity = 0;
+    public double quantity = 0;
 
     @SerializedName(value = "batchEnabled", alternate = {"batch_enabled", "is_batch_enabled"})
     public boolean batchEnabled = false;
@@ -83,7 +83,7 @@ public class OnlineProductDto {
     public String batchNo;
 
     @SerializedName(value = "batchQuantity", alternate = {"batch_quantity", "batch_qty"})
-    public Integer batchQuantity;
+    public Double batchQuantity;
 
     @SerializedName(value = "expiryDate", alternate = {"expiry_date", "expiry"})
     public Long expiryDate;
@@ -102,12 +102,12 @@ public class OnlineProductDto {
         public String batchNo;
 
         @SerializedName(value = "quantity", alternate = {"qty", "stock", "batchQuantity", "batch_quantity"})
-        public int quantity;
+        public double quantity;
 
         @SerializedName(value = "purchasePrice", alternate = {"purchase_price", "cost_price", "unit_price", "unitPrice"})
         public double purchasePrice;
 
-        @SerializedName(value = "sellingPrice", alternate = {"selling_price", "sale_price", "sellingPrice"})
+        @SerializedName(value = "sellingPrice", alternate = {"selling_price", "sale_price"})
         public double sellingPrice;
 
         @SerializedName(value = "expiryDate", alternate = {"expiry_date", "expiry"})
@@ -118,7 +118,7 @@ public class OnlineProductDto {
 
         public OnlineBatchDto() {}
 
-        public OnlineBatchDto(Integer batchId, Integer productId, String batchNo, int quantity,
+        public OnlineBatchDto(Integer batchId, Integer productId, String batchNo, double quantity,
                               double purchasePrice, double sellingPrice, Long expiryDate) {
             this.batchId = batchId;
             this.productId = productId;

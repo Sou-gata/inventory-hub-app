@@ -157,7 +157,7 @@
     <string name="backup_data">Backup Data</string>
     <string name="restore_data">Restore Data</string>
     <string name="backup_desc">Export your entire database as an encrypted file to the Downloads folder. You can transfer this file to another device to restore your data.</string>
-    <string name="restore_desc">Restore your data from a previously created backup file (.ihbak). This will replace current database records.</string>
+    <string name="restore_desc">Restore your data from a previously created backup file (.st). This will replace current database records.</string>
     <string name="btn_create_backup">Create Backup</string>
     <string name="btn_restore_backup">Restore from File</string>
     <string name="backup_password_hint">Set a password (optional)</string>

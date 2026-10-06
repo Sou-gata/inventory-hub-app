@@ -2,6 +2,8 @@ package in.gbtsolutions.inventoryhub.helpers;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.text.InputFilter;
+import android.text.Spanned;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,11 +12,15 @@ import android.widget.TextView;
 
 import androidx.core.content.ContextCompat;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import in.gbtsolutions.inventoryhub.R;
 import in.gbtsolutions.inventoryhub.models.Buyer;
@@ -30,6 +36,51 @@ import in.gbtsolutions.inventoryhub.models.SaleItemWithProduct;
 import in.gbtsolutions.inventoryhub.models.Suppliers;
 
 public class CommonFunctions {
+
+    public static boolean isDecimalUnit(String unitOfMeasure) {
+        if (unitOfMeasure == null) return false;
+        String u = unitOfMeasure.trim().toLowerCase(Locale.ROOT);
+        return u.equals("kg") || u.equals("kgs") || u.equals("kilogram") || u.equals("kilograms")
+                || u.equals("liter") || u.equals("liters") || u.equals("litre") || u.equals("litres") || u.equals("ltr");
+    }
+
+    public static double roundTo3Decimals(double value) {
+        return Math.round(value * 1000.0) / 1000.0;
+    }
+
+    public static String formatQuantity(double qty) {
+        if (qty == (long) qty) {
+            return String.valueOf((long) qty);
+        }
+        DecimalFormat df = new DecimalFormat("0.###", DecimalFormatSymbols.getInstance(Locale.US));
+        return df.format(qty);
+    }
+
+    public static String formatQuantity(double qty, String unitOfMeasure) {
+        return formatQuantity(qty);
+    }
+
+    public static class DecimalDigitsInputFilter implements InputFilter {
+        private final Pattern pattern;
+
+        public DecimalDigitsInputFilter(int digitsBeforeZero, int digitsAfterZero) {
+            pattern = Pattern.compile("^(?:\\d{0," + digitsBeforeZero + "})?(?:\\.\\d{0," + digitsAfterZero + "})?$");
+        }
+
+        @Override
+        public CharSequence filter(CharSequence source, int start, int end, Spanned dest, int dstart, int dend) {
+            String replacement = source.subSequence(start, end).toString();
+            String newVal = dest.subSequence(0, dstart).toString() + replacement + dest.subSequence(dend, dest.length()).toString();
+            if (newVal.isEmpty() || newVal.equals(".")) {
+                return null;
+            }
+            Matcher matcher = pattern.matcher(newVal);
+            if (!matcher.matches()) {
+                return "";
+            }
+            return null;
+        }
+    }
 
     public static Bitmap createSellBillBitmap(Context context, Sale sale, Buyer buyer, List<SaleItemWithProduct> saleItems, Map<String, String> cachedCompanyConfigs) {
         if (sale == null || context == null) return null;
@@ -184,7 +235,7 @@ public class CommonFunctions {
 
         LayoutInflater inflater = LayoutInflater.from(context);
         int totalItemsCount = 0;
-        int totalQtyCount = 0;
+        double totalQtyCount = 0.0;
 
         if (saleItems != null && !saleItems.isEmpty()) {
             for (SaleItemWithProduct itemWithProd : saleItems) {
@@ -226,16 +277,39 @@ public class CommonFunctions {
                     tvItemSubtext.setVisibility(View.GONE);
                 }
 
-                tvItemQty.setText(String.format(Locale.getDefault(), "%d.00", sItem.quantity));
+                tvItemQty.setText(formatQuantity(sItem.quantity));
                 tvItemRate.setText(String.format(Locale.getDefault(), "%,.2f", sItem.unitPrice));
                 tvItemAmount.setText(String.format(Locale.getDefault(), "%,.2f", sItem.subtotal));
 
-                if (sItem.discountAmount > 0) {
-                    tvItemTaxDisc.setVisibility(View.VISIBLE);
-                    tvItemTaxDisc.setText(String.format(Locale.getDefault(), "Disc: ₹ %,.2f", sItem.discountAmount));
-                } else {
-                    tvItemTaxDisc.setVisibility(View.GONE);
+                double itemGstRate = sItem.gstRate;
+                if (itemGstRate <= 0) {
+                    itemGstRate = sItem.cgstRate + sItem.sgstRate + sItem.igstRate;
                 }
+                if (itemGstRate <= 0 && itemWithProd.product != null) {
+                    itemGstRate = itemWithProd.product.gstPercent;
+                }
+                double itemGstAmount = sItem.cgstAmount + sItem.sgstAmount + sItem.igstAmount;
+                if (itemGstAmount <= 0 && itemGstRate > 0) {
+                    itemGstAmount = sItem.subtotal * (itemGstRate / 100.0);
+                }
+
+                StringBuilder taxDiscBuilder = new StringBuilder();
+                if (sItem.discountAmount > 0) {
+                    taxDiscBuilder.append(String.format(Locale.getDefault(), "Disc: ₹ %,.2f", sItem.discountAmount));
+                }
+                if (itemGstRate > 0 || itemGstAmount > 0) {
+                    if (taxDiscBuilder.length() > 0) taxDiscBuilder.append(" | ");
+                    String rateStr = (itemGstRate % 1 == 0)
+                            ? String.format(Locale.getDefault(), "%.0f%%", itemGstRate)
+                            : String.format(Locale.getDefault(), "%.1f%%", itemGstRate);
+                    taxDiscBuilder.append(String.format(Locale.getDefault(), "GST: %s (₹ %,.2f)", rateStr, itemGstAmount));
+                } else {
+                    if (taxDiscBuilder.length() > 0) taxDiscBuilder.append(" | ");
+                    taxDiscBuilder.append("GST: 0% (₹ 0.00)");
+                }
+
+                tvItemTaxDisc.setVisibility(View.VISIBLE);
+                tvItemTaxDisc.setText(taxDiscBuilder.toString());
 
                 containerBillItems.addView(itemView);
             }
@@ -245,7 +319,7 @@ public class CommonFunctions {
         TextView tvTotalItems = billView.findViewById(R.id.tv_bill_total_items);
         TextView tvTotalQty = billView.findViewById(R.id.tv_bill_total_qty);
         tvTotalItems.setText(String.valueOf(totalItemsCount));
-        tvTotalQty.setText(String.format(Locale.getDefault(), "%d.00", totalQtyCount));
+        tvTotalQty.setText(formatQuantity(totalQtyCount));
 
         TextView tvSubtotal = billView.findViewById(R.id.tv_bill_subtotal);
         tvSubtotal.setText(String.format(Locale.getDefault(), "₹ %,.2f", sale.subtotalAmount));
@@ -295,13 +369,31 @@ public class CommonFunctions {
             layoutOther.setVisibility(View.GONE);
         }
 
+        double unroundedSaleTotal = sale.totalAmount;
+        long roundedSaleTotal = Math.round(unroundedSaleTotal);
+        double saleRoundOff = roundedSaleTotal - unroundedSaleTotal;
+
         View layoutRoundOff = billView.findViewById(R.id.layout_bill_round_off);
+        TextView tvRoundOff = billView.findViewById(R.id.tv_bill_round_off);
         if (layoutRoundOff != null) {
-            layoutRoundOff.setVisibility(View.GONE);
+            if (Math.abs(saleRoundOff) >= 0.005) {
+                layoutRoundOff.setVisibility(View.VISIBLE);
+                if (tvRoundOff != null) {
+                    String sign = saleRoundOff > 0 ? "+ " : "- ";
+                    tvRoundOff.setText(String.format(Locale.getDefault(), "%s₹ %,.2f", sign, Math.abs(saleRoundOff)));
+                }
+            } else {
+                layoutRoundOff.setVisibility(View.GONE);
+            }
         }
 
         TextView tvGrandTotal = billView.findViewById(R.id.tv_bill_grand_total);
-        tvGrandTotal.setText(String.format(Locale.getDefault(), "₹ %,.2f", sale.totalAmount));
+        tvGrandTotal.setText(String.format(Locale.getDefault(), "₹ %,.2f", (double) roundedSaleTotal));
+
+        TextView tvAmountWords = billView.findViewById(R.id.tv_bill_amount_words);
+        if (tvAmountWords != null) {
+            tvAmountWords.setText(NumberToWordsHelper.convertToIndianCurrencyWords(roundedSaleTotal));
+        }
 
         TextView tvPayMode = billView.findViewById(R.id.tv_bill_payment_mode);
         if (tvPayMode != null) {
@@ -463,8 +555,10 @@ public class CommonFunctions {
         LinearLayout containerItems = billView.findViewById(R.id.container_bill_items);
         containerItems.removeAllViews();
 
-        int totalUnitsReceived = 0;
+        double totalUnitsReceived = 0.0;
         int totalItemsCount = 0;
+        double totalReceivedSubtotal = 0.0;
+        double totalReceivedGst = 0.0;
         if (receiveItems != null && !receiveItems.isEmpty()) {
             LayoutInflater inflater = LayoutInflater.from(context);
             int sl = 1;
@@ -492,7 +586,23 @@ public class CommonFunctions {
                     }
                 }
 
+                double itemUnitPrice = 0.0;
+                double itemGstRate = 0.0;
+                double itemDiscountPercent = 0.0;
+
                 if (matchedItem != null) {
+                    if (matchedItem.purchaseItem != null) {
+                        itemUnitPrice = matchedItem.purchaseItem.unitPrice;
+                        itemGstRate = matchedItem.purchaseItem.cgstRate + matchedItem.purchaseItem.sgstRate + matchedItem.purchaseItem.igstRate;
+                        itemDiscountPercent = matchedItem.purchaseItem.discountPercent;
+                    }
+                    if (itemGstRate <= 0 && matchedItem.product != null) {
+                        itemGstRate = matchedItem.product.gstPercent;
+                    }
+                    if (itemUnitPrice <= 0 && matchedItem.product != null) {
+                        itemUnitPrice = matchedItem.product.unitPrice;
+                    }
+
                     if (matchedItem.product != null && !TextUtils.isEmpty(matchedItem.product.productName)) {
                         tvName.setText(matchedItem.product.productName);
                     } else {
@@ -506,17 +616,46 @@ public class CommonFunctions {
                         tvSku.setVisibility(View.INVISIBLE);
                     }
 
-                    tvOrdered.setText(String.valueOf(matchedItem.purchaseItem.quantity));
-                    tvRecNow.setText(String.valueOf(rItem.quantityReceived));
-                    tvTotalRec.setText(String.format(Locale.getDefault(), "%d / %d",
-                            matchedItem.purchaseItem.receivedQuantity,
-                            matchedItem.purchaseItem.quantity));
+                    double orderedQty = matchedItem.purchaseItem != null ? matchedItem.purchaseItem.quantity : rItem.quantityReceived;
+                    double receivedSoFar = matchedItem.purchaseItem != null ? matchedItem.purchaseItem.receivedQuantity : rItem.quantityReceived;
+
+                    tvOrdered.setText(formatQuantity(orderedQty));
+                    tvRecNow.setText(formatQuantity(rItem.quantityReceived));
+                    tvTotalRec.setText(String.format(Locale.getDefault(), "%s / %s", formatQuantity(receivedSoFar), formatQuantity(orderedQty)));
                 } else {
                     tvName.setText(String.format(Locale.getDefault(), "Product #%d", rItem.productId));
                     tvSku.setVisibility(View.INVISIBLE);
                     tvOrdered.setText("-");
-                    tvRecNow.setText(String.valueOf(rItem.quantityReceived));
-                    tvTotalRec.setText(String.valueOf(rItem.quantityReceived));
+                    tvRecNow.setText(formatQuantity(rItem.quantityReceived));
+                    tvTotalRec.setText(formatQuantity(rItem.quantityReceived));
+                }
+
+                double itemBase = rItem.quantityReceived * itemUnitPrice;
+                double itemDiscountAmt = (itemDiscountPercent > 0) ? itemBase * (itemDiscountPercent / 100.0) : 0.0;
+                double itemTaxable = Math.max(0.0, itemBase - itemDiscountAmt);
+                double itemGstAmt = itemTaxable * (itemGstRate / 100.0);
+
+                totalReceivedSubtotal += itemTaxable;
+                totalReceivedGst += itemGstAmt;
+
+                TextView tvTaxDisc = row.findViewById(R.id.tv_bill_item_tax_disc);
+                if (tvTaxDisc != null) {
+                    StringBuilder sb = new StringBuilder();
+                    if (itemDiscountAmt > 0) {
+                        sb.append(String.format(Locale.getDefault(), "Disc: ₹ %,.2f", itemDiscountAmt));
+                    }
+                    if (itemGstRate > 0 || itemGstAmt > 0) {
+                        if (sb.length() > 0) sb.append(" | ");
+                        String rateStr = (itemGstRate % 1 == 0)
+                                ? String.format(Locale.getDefault(), "%.0f%%", itemGstRate)
+                                : String.format(Locale.getDefault(), "%.1f%%", itemGstRate);
+                        sb.append(String.format(Locale.getDefault(), "GST: %s (₹ %,.2f)", rateStr, itemGstAmt));
+                    } else {
+                        if (sb.length() > 0) sb.append(" | ");
+                        sb.append("GST: 0% (₹ 0.00)");
+                    }
+                    tvTaxDisc.setVisibility(View.VISIBLE);
+                    tvTaxDisc.setText(sb.toString());
                 }
 
                 totalUnitsReceived += rItem.quantityReceived;
@@ -532,7 +671,45 @@ public class CommonFunctions {
 
         TextView tvTotalQty = billView.findViewById(R.id.tv_bill_total_qty);
         if (tvTotalQty != null) {
-            tvTotalQty.setText(String.format(Locale.getDefault(), "%d Units", totalUnitsReceived));
+            tvTotalQty.setText(String.format(Locale.getDefault(), "%s Units", formatQuantity(totalUnitsReceived)));
+        }
+
+        double unroundedReceiveTotal = totalReceivedSubtotal + totalReceivedGst;
+        long roundedReceiveTotal = Math.round(unroundedReceiveTotal);
+        double receiveRoundOff = roundedReceiveTotal - unroundedReceiveTotal;
+
+        TextView tvSubtotal = billView.findViewById(R.id.tv_bill_subtotal);
+        if (tvSubtotal != null) {
+            tvSubtotal.setText(String.format(Locale.getDefault(), "₹ %,.2f", totalReceivedSubtotal));
+        }
+
+        TextView tvTotalGst = billView.findViewById(R.id.tv_bill_total_gst);
+        if (tvTotalGst != null) {
+            tvTotalGst.setText(String.format(Locale.getDefault(), "₹ %,.2f", totalReceivedGst));
+        }
+
+        View layoutRoundOff = billView.findViewById(R.id.layout_bill_round_off);
+        TextView tvRoundOff = billView.findViewById(R.id.tv_bill_round_off);
+        if (layoutRoundOff != null) {
+            if (Math.abs(receiveRoundOff) >= 0.005) {
+                layoutRoundOff.setVisibility(View.VISIBLE);
+                if (tvRoundOff != null) {
+                    String sign = receiveRoundOff > 0 ? "+ " : "- ";
+                    tvRoundOff.setText(String.format(Locale.getDefault(), "%s₹ %,.2f", sign, Math.abs(receiveRoundOff)));
+                }
+            } else {
+                layoutRoundOff.setVisibility(View.GONE);
+            }
+        }
+
+        TextView tvReceivedValue = billView.findViewById(R.id.tv_bill_received_value);
+        if (tvReceivedValue != null) {
+            tvReceivedValue.setText(String.format(Locale.getDefault(), "₹ %,.2f", (double) roundedReceiveTotal));
+        }
+
+        TextView tvAmountWords = billView.findViewById(R.id.tv_bill_amount_words);
+        if (tvAmountWords != null) {
+            tvAmountWords.setText(NumberToWordsHelper.convertToIndianCurrencyWords(roundedReceiveTotal));
         }
 
         TextView tvTotalUnits = billView.findViewById(R.id.tv_bill_total_units_received);
@@ -696,7 +873,7 @@ public class CommonFunctions {
 
         LayoutInflater inflater = LayoutInflater.from(context);
         int totalItemsCount = 0;
-        int totalQtyCount = 0;
+        double totalQtyCount = 0.0;
 
         if (cartItems != null && !cartItems.isEmpty()) {
             for (CartItem item : cartItems) {
@@ -729,16 +906,30 @@ public class CommonFunctions {
                     tvItemSubtext.setVisibility(View.GONE);
                 }
 
-                tvItemQty.setText(String.format(Locale.getDefault(), "%d.00", item.quantity));
+                tvItemQty.setText(formatQuantity(item.quantity));
                 tvItemRate.setText(String.format(Locale.getDefault(), "%,.2f", item.sellingPrice));
                 tvItemAmount.setText(String.format(Locale.getDefault(), "%,.2f", item.getTaxableAmount()));
 
+                double itemGstRate = (item.product != null) ? item.product.gstPercent : 0.0;
+                double itemGstAmount = item.getGstAmount();
+
+                StringBuilder taxDiscBuilder = new StringBuilder();
                 if (item.getDiscountAmount() > 0) {
-                    tvItemTaxDisc.setVisibility(View.VISIBLE);
-                    tvItemTaxDisc.setText(String.format(Locale.getDefault(), "Disc: ₹ %,.2f", item.getDiscountAmount()));
-                } else {
-                    tvItemTaxDisc.setVisibility(View.GONE);
+                    taxDiscBuilder.append(String.format(Locale.getDefault(), "Disc: ₹ %,.2f", item.getDiscountAmount()));
                 }
+                if (itemGstRate > 0 || itemGstAmount > 0) {
+                    if (taxDiscBuilder.length() > 0) taxDiscBuilder.append(" | ");
+                    String rateStr = (itemGstRate % 1 == 0)
+                            ? String.format(Locale.getDefault(), "%.0f%%", itemGstRate)
+                            : String.format(Locale.getDefault(), "%.1f%%", itemGstRate);
+                    taxDiscBuilder.append(String.format(Locale.getDefault(), "GST: %s (₹ %,.2f)", rateStr, itemGstAmount));
+                } else {
+                    if (taxDiscBuilder.length() > 0) taxDiscBuilder.append(" | ");
+                    taxDiscBuilder.append("GST: 0% (₹ 0.00)");
+                }
+
+                tvItemTaxDisc.setVisibility(View.VISIBLE);
+                tvItemTaxDisc.setText(taxDiscBuilder.toString());
 
                 containerBillItems.addView(itemView);
             }
@@ -748,7 +939,7 @@ public class CommonFunctions {
         TextView tvTotalItems = billView.findViewById(R.id.tv_bill_total_items);
         TextView tvTotalQty = billView.findViewById(R.id.tv_bill_total_qty);
         tvTotalItems.setText(String.valueOf(totalItemsCount));
-        tvTotalQty.setText(String.format(Locale.getDefault(), "%d.00", totalQtyCount));
+        tvTotalQty.setText(formatQuantity(totalQtyCount));
 
         TextView tvSubtotal = billView.findViewById(R.id.tv_bill_subtotal);
         tvSubtotal.setText(String.format(Locale.getDefault(), "₹ %,.2f", purchase.subtotalAmount));
@@ -798,8 +989,31 @@ public class CommonFunctions {
             layoutOther.setVisibility(View.GONE);
         }
 
+        double unroundedPurchaseTotal = purchase.totalAmount;
+        long roundedPurchaseTotal = Math.round(unroundedPurchaseTotal);
+        double purchaseRoundOff = roundedPurchaseTotal - unroundedPurchaseTotal;
+
+        View layoutRoundOff = billView.findViewById(R.id.layout_bill_round_off);
+        TextView tvRoundOff = billView.findViewById(R.id.tv_bill_round_off);
+        if (layoutRoundOff != null) {
+            if (Math.abs(purchaseRoundOff) >= 0.005) {
+                layoutRoundOff.setVisibility(View.VISIBLE);
+                if (tvRoundOff != null) {
+                    String sign = purchaseRoundOff > 0 ? "+ " : "- ";
+                    tvRoundOff.setText(String.format(Locale.getDefault(), "%s₹ %,.2f", sign, Math.abs(purchaseRoundOff)));
+                }
+            } else {
+                layoutRoundOff.setVisibility(View.GONE);
+            }
+        }
+
         TextView tvGrandTotal = billView.findViewById(R.id.tv_bill_grand_total);
-        tvGrandTotal.setText(String.format(Locale.getDefault(), "₹ %,.2f", purchase.totalAmount));
+        tvGrandTotal.setText(String.format(Locale.getDefault(), "₹ %,.2f", (double) roundedPurchaseTotal));
+
+        TextView tvAmountWords = billView.findViewById(R.id.tv_bill_amount_words);
+        if (tvAmountWords != null) {
+            tvAmountWords.setText(NumberToWordsHelper.convertToIndianCurrencyWords(roundedPurchaseTotal));
+        }
 
         TextView tvStatus = billView.findViewById(R.id.tv_bill_payment_status);
         String status = !TextUtils.isEmpty(purchase.status) ? purchase.status.toUpperCase(Locale.getDefault()) : "COMPLETED";

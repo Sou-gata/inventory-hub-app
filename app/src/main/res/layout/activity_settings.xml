@@ -156,7 +156,8 @@
                         android:gravity="center_vertical"
                         android:orientation="horizontal"
                         android:paddingHorizontal="16dp"
-                        android:paddingVertical="14dp">
+                        android:paddingVertical="14dp"
+                        android:visibility="gone">
 
                         <FrameLayout
                             android:layout_width="38dp"

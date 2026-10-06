@@ -22,6 +22,7 @@ import in.gbtsolutions.inventoryhub.R;
 import in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper;
 import in.gbtsolutions.inventoryhub.models.AuditTrail;
 import in.gbtsolutions.inventoryhub.models.Buyer;
+import in.gbtsolutions.inventoryhub.repository.BuyerRepository;
 
 public class AddBuyerActivity extends BaseActivity {
 
@@ -50,7 +51,7 @@ public class AddBuyerActivity extends BaseActivity {
     private int buyerId = -1;
     private long createdAt = 0;
 
-    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private BuyerRepository buyerRepository;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     @Override
@@ -58,6 +59,7 @@ public class AddBuyerActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_buyer);
 
+        buyerRepository = new BuyerRepository(getApplication());
         buyerId = getIntent().getIntExtra("buyer_id", -1);
         boolean isEditMode = buyerId > 0;
 
@@ -185,77 +187,64 @@ public class AddBuyerActivity extends BaseActivity {
 
         setLoading(true);
 
-        executorService.execute(() -> {
-            try {
-                Database db = Database.getInstance(getApplicationContext());
-                Buyer buyer = new Buyer();
-                buyer.buyerName = name;
-                buyer.contactPerson = contactPerson;
-                buyer.phone = phone;
-                buyer.email = finalEmail;
-                buyer.address = address;
-                buyer.city = city;
-                buyer.stateCode = state;
-                buyer.postalCode = postalCode;
-                buyer.country = country;
-                buyer.gst = finalGst;
-                buyer.pan = finalPan;
-                buyer.notes = notes;
-                buyer.isActive = isActive;
-                buyer.updatedAt = System.currentTimeMillis();
+        Buyer buyer = new Buyer();
+        buyer.buyerName = name;
+        buyer.contactPerson = contactPerson;
+        buyer.phone = phone;
+        buyer.email = finalEmail;
+        buyer.address = address;
+        buyer.city = city;
+        buyer.stateCode = state;
+        buyer.postalCode = postalCode;
+        buyer.country = country;
+        buyer.gst = finalGst;
+        buyer.pan = finalPan;
+        buyer.notes = notes;
+        buyer.isActive = isActive;
+        buyer.updatedAt = System.currentTimeMillis();
 
-                if (buyerId > 0) {
-                    buyer.buyerId = buyerId;
-                    buyer.createdAt = createdAt > 0 ? createdAt : System.currentTimeMillis();
-                    db.buyerDao().update(buyer);
-
-                    AuditTrailHelper.logEdit(
-                            getApplicationContext(),
-                            AuditTrail.MODULE_BUYER,
-                            name,
-                            "Updated buyer: " + name
-                    );
-
+        if (buyerId > 0) {
+            buyer.buyerId = buyerId;
+            buyer.createdAt = createdAt > 0 ? createdAt : System.currentTimeMillis();
+            buyerRepository.update(buyer, new BuyerRepository.BuyerActionCallback() {
+                @Override
+                public void onSuccess() {
                     mainHandler.post(() -> {
                         setLoading(false);
                         showToast("Buyer \"" + name + "\" updated successfully");
                         finish();
                     });
-                } else {
-                    buyer.createdAt = System.currentTimeMillis();
-                    long id = db.buyerDao().insert(buyer);
+                }
 
-                    if (id > 0) {
-                        AuditTrailHelper.logAddition(
-                                getApplicationContext(),
-                                AuditTrail.MODULE_BUYER,
-                                name,
-                                "Added buyer: " + name
-                        );
-                    }
-
+                @Override
+                public void onError(String message) {
                     mainHandler.post(() -> {
                         setLoading(false);
-                        if (id > 0) {
-                            showToast("Buyer \"" + name + "\" added successfully");
-                            finish();
-                        } else {
-                            showError("Failed to add buyer. Please verify the details.");
-                        }
+                        showError(message != null ? message : "Failed to update buyer.");
                     });
                 }
-            } catch (SQLiteConstraintException e) {
-                mainHandler.post(() -> {
-                    setLoading(false);
-                    showError("A buyer with this phone number, email, or GST already exists.");
-                });
-            } catch (Exception e) {
-                mainHandler.post(() -> {
-                    setLoading(false);
-                    showError("Failed to save buyer: " + e.getMessage());
-                });
-            }
-        });
+            });
+        } else {
+            buyer.createdAt = System.currentTimeMillis();
+            buyerRepository.insert(buyer, new BuyerRepository.BuyerActionCallback() {
+                @Override
+                public void onSuccess() {
+                    mainHandler.post(() -> {
+                        setLoading(false);
+                        showToast("Buyer \"" + name + "\" added successfully");
+                        finish();
+                    });
+                }
+
+                @Override
+                public void onError(String message) {
+                    mainHandler.post(() -> {
+                        setLoading(false);
+                        showError(message != null ? message : "Failed to add buyer.");
+                    });
+                }
+            });
+        }
     }
 
     private void setLoading(boolean loading) {
@@ -276,6 +265,5 @@ public class AddBuyerActivity extends BaseActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        executorService.shutdown();
     }
 }

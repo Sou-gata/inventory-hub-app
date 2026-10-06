@@ -22,6 +22,7 @@ import in.gbtsolutions.inventoryhub.R;
 import in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper;
 import in.gbtsolutions.inventoryhub.models.AuditTrail;
 import in.gbtsolutions.inventoryhub.models.Suppliers;
+import in.gbtsolutions.inventoryhub.repository.SupplierRepository;
 
 public class AddSupplierActivity extends BaseActivity {
 
@@ -50,7 +51,7 @@ public class AddSupplierActivity extends BaseActivity {
     private int supplierId = -1;
     private long createdAt = 0;
 
-    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private SupplierRepository supplierRepository;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     @Override
@@ -58,6 +59,7 @@ public class AddSupplierActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_supplier);
 
+        supplierRepository = new SupplierRepository(getApplication());
         supplierId = getIntent().getIntExtra("supplier_id", -1);
         boolean isEditMode = supplierId > 0;
 
@@ -185,77 +187,64 @@ public class AddSupplierActivity extends BaseActivity {
 
         setLoading(true);
 
-        executorService.execute(() -> {
-            try {
-                Database db = Database.getInstance(getApplicationContext());
-                Suppliers supplier = new Suppliers();
-                supplier.supplierName = name;
-                supplier.contactPerson = contactPerson;
-                supplier.phone = phone;
-                supplier.email = finalEmail;
-                supplier.address = address;
-                supplier.city = city;
-                supplier.stateCode = state;
-                supplier.postalCode = postalCode;
-                supplier.country = country;
-                supplier.gst = finalGst;
-                supplier.pan = finalPan;
-                supplier.notes = notes;
-                supplier.isActive = isActive;
-                supplier.updatedAt = System.currentTimeMillis();
+        Suppliers supplier = new Suppliers();
+        supplier.supplierName = name;
+        supplier.contactPerson = contactPerson;
+        supplier.phone = phone;
+        supplier.email = finalEmail;
+        supplier.address = address;
+        supplier.city = city;
+        supplier.stateCode = state;
+        supplier.postalCode = postalCode;
+        supplier.country = country;
+        supplier.gst = finalGst;
+        supplier.pan = finalPan;
+        supplier.notes = notes;
+        supplier.isActive = isActive;
+        supplier.updatedAt = System.currentTimeMillis();
 
-                if (supplierId > 0) {
-                    supplier.supplierId = supplierId;
-                    supplier.createdAt = createdAt > 0 ? createdAt : System.currentTimeMillis();
-                    db.supplierDao().update(supplier);
-
-                    AuditTrailHelper.logEdit(
-                            getApplicationContext(),
-                            AuditTrail.MODULE_SUPPLIER,
-                            name,
-                            "Updated supplier: " + name
-                    );
-
+        if (supplierId > 0) {
+            supplier.supplierId = supplierId;
+            supplier.createdAt = createdAt > 0 ? createdAt : System.currentTimeMillis();
+            supplierRepository.update(supplier, new SupplierRepository.SupplierActionCallback() {
+                @Override
+                public void onSuccess() {
                     mainHandler.post(() -> {
                         setLoading(false);
                         showToast("Supplier \"" + name + "\" updated successfully");
                         finish();
                     });
-                } else {
-                    supplier.createdAt = System.currentTimeMillis();
-                    long id = db.supplierDao().insert(supplier);
+                }
 
-                    if (id > 0) {
-                        AuditTrailHelper.logAddition(
-                                getApplicationContext(),
-                                AuditTrail.MODULE_SUPPLIER,
-                                name,
-                                "Added supplier: " + name
-                        );
-                    }
-
+                @Override
+                public void onError(String message) {
                     mainHandler.post(() -> {
                         setLoading(false);
-                        if (id > 0) {
-                            showToast("Supplier \"" + name + "\" added successfully");
-                            finish();
-                        } else {
-                            showError("Failed to add supplier. Please verify the details.");
-                        }
+                        showError(message != null ? message : "Failed to update supplier.");
                     });
                 }
-            } catch (SQLiteConstraintException e) {
-                mainHandler.post(() -> {
-                    setLoading(false);
-                    showError("A supplier with this phone number, email, or GST already exists.");
-                });
-            } catch (Exception e) {
-                mainHandler.post(() -> {
-                    setLoading(false);
-                    showError("Failed to save supplier: " + e.getMessage());
-                });
-            }
-        });
+            });
+        } else {
+            supplier.createdAt = System.currentTimeMillis();
+            supplierRepository.insert(supplier, new SupplierRepository.SupplierActionCallback() {
+                @Override
+                public void onSuccess() {
+                    mainHandler.post(() -> {
+                        setLoading(false);
+                        showToast("Supplier \"" + name + "\" added successfully");
+                        finish();
+                    });
+                }
+
+                @Override
+                public void onError(String message) {
+                    mainHandler.post(() -> {
+                        setLoading(false);
+                        showError(message != null ? message : "Failed to add supplier.");
+                    });
+                }
+            });
+        }
     }
 
     private void setLoading(boolean loading) {
@@ -276,6 +265,5 @@ public class AddSupplierActivity extends BaseActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        executorService.shutdown();
     }
 }

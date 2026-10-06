@@ -334,13 +334,39 @@ public class PurchaseDetailsFragment extends Fragment {
 
         if (getActivity() != null) {
             SupplierRepository supplierRepository = new SupplierRepository(getActivity().getApplication());
-            supplierRepository.getActiveSuppliers().observe(getViewLifecycleOwner(), suppliers -> {
-                supplierList.clear();
-                if (suppliers != null) {
-                    supplierList.addAll(suppliers);
-                }
-                supplierAdapter.updateData(supplierList);
-            });
+            if (supplierRepository.isOnlineMode()) {
+                supplierRepository.fetchSuppliersOnline(new in.gbtsolutions.inventoryhub.online.repository.OnlineSupplierRepository.SupplierListCallback() {
+                    @Override
+                    public void onSuccess(List<Suppliers> suppliers) {
+                        if (getActivity() != null && isAdded()) {
+                            getActivity().runOnUiThread(() -> {
+                                supplierList.clear();
+                                if (suppliers != null) {
+                                    for (Suppliers s : suppliers) {
+                                        if (s.isActive) {
+                                            supplierList.add(s);
+                                        }
+                                    }
+                                }
+                                supplierAdapter.updateData(supplierList);
+                            });
+                        }
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        // Keep any existing data or fallback
+                    }
+                });
+            } else {
+                supplierRepository.getActiveSuppliers().observe(getViewLifecycleOwner(), suppliers -> {
+                    supplierList.clear();
+                    if (suppliers != null) {
+                        supplierList.addAll(suppliers);
+                    }
+                    supplierAdapter.updateData(supplierList);
+                });
+            }
         }
     }
 

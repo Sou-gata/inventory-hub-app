@@ -1,7 +1,6 @@
 package in.gbtsolutions.inventoryhub.adapters;
 
 import android.content.Context;
-import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -26,11 +25,6 @@ import in.gbtsolutions.inventoryhub.models.ProductBatch;
 
 public class BatchListAdapter extends RecyclerView.Adapter<BatchListAdapter.BatchViewHolder> {
 
-    public interface OnBatchActionListener {
-        void onEdit(ProductBatch batch, int position);
-        void onDelete(ProductBatch batch, int position);
-    }
-
     private final List<ProductBatch> batches = new ArrayList<>();
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
     private OnBatchActionListener actionListener;
@@ -39,16 +33,16 @@ public class BatchListAdapter extends RecyclerView.Adapter<BatchListAdapter.Batc
     public BatchListAdapter() {
     }
 
+    public List<ProductBatch> getBatches() {
+        return batches;
+    }
+
     public void setBatches(List<ProductBatch> newBatches) {
         this.batches.clear();
         if (newBatches != null) {
             this.batches.addAll(newBatches);
         }
         notifyDataSetChanged();
-    }
-
-    public List<ProductBatch> getBatches() {
-        return batches;
     }
 
     public void setActionListener(OnBatchActionListener listener) {
@@ -142,6 +136,12 @@ public class BatchListAdapter extends RecyclerView.Adapter<BatchListAdapter.Batc
     @Override
     public int getItemCount() {
         return batches.size();
+    }
+
+    public interface OnBatchActionListener {
+        void onEdit(ProductBatch batch, int position);
+
+        void onDelete(ProductBatch batch, int position);
     }
 
     static class BatchViewHolder extends RecyclerView.ViewHolder {

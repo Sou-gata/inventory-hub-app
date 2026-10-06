@@ -51,7 +51,7 @@ public class PurchaseCartManager {
         String key = buildKey(product.productId);
         CartItem existing = cartItems.get(key);
         if (existing != null) {
-            existing.quantity += 1;
+            existing.quantity = Math.round((existing.quantity + 1.0) * 1000.0) / 1000.0;
             // Keep current cost price (user may have edited it)
         } else {
             // Use unitPrice (cost price) as default; fallback to sellingPrice
@@ -90,17 +90,21 @@ public class PurchaseCartManager {
         return cartItems.containsKey(buildKey(productId));
     }
 
-    public int getProductQuantityInCart(int productId) {
+    public double getProductQuantityInCart(int productId) {
         CartItem item = cartItems.get(buildKey(productId));
         return item != null ? item.quantity : 0;
     }
 
-    public void updateItemQuantity(CartItem item, int quantity) {
+    public void updateItemQuantity(CartItem item, double quantity) {
         if (item == null || item.product == null) return;
         CartItem target = cartItems.get(buildKey(item.product.productId));
         if (target != null) {
-            target.quantity = quantity;
+            target.quantity = Math.round(quantity * 1000.0) / 1000.0;
         }
+    }
+
+    public void updateItemQuantity(CartItem item, int quantity) {
+        updateItemQuantity(item, (double) quantity);
     }
 
     public void updateItemSellingPrice(CartItem item, double price) {

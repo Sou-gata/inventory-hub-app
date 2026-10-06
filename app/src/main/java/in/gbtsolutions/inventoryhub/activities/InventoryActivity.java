@@ -64,6 +64,7 @@ import in.gbtsolutions.inventoryhub.dao.ProductBatchDao;
 import in.gbtsolutions.inventoryhub.dao.ProductDao;
 import in.gbtsolutions.inventoryhub.helpers.BitmapHelper;
 import in.gbtsolutions.inventoryhub.helpers.CategoryIconHelper;
+import in.gbtsolutions.inventoryhub.helpers.CommonFunctions;
 import in.gbtsolutions.inventoryhub.helpers.ProductCsvParser;
 import in.gbtsolutions.inventoryhub.helpers.ProductQRHelper;
 import in.gbtsolutions.inventoryhub.helpers.ThemeManager;
@@ -73,6 +74,7 @@ import in.gbtsolutions.inventoryhub.models.ProductBatch;
 import in.gbtsolutions.inventoryhub.online.config.AppMode;
 import in.gbtsolutions.inventoryhub.online.config.AppModeManager;
 import in.gbtsolutions.inventoryhub.online.paging.EndlessRecyclerScrollListener;
+import in.gbtsolutions.inventoryhub.online.repository.OnlineCategoryRepository;
 import in.gbtsolutions.inventoryhub.online.repository.OnlineProductRepository;
 import in.gbtsolutions.inventoryhub.repository.CategoryRepository;
 import in.gbtsolutions.inventoryhub.repository.ProductBatchRepository;
@@ -381,7 +383,7 @@ public class InventoryActivity extends BaseActivity {
 
     private void observeData() {
         if (appModeManager != null && appModeManager.isOnlineMode()) {
-            categoryRepository.fetchCategoriesOnline(new in.gbtsolutions.inventoryhub.online.repository.OnlineCategoryRepository.CategoryListCallback() {
+            categoryRepository.fetchCategoriesOnline(new OnlineCategoryRepository.CategoryListCallback() {
                 @Override
                 public void onSuccess(List<Category> categories) {
                     categoryNames.clear();
@@ -431,7 +433,7 @@ public class InventoryActivity extends BaseActivity {
         productBatchRepository.getAllEarliestExpiries().observe(this, tuples -> {
             Map<Integer, Long> expiryMap = new HashMap<>();
             if (tuples != null) {
-                for (in.gbtsolutions.inventoryhub.dao.ProductBatchDao.ProductExpiryTuple tuple : tuples) {
+                for (ProductBatchDao.ProductExpiryTuple tuple : tuples) {
                     expiryMap.put(tuple.product_id, tuple.earliest_expiry);
                 }
             }
@@ -672,8 +674,7 @@ public class InventoryActivity extends BaseActivity {
     }
 
     private void showProductDetailsSheet(@NonNull Product product) {
-        com.google.android.material.bottomsheet.BottomSheetDialog dialog =
-                new com.google.android.material.bottomsheet.BottomSheetDialog(this);
+        BottomSheetDialog dialog = new BottomSheetDialog(this);
         View view = getLayoutInflater().inflate(R.layout.bottom_sheet_product_details, null);
         dialog.setContentView(view);
 
@@ -718,7 +719,7 @@ public class InventoryActivity extends BaseActivity {
         }
 
         String uom = !TextUtils.isEmpty(product.unitOfMeasure) ? product.unitOfMeasure : "pcs";
-        int qty = product.quantity;
+        double qty = product.quantity;
         int reorder = product.reorderLevel;
 
         if (qty <= 0) {
@@ -729,7 +730,7 @@ public class InventoryActivity extends BaseActivity {
             tintCircle(stockDot, redColor);
         } else if (qty <= reorder) {
             stockBadge.setBackgroundResource(R.drawable.bg_stock_low);
-            textStockStatus.setText(String.format(Locale.getDefault(), "Low Stock: %d %s left", qty, uom));
+            textStockStatus.setText(String.format(Locale.getDefault(), "Low Stock: %s %s left", CommonFunctions.formatQuantity(qty), uom));
             int amberColor = ContextCompat.getColor(this, R.color.accent_amber);
             textStockStatus.setTextColor(amberColor);
             tintCircle(stockDot, amberColor);
@@ -743,7 +744,7 @@ public class InventoryActivity extends BaseActivity {
 
         textSellingPrice.setText(String.format(Locale.getDefault(), "₹ %,.2f", product.sellingPrice));
         textUnitPrice.setText(String.format(Locale.getDefault(), "₹ %,.2f", product.unitPrice));
-        textQuantity.setText(String.format(Locale.getDefault(), "%d %s", qty, uom));
+        textQuantity.setText(String.format(Locale.getDefault(), "%s %s", CommonFunctions.formatQuantity(qty), uom));
 
         textReorder.setText(String.format(Locale.getDefault(), "Alert at %d %s • Reorder %d %s",
                 product.reorderLevel, uom, product.reorderQuantity, uom));

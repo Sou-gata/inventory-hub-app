@@ -582,6 +582,125 @@
             android:layout_height="1dp"
             android:background="@color/black" />
 
+        <!-- Monetary Summary Section (Subtotal, Total GST, Received Value) -->
+        <LinearLayout
+            android:id="@+id/layout_bill_monetary_summary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="vertical">
+
+            <!-- Sub Total Row -->
+            <LinearLayout
+                android:id="@+id/layout_bill_subtotal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="sans-serif"
+                    android:text="Sub Total (Taxable):"
+                    android:textColor="@color/black"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/tv_bill_subtotal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:textColor="@color/black"
+                    android:textSize="11sp"
+                    tools:text="₹ 2,490.00" />
+            </LinearLayout>
+
+            <!-- Total GST Row -->
+            <LinearLayout
+                android:id="@+id/layout_bill_total_gst_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="sans-serif"
+                    android:text="Total GST:"
+                    android:textColor="@color/black"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/tv_bill_total_gst"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:textColor="@color/black"
+                    android:textSize="11sp"
+                    tools:text="₹ 448.20" />
+            </LinearLayout>
+
+            <!-- Round Off Row -->
+            <LinearLayout
+                android:id="@+id/layout_bill_round_off"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="sans-serif"
+                    android:text="Round Off:"
+                    android:textColor="@color/black"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/tv_bill_round_off"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:textColor="@color/black"
+                    android:textSize="11sp"
+                    tools:text="0.00" />
+            </LinearLayout>
+
+            <!-- Total Received Value Row -->
+            <LinearLayout
+                android:id="@+id/layout_bill_received_value"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="sans-serif"
+                    android:text="Received Value:"
+                    android:textColor="@color/black"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_bill_received_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:textColor="@color/black"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    tools:text="₹ 2,938.00" />
+            </LinearLayout>
+
+        </LinearLayout>
+
         <!-- Double Line / Thick Divider for Grand Total -->
         <View
             android:layout_width="match_parent"
@@ -622,6 +741,34 @@
             android:layout_height="2dp"
             android:layout_marginBottom="6dp"
             android:background="@color/black" />
+
+        <!-- Amount in Words Section -->
+        <LinearLayout
+            android:id="@+id/layout_bill_amount_words"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="6dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif"
+                android:text="AMOUNT IN WORDS:"
+                android:textColor="@color/black"
+                android:textSize="9.5sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_bill_amount_words"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="@color/black"
+                android:textSize="10.5sp"
+                tools:text="Rupees Two Thousand Nine Hundred Thirty-Eight Only" />
+        </LinearLayout>
 
         <!-- Status & Verification Row -->
         <LinearLayout

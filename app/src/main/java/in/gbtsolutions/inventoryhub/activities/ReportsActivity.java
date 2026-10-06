@@ -61,8 +61,27 @@ import in.gbtsolutions.inventoryhub.reports.gstr1.GSTR1ReportCalculator;
 
 public class ReportsActivity extends BaseActivity {
 
-    private NavigationView navView;
+    private static final SimpleDateFormat DB_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+    private static final SimpleDateFormat DISPLAY_DATE_FORMAT = new SimpleDateFormat("dd MMM yyyy", Locale.US);
 
+    static {
+        DB_DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
+        DISPLAY_DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
+    }
+
+    private File pendingFileToSave;
+    private String pendingMimeTypeToSave;
+
+    private final ActivityResultLauncher<String> storagePermissionLauncher = registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+        if (isGranted) {
+            if (pendingFileToSave != null) {
+                saveFileToDownloads(pendingFileToSave, pendingMimeTypeToSave);
+            }
+        } else {
+            Toast.makeText(this, "Storage permission is required to save reports to Downloads.", Toast.LENGTH_SHORT).show();
+        }
+    });
+    private NavigationView navView;
     // Filter views
     private TextView tvStartDate;
     private TextView tvEndDate;
@@ -70,17 +89,14 @@ public class ReportsActivity extends BaseActivity {
     private TextView chipLastMonth;
     private TextView chipThisQuarter;
     private TextView chipAllTime;
-
     private MaterialButton btnGenerate;
     private MaterialButton btnValidate;
     private MaterialButton btnExport;
-
     // Validation banner
     private LinearLayout layoutValidationBanner;
     private ImageView ivValidationIcon;
     private TextView tvValidationText;
     private TextView btnViewIssues;
-
     // KPI cards
     private TextView kpiTotalSales;
     private TextView kpiTaxableValue;
@@ -89,7 +105,6 @@ public class ReportsActivity extends BaseActivity {
     private TextView kpiIgst;
     private TextView kpiTotalGst;
     private TextView kpiInvoicesCount;
-
     // Section Tabs
     private TextView tabSecB2b;
     private TextView tabSecB2c;
@@ -98,46 +113,21 @@ public class ReportsActivity extends BaseActivity {
     private TextView tabSecNil;
     private TextView tabSecHsn;
     private TextView tabSecTaxdoc;
-
     // Subtabs
     private LinearLayout layoutSubtabsContainer;
     private TextView subtabOne;
     private TextView subtabTwo;
-
     // Table Container
     private TextView tvActiveSectionTitle;
     private TextView tvActiveSectionDesc;
     private TableLayout tableContent;
     private TextView tvTableEmptyState;
-
     // State
     private String selectedStartDate; // "YYYY-MM-DD"
     private String selectedEndDate;   // "YYYY-MM-DD"
     private int activeSectionIndex = 1; // 1: B2B, 2: B2C, 3: Export, 4: Notes, 5: Nil, 6: HSN, 7: TaxDoc
     private int activeSubtabIndex = 1;   // 1 or 2
     private GSTR1Models.ReportData currentReportData = null;
-
-    private File pendingFileToSave;
-    private String pendingMimeTypeToSave;
-
-    private final ActivityResultLauncher<String> storagePermissionLauncher =
-            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
-                if (isGranted) {
-                    if (pendingFileToSave != null) {
-                        saveFileToDownloads(pendingFileToSave, pendingMimeTypeToSave);
-                    }
-                } else {
-                    Toast.makeText(this, "Storage permission is required to save reports to Downloads.", Toast.LENGTH_SHORT).show();
-                }
-            });
-
-    private static final SimpleDateFormat DB_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
-    private static final SimpleDateFormat DISPLAY_DATE_FORMAT = new SimpleDateFormat("dd MMM yyyy", Locale.US);
-
-    static {
-        DB_DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
-        DISPLAY_DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -155,7 +145,7 @@ public class ReportsActivity extends BaseActivity {
         View reportsScrollView = findViewById(R.id.reports_scroll_view);
 
         applyDrawerInsets(drawerLayout, headerContainer, reportsScrollView, navView);
-        setupDrawerNavigation(drawerLayout, toolbar, navView, R.id.nav_reports);
+        setupDrawerNavigation(drawerLayout, toolbar, navView, R.id.nav_reports_gstr1);
 
         initViews();
         initListeners();
@@ -321,10 +311,7 @@ public class ReportsActivity extends BaseActivity {
     }
 
     private void showDatePicker(boolean isStart) {
-        MaterialDatePicker<Long> picker = MaterialDatePicker.Builder.datePicker()
-                .setTitleText(isStart ? "Select Start Date" : "Select End Date")
-                .setSelection(MaterialDatePicker.todayInUtcMilliseconds())
-                .build();
+        MaterialDatePicker<Long> picker = MaterialDatePicker.Builder.datePicker().setTitleText(isStart ? "Select Start Date" : "Select End Date").setSelection(MaterialDatePicker.todayInUtcMilliseconds()).build();
 
         picker.addOnPositiveButtonClickListener(selection -> {
             if (selection != null) {
@@ -348,11 +335,7 @@ public class ReportsActivity extends BaseActivity {
         btnGenerate.setText("Calculating...");
 
         Executors.newSingleThreadExecutor().execute(() -> {
-            GSTR1Models.ReportData report = GSTR1ReportCalculator.generateReport(
-                    ReportsActivity.this,
-                    selectedStartDate,
-                    selectedEndDate,
-                    100000.0 // B2C Large Threshold
+            GSTR1Models.ReportData report = GSTR1ReportCalculator.generateReport(ReportsActivity.this, selectedStartDate, selectedEndDate, 100000.0 // B2C Large Threshold
             );
 
             new Handler(Looper.getMainLooper()).post(() -> {
@@ -544,20 +527,7 @@ public class ReportsActivity extends BaseActivity {
         addTableHeaderRow(headers);
 
         for (GSTR1Models.B2BRow row : currentReportData.b2bList) {
-            String[] cells = {
-                    row.customerGstin,
-                    row.customerName,
-                    row.placeOfSupply,
-                    row.taxRate + "%",
-                    String.valueOf(row.invoiceCount),
-                    "₹ " + row.taxableValue.toPlainString(),
-                    "₹ " + row.cgst.toPlainString(),
-                    "₹ " + row.sgst.toPlainString(),
-                    "₹ " + row.igst.toPlainString(),
-                    "₹ " + row.cess.toPlainString(),
-                    "₹ " + row.totalTax.toPlainString(),
-                    "₹ " + row.invoiceValue.toPlainString()
-            };
+            String[] cells = {row.customerGstin, row.customerName, row.placeOfSupply, row.taxRate + "%", String.valueOf(row.invoiceCount), "₹ " + row.taxableValue.toPlainString(), "₹ " + row.cgst.toPlainString(), "₹ " + row.sgst.toPlainString(), "₹ " + row.igst.toPlainString(), "₹ " + row.cess.toPlainString(), "₹ " + row.totalTax.toPlainString(), "₹ " + row.invoiceValue.toPlainString()};
             addTableRow(cells);
         }
     }
@@ -573,19 +543,7 @@ public class ReportsActivity extends BaseActivity {
         addTableHeaderRow(headers);
 
         for (GSTR1Models.B2CRow row : list) {
-            String[] cells = {
-                    row.supplyCategory,
-                    row.placeOfSupply,
-                    row.taxRate + "%",
-                    String.valueOf(row.invoiceCount),
-                    "₹ " + row.taxableValue.toPlainString(),
-                    "₹ " + row.cgst.toPlainString(),
-                    "₹ " + row.sgst.toPlainString(),
-                    "₹ " + row.igst.toPlainString(),
-                    "₹ " + row.cess.toPlainString(),
-                    "₹ " + row.totalTax.toPlainString(),
-                    "₹ " + row.invoiceValue.toPlainString()
-            };
+            String[] cells = {row.supplyCategory, row.placeOfSupply, row.taxRate + "%", String.valueOf(row.invoiceCount), "₹ " + row.taxableValue.toPlainString(), "₹ " + row.cgst.toPlainString(), "₹ " + row.sgst.toPlainString(), "₹ " + row.igst.toPlainString(), "₹ " + row.cess.toPlainString(), "₹ " + row.totalTax.toPlainString(), "₹ " + row.invoiceValue.toPlainString()};
             addTableRow(cells);
         }
     }
@@ -601,18 +559,7 @@ public class ReportsActivity extends BaseActivity {
         addTableHeaderRow(headers);
 
         for (GSTR1Models.ExportRow row : currentReportData.exportList) {
-            String[] cells = {
-                    row.category,
-                    String.valueOf(row.invoiceCount),
-                    "₹ " + row.taxableValue.toPlainString(),
-                    "₹ " + row.invoiceValue.toPlainString(),
-                    "₹ " + row.igst.toPlainString(),
-                    "₹ " + row.cgst.toPlainString(),
-                    "₹ " + row.sgst.toPlainString(),
-                    "₹ " + row.cess.toPlainString(),
-                    row.shippingBillNo != null ? row.shippingBillNo : "N/A",
-                    row.portCode != null ? row.portCode : "N/A"
-            };
+            String[] cells = {row.category, String.valueOf(row.invoiceCount), "₹ " + row.taxableValue.toPlainString(), "₹ " + row.invoiceValue.toPlainString(), "₹ " + row.igst.toPlainString(), "₹ " + row.cgst.toPlainString(), "₹ " + row.sgst.toPlainString(), "₹ " + row.cess.toPlainString(), row.shippingBillNo != null ? row.shippingBillNo : "N/A", row.portCode != null ? row.portCode : "N/A"};
             addTableRow(cells);
         }
     }
@@ -628,19 +575,7 @@ public class ReportsActivity extends BaseActivity {
         addTableHeaderRow(headers);
 
         for (GSTR1Models.CreditDebitNoteRow row : list) {
-            String[] cells = {
-                    row.noteType,
-                    row.recipientType,
-                    row.taxRate + "%",
-                    String.valueOf(row.noteCount),
-                    "₹ " + row.taxableValue.toPlainString(),
-                    "₹ " + row.cgst.toPlainString(),
-                    "₹ " + row.sgst.toPlainString(),
-                    "₹ " + row.igst.toPlainString(),
-                    "₹ " + row.cess.toPlainString(),
-                    "₹ " + row.totalTax.toPlainString(),
-                    "₹ " + row.totalValue.toPlainString()
-            };
+            String[] cells = {row.noteType, row.recipientType, row.taxRate + "%", String.valueOf(row.noteCount), "₹ " + row.taxableValue.toPlainString(), "₹ " + row.cgst.toPlainString(), "₹ " + row.sgst.toPlainString(), "₹ " + row.igst.toPlainString(), "₹ " + row.cess.toPlainString(), "₹ " + row.totalTax.toPlainString(), "₹ " + row.totalValue.toPlainString()};
             addTableRow(cells);
         }
     }
@@ -656,13 +591,7 @@ public class ReportsActivity extends BaseActivity {
         addTableHeaderRow(headers);
 
         for (GSTR1Models.NilExemptRow row : currentReportData.nilExemptList) {
-            String[] cells = {
-                    row.category,
-                    row.supplyType,
-                    row.recipientType,
-                    String.valueOf(row.invoiceCount),
-                    "₹ " + row.reportedValue.toPlainString()
-            };
+            String[] cells = {row.category, row.supplyType, row.recipientType, String.valueOf(row.invoiceCount), "₹ " + row.reportedValue.toPlainString()};
             addTableRow(cells);
         }
     }
@@ -678,20 +607,7 @@ public class ReportsActivity extends BaseActivity {
         addTableHeaderRow(headers);
 
         for (GSTR1Models.HsnRow row : list) {
-            String[] cells = {
-                    row.hsnCode,
-                    row.description,
-                    row.uqc,
-                    String.valueOf(row.quantity),
-                    row.taxRate + "%",
-                    "₹ " + row.taxableValue.toPlainString(),
-                    "₹ " + row.cgst.toPlainString(),
-                    "₹ " + row.sgst.toPlainString(),
-                    "₹ " + row.igst.toPlainString(),
-                    "₹ " + row.cess.toPlainString(),
-                    "₹ " + row.totalTax.toPlainString(),
-                    "₹ " + row.totalValue.toPlainString()
-            };
+            String[] cells = {row.hsnCode, row.description, row.uqc, String.valueOf(row.quantity), row.taxRate + "%", "₹ " + row.taxableValue.toPlainString(), "₹ " + row.cgst.toPlainString(), "₹ " + row.sgst.toPlainString(), "₹ " + row.igst.toPlainString(), "₹ " + row.cess.toPlainString(), "₹ " + row.totalTax.toPlainString(), "₹ " + row.totalValue.toPlainString()};
             addTableRow(cells);
         }
     }
@@ -777,18 +693,11 @@ public class ReportsActivity extends BaseActivity {
             sb.append("No errors or warnings found. Report is export-ready!");
         } else {
             for (GSTR1Models.ValidationIssue issue : currentReportData.validationIssues) {
-                sb.append("[").append(issue.severity.name()).append("] ")
-                        .append(issue.invoiceOrRef).append(": ")
-                        .append(issue.title).append("\n")
-                        .append("   ").append(issue.description).append("\n\n");
+                sb.append("[").append(issue.severity.name()).append("] ").append(issue.invoiceOrRef).append(": ").append(issue.title).append("\n").append("   ").append(issue.description).append("\n\n");
             }
         }
 
-        new MaterialAlertDialogBuilder(this)
-                .setTitle("GSTR-1 Validation & Audit")
-                .setMessage(sb.toString())
-                .setPositiveButton("OK", (dialog, which) -> dialog.dismiss())
-                .show();
+        new MaterialAlertDialogBuilder(this).setTitle("GSTR-1 Validation & Audit").setMessage(sb.toString()).setPositiveButton("OK", (dialog, which) -> dialog.dismiss()).show();
     }
 
     private void showExportDialog() {
@@ -798,22 +707,19 @@ public class ReportsActivity extends BaseActivity {
         }
 
         String[] options = {"PDF Document (Management Report)", "Excel Workbook (.xlsx - 8 Sheets)", "CSV (Full Summary)"};
-        new MaterialAlertDialogBuilder(this)
-                .setTitle("Export GSTR-1 Report")
-                .setItems(options, (dialog, which) -> {
-                    switch (which) {
-                        case 0:
-                            exportPdf();
-                            break;
-                        case 1:
-                            exportExcel();
-                            break;
-                        case 2:
-                            exportCsv();
-                            break;
-                    }
-                })
-                .show();
+        new MaterialAlertDialogBuilder(this).setTitle("Export GSTR-1 Report").setItems(options, (dialog, which) -> {
+            switch (which) {
+                case 0:
+                    exportPdf();
+                    break;
+                case 1:
+                    exportExcel();
+                    break;
+                case 2:
+                    exportCsv();
+                    break;
+            }
+        }).show();
     }
 
     private void exportPdf() {
@@ -823,8 +729,7 @@ public class ReportsActivity extends BaseActivity {
                 File file = GSTR1PdfExporter.exportToPdf(ReportsActivity.this, currentReportData);
                 new Handler(Looper.getMainLooper()).post(() -> showExportSuccess(file, "application/pdf"));
             } catch (Exception e) {
-                new Handler(Looper.getMainLooper()).post(() ->
-                        Toast.makeText(ReportsActivity.this, "PDF Export failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(ReportsActivity.this, "PDF Export failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
             }
         });
     }
@@ -836,8 +741,7 @@ public class ReportsActivity extends BaseActivity {
                 File file = GSTR1ExcelExporter.exportToExcel(ReportsActivity.this, currentReportData);
                 new Handler(Looper.getMainLooper()).post(() -> showExportSuccess(file, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
             } catch (Exception e) {
-                new Handler(Looper.getMainLooper()).post(() ->
-                        Toast.makeText(ReportsActivity.this, "Excel Export failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(ReportsActivity.this, "Excel Export failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
             }
         });
     }
@@ -849,8 +753,7 @@ public class ReportsActivity extends BaseActivity {
                 File file = GSTR1CsvExporter.exportToCsv(ReportsActivity.this, currentReportData);
                 new Handler(Looper.getMainLooper()).post(() -> showExportSuccess(file, "text/csv"));
             } catch (Exception e) {
-                new Handler(Looper.getMainLooper()).post(() ->
-                        Toast.makeText(ReportsActivity.this, "CSV Export failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(ReportsActivity.this, "CSV Export failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
             }
         });
     }
@@ -883,10 +786,7 @@ public class ReportsActivity extends BaseActivity {
         }
         tvFileInfo.setText(typeLabel + " • " + formatFileSize(file.length()));
 
-        AlertDialog dialog = new MaterialAlertDialogBuilder(this)
-                .setView(dialogView)
-                .setCancelable(true)
-                .create();
+        AlertDialog dialog = new MaterialAlertDialogBuilder(this).setView(dialogView).setCancelable(true).create();
 
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
@@ -923,8 +823,7 @@ public class ReportsActivity extends BaseActivity {
 
         // On Android 9 and below, check WRITE_EXTERNAL_STORAGE permission
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                    != PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                 pendingFileToSave = file;
                 pendingMimeTypeToSave = mimeType;
                 storagePermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE);
@@ -952,8 +851,7 @@ public class ReportsActivity extends BaseActivity {
                     }
 
                     try {
-                        try (InputStream in = new FileInputStream(file);
-                             OutputStream out = resolver.openOutputStream(fileUri)) {
+                        try (InputStream in = new FileInputStream(file); OutputStream out = resolver.openOutputStream(fileUri)) {
                             if (out == null) {
                                 throw new IOException("Failed to open output stream for download URI.");
                             }
@@ -972,7 +870,8 @@ public class ReportsActivity extends BaseActivity {
                     } catch (Exception e) {
                         try {
                             resolver.delete(fileUri, null, null);
-                        } catch (Exception ignored) {}
+                        } catch (Exception ignored) {
+                        }
                         throw e;
                     }
                 } else {
@@ -982,8 +881,7 @@ public class ReportsActivity extends BaseActivity {
                         throw new IOException("Failed to create directory: " + targetDir.getAbsolutePath());
                     }
                     File destFile = new File(targetDir, file.getName());
-                    try (InputStream in = new FileInputStream(file);
-                         OutputStream out = new FileOutputStream(destFile)) {
+                    try (InputStream in = new FileInputStream(file); OutputStream out = new FileOutputStream(destFile)) {
                         byte[] buffer = new byte[8192];
                         int bytesRead;
                         while ((bytesRead = in.read(buffer)) != -1) {
@@ -991,34 +889,23 @@ public class ReportsActivity extends BaseActivity {
                         }
                         out.flush();
                     }
-                    MediaScannerConnection.scanFile(
-                            ReportsActivity.this,
-                            new String[]{destFile.getAbsolutePath()},
-                            new String[]{mimeType},
-                            null
-                    );
+                    MediaScannerConnection.scanFile(ReportsActivity.this, new String[]{destFile.getAbsolutePath()}, new String[]{mimeType}, null);
                     success = true;
                 }
             } catch (Exception e) {
-                new Handler(Looper.getMainLooper()).post(() ->
-                        Toast.makeText(ReportsActivity.this, "Failed to save file: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(ReportsActivity.this, "Failed to save file: " + e.getMessage(), Toast.LENGTH_LONG).show());
                 return;
             }
 
             if (success) {
-                new Handler(Looper.getMainLooper()).post(() ->
-                        Toast.makeText(ReportsActivity.this, "File saved to " + savedPath, Toast.LENGTH_LONG).show());
+                new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(ReportsActivity.this, "File saved to " + savedPath, Toast.LENGTH_LONG).show());
             }
         });
     }
 
     private void shareFile(File file, String mimeType) {
         try {
-            Uri fileUri = FileProvider.getUriForFile(
-                    this,
-                    getApplicationContext().getPackageName() + ".fileprovider",
-                    file
-            );
+            Uri fileUri = FileProvider.getUriForFile(this, getApplicationContext().getPackageName() + ".fileprovider", file);
 
             Intent shareIntent = new Intent(Intent.ACTION_SEND);
             shareIntent.setType(mimeType);
@@ -1037,7 +924,7 @@ public class ReportsActivity extends BaseActivity {
         super.onResume();
         GlobalStore.getInstance().loadSettings(this);
         if (navView != null) {
-            navView.setCheckedItem(R.id.nav_reports);
+            navView.setCheckedItem(R.id.nav_reports_gstr1);
         }
     }
 }

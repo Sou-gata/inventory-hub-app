@@ -2,6 +2,8 @@ package in.gbtsolutions.inventoryhub.adapters;
 
 import android.content.Context;
 import android.text.Editable;
+import android.text.InputFilter;
+import android.text.InputType;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
@@ -21,17 +23,10 @@ import java.util.List;
 import java.util.Locale;
 
 import in.gbtsolutions.inventoryhub.R;
+import in.gbtsolutions.inventoryhub.helpers.CommonFunctions;
 import in.gbtsolutions.inventoryhub.helpers.PurchaseCartManager;
 import in.gbtsolutions.inventoryhub.models.CartItem;
 
-/**
- * Cart item adapter for the Purchase flow.
- * Differences from CartItemAdapter:
- *   - Uses PurchaseCartManager (not SellCartManager)
- *   - No stock cap on the + button (can purchase any quantity)
- *   - Price field label is "Cost Price" (displayed via hint)
- *   - Batch number row always hidden
- */
 public class PurchaseCartItemAdapter extends RecyclerView.Adapter<PurchaseCartItemAdapter.PurchaseCartItemViewHolder> {
 
     private final List<CartItem> cartItems = new ArrayList<>();
@@ -52,10 +47,14 @@ public class PurchaseCartItemAdapter extends RecyclerView.Adapter<PurchaseCartIt
     public void setCartItems(@NonNull List<CartItem> newItems) {
         DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new DiffUtil.Callback() {
             @Override
-            public int getOldListSize() { return cartItems.size(); }
+            public int getOldListSize() {
+                return cartItems.size();
+            }
 
             @Override
-            public int getNewListSize() { return newItems.size(); }
+            public int getNewListSize() {
+                return newItems.size();
+            }
 
             @Override
             public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
@@ -69,10 +68,7 @@ public class PurchaseCartItemAdapter extends RecyclerView.Adapter<PurchaseCartIt
             public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
                 CartItem oldI = cartItems.get(oldItemPosition);
                 CartItem newI = newItems.get(newItemPosition);
-                return oldI.quantity == newI.quantity
-                        && Double.compare(oldI.sellingPrice, newI.sellingPrice) == 0
-                        && Double.compare(oldI.discountValue, newI.discountValue) == 0
-                        && oldI.discountType == newI.discountType;
+                return oldI.quantity == newI.quantity && Double.compare(oldI.sellingPrice, newI.sellingPrice) == 0 && Double.compare(oldI.discountValue, newI.discountValue) == 0 && oldI.discountType == newI.discountType;
             }
         });
 
@@ -153,8 +149,7 @@ public class PurchaseCartItemAdapter extends RecyclerView.Adapter<PurchaseCartIt
             // Batch row always hidden for purchases
             if (textBatchNo != null) textBatchNo.setVisibility(View.GONE);
 
-            String name = (item.product != null && item.product.productName != null)
-                    ? item.product.productName.trim() : "Unnamed Product";
+            String name = (item.product != null && item.product.productName != null) ? item.product.productName.trim() : "Unnamed Product";
             textName.setText(name);
 
             if (item.product != null && !TextUtils.isEmpty(item.product.brand)) {
@@ -171,7 +166,16 @@ public class PurchaseCartItemAdapter extends RecyclerView.Adapter<PurchaseCartIt
                 textSku.setVisibility(View.GONE);
             }
 
-            editQuantity.setText(String.valueOf(item.quantity));
+            boolean isDecimal = item.product != null && CommonFunctions.isDecimalUnit(item.product.unitOfMeasure);
+            if (isDecimal) {
+                editQuantity.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+                editQuantity.setFilters(new InputFilter[]{new CommonFunctions.DecimalDigitsInputFilter(6, 3)});
+            } else {
+                editQuantity.setInputType(InputType.TYPE_CLASS_NUMBER);
+                editQuantity.setFilters(new InputFilter[]{new InputFilter.LengthFilter(6)});
+            }
+
+            editQuantity.setText(CommonFunctions.formatQuantity(item.quantity));
             // Show the cost price (stored in sellingPrice field)
             editSellingPrice.setText(String.format(Locale.getDefault(), "%.2f", item.sellingPrice));
             editSellingPrice.setHint("Cost Price");
@@ -179,51 +183,68 @@ public class PurchaseCartItemAdapter extends RecyclerView.Adapter<PurchaseCartIt
 
             // No stock cap for purchases — can order any quantity
             btnQtyMinus.setOnClickListener(v -> {
-                if (item.quantity > 1) {
-                    item.quantity--;
-                    editQuantity.setText(String.valueOf(item.quantity));
-                    updateTotalDisplay(item);
-                    PurchaseCartManager.getInstance().updateItemQuantity(item, item.quantity);
-                    if (updateListener != null) updateListener.onCartItemUpdated();
+                double minQty = isDecimal ? 0.001 : 1.0;
+                double step = 1.0;
+                if (item.quantity - step >= minQty - 0.0001) {
+                    item.quantity = CommonFunctions.roundTo3Decimals(item.quantity - step);
+                } else if (item.quantity > minQty) {
+                    item.quantity = minQty;
                 }
+                editQuantity.setText(CommonFunctions.formatQuantity(item.quantity));
+                updateTotalDisplay(item);
+                PurchaseCartManager.getInstance().updateItemQuantity(item, item.quantity);
+                if (updateListener != null) updateListener.onCartItemUpdated();
             });
 
             btnQtyPlus.setOnClickListener(v -> {
-                item.quantity++;
-                editQuantity.setText(String.valueOf(item.quantity));
+                double step = 1.0;
+                item.quantity = CommonFunctions.roundTo3Decimals(item.quantity + step);
+                editQuantity.setText(CommonFunctions.formatQuantity(item.quantity));
                 updateTotalDisplay(item);
                 PurchaseCartManager.getInstance().updateItemQuantity(item, item.quantity);
                 if (updateListener != null) updateListener.onCartItemUpdated();
             });
 
             qtyWatcher = new TextWatcher() {
-                @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
 
                 @Override
                 public void onTextChanged(CharSequence s, int start, int before, int count) {
                     if (s != null && s.length() > 0) {
                         try {
-                            int q = Integer.parseInt(s.toString().trim());
-                            if (q > 0) {
+                            double q = Double.parseDouble(s.toString().trim());
+                            q = CommonFunctions.roundTo3Decimals(q);
+                            if (q > 0.0001) {
                                 item.quantity = q;
                                 updateTotalDisplay(item);
                                 PurchaseCartManager.getInstance().updateItemQuantity(item, item.quantity);
                                 if (updateListener != null) updateListener.onCartItemUpdated();
                             }
-                        } catch (NumberFormatException ignored) {}
+                        } catch (NumberFormatException ignored) {
+                        }
                     }
                 }
 
-                @Override public void afterTextChanged(Editable s) {}
+                @Override
+                public void afterTextChanged(Editable s) {
+                }
             };
             editQuantity.addTextChangedListener(qtyWatcher);
 
             editQuantity.setOnFocusChangeListener((v, hasFocus) -> {
                 if (!hasFocus) {
                     String str = editQuantity.getText().toString().trim();
-                    if (TextUtils.isEmpty(str) || "0".equals(str)) {
-                        item.quantity = 1;
-                        editQuantity.setText("1");
+                    double val = 0.0;
+                    try {
+                        val = Double.parseDouble(str);
+                    } catch (NumberFormatException ignored) {
+                    }
+                    double minQty = isDecimal ? 0.001 : 1.0;
+                    if (val < minQty) {
+                        item.quantity = 1.0;
+                        editQuantity.setText(CommonFunctions.formatQuantity(item.quantity));
                         updateTotalDisplay(item);
                         PurchaseCartManager.getInstance().updateItemQuantity(item, 1);
                         if (updateListener != null) updateListener.onCartItemUpdated();
@@ -232,7 +253,9 @@ public class PurchaseCartItemAdapter extends RecyclerView.Adapter<PurchaseCartIt
             });
 
             priceWatcher = new TextWatcher() {
-                @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
 
                 @Override
                 public void onTextChanged(CharSequence s, int start, int before, int count) {
@@ -245,11 +268,14 @@ public class PurchaseCartItemAdapter extends RecyclerView.Adapter<PurchaseCartIt
                                 PurchaseCartManager.getInstance().updateItemSellingPrice(item, item.sellingPrice);
                                 if (updateListener != null) updateListener.onCartItemUpdated();
                             }
-                        } catch (NumberFormatException ignored) {}
+                        } catch (NumberFormatException ignored) {
+                        }
                     }
                 }
 
-                @Override public void afterTextChanged(Editable s) {}
+                @Override
+                public void afterTextChanged(Editable s) {
+                }
             };
             editSellingPrice.addTextChangedListener(priceWatcher);
 
@@ -299,14 +325,18 @@ public class PurchaseCartItemAdapter extends RecyclerView.Adapter<PurchaseCartIt
             });
 
             discountWatcher = new TextWatcher() {
-                @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
 
                 @Override
                 public void onTextChanged(CharSequence s, int start, int before, int count) {
                     double val = 0.0;
                     if (s != null && s.length() > 0) {
-                        try { val = Double.parseDouble(s.toString().trim()); }
-                        catch (NumberFormatException ignored) {}
+                        try {
+                            val = Double.parseDouble(s.toString().trim());
+                        } catch (NumberFormatException ignored) {
+                        }
                     }
                     item.discountValue = Math.max(0.0, val);
                     updateTotalDisplay(item);
@@ -314,7 +344,9 @@ public class PurchaseCartItemAdapter extends RecyclerView.Adapter<PurchaseCartIt
                     if (updateListener != null) updateListener.onCartItemUpdated();
                 }
 
-                @Override public void afterTextChanged(Editable s) {}
+                @Override
+                public void afterTextChanged(Editable s) {
+                }
             };
             editDiscount.addTextChangedListener(discountWatcher);
 

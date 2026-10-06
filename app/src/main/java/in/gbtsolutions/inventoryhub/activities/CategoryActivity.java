@@ -32,6 +32,7 @@ import in.gbtsolutions.inventoryhub.R;
 import in.gbtsolutions.inventoryhub.adapters.CategoryAdapter;
 import in.gbtsolutions.inventoryhub.helpers.ThemeManager;
 import in.gbtsolutions.inventoryhub.models.Category;
+import in.gbtsolutions.inventoryhub.online.repository.OnlineCategoryRepository;
 import in.gbtsolutions.inventoryhub.repository.CategoryRepository;
 
 public class CategoryActivity extends BaseActivity {
@@ -175,7 +176,7 @@ public class CategoryActivity extends BaseActivity {
     }
 
     private void loadOnlineCategories() {
-        categoryRepository.fetchCategoriesOnline(new in.gbtsolutions.inventoryhub.online.repository.OnlineCategoryRepository.CategoryListCallback() {
+        categoryRepository.fetchCategoriesOnline(new OnlineCategoryRepository.CategoryListCallback() {
             @Override
             public void onSuccess(List<Category> categories) {
                 allCategories.clear();

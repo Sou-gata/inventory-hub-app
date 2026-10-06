@@ -1,6 +1,7 @@
 package in.gbtsolutions.inventoryhub.views;
 
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -36,11 +37,15 @@ public class BatchSelectDialog extends BottomSheetDialogFragment {
 
     public static class BatchSelection {
         public ProductBatch batch;
-        public int quantity;
+        public double quantity;
 
-        public BatchSelection(ProductBatch batch, int quantity) {
+        public BatchSelection(ProductBatch batch, double quantity) {
             this.batch = batch;
             this.quantity = quantity;
+        }
+
+        public BatchSelection(ProductBatch batch, int quantity) {
+            this(batch, (double) quantity);
         }
     }
 
@@ -94,7 +99,7 @@ public class BatchSelectDialog extends BottomSheetDialogFragment {
         adapter.setQuantityChangedListener(this::updateSummary);
 
         // Pre-fill existing quantities in cart for this product
-        Map<Integer, Integer> existingInCart = new HashMap<>();
+        Map<Integer, Double> existingInCart = new HashMap<>();
         List<CartItem> currentCart = SellCartManager.getInstance().getCartItems();
         for (CartItem ci : currentCart) {
             if (ci.product != null && ci.product.productId == (product != null ? product.productId : -1)) {
@@ -126,10 +131,11 @@ public class BatchSelectDialog extends BottomSheetDialogFragment {
 
     private void updateSummary() {
         if (adapter == null) return;
-        int totalQty = adapter.getTotalSelectedQuantity();
+        double totalQty = adapter.getTotalSelectedQuantity();
         int batchCount = adapter.getSelectedBatchCount();
         if (tvSummaryQty != null) {
-            tvSummaryQty.setText("Total Qty: " + totalQty);
+            String uom = (product != null && !TextUtils.isEmpty(product.unitOfMeasure)) ? " " + product.unitOfMeasure.trim() : "";
+            tvSummaryQty.setText("Total Qty: " + in.gbtsolutions.inventoryhub.helpers.CommonFunctions.formatQuantity(totalQty) + uom);
         }
         if (tvSummaryBatches != null) {
             tvSummaryBatches.setText(batchCount + " batch(es) selected");
@@ -142,14 +148,14 @@ public class BatchSelectDialog extends BottomSheetDialogFragment {
             return;
         }
 
-        Map<Integer, Integer> selectedMap = adapter.getSelectedQuantities();
+        Map<Integer, Double> selectedMap = adapter.getSelectedQuantities();
         List<ProductBatch> allBatches = adapter.getBatches();
         List<BatchSelection> result = new ArrayList<>();
 
         for (ProductBatch b : allBatches) {
             if (selectedMap.containsKey(b.batchId)) {
-                int q = selectedMap.get(b.batchId);
-                if (q > 0) {
+                Double q = selectedMap.get(b.batchId);
+                if (q != null && q > 0.0001) {
                     result.add(new BatchSelection(b, q));
                 }
             }

@@ -38,10 +38,10 @@ public class OnlinePendingReceiveDto {
         public String productName;
 
         @SerializedName(value = "quantityOrdered", alternate = {"quantity_ordered", "quantity", "ordered_quantity"})
-        public int quantityOrdered;
+        public double quantityOrdered;
 
         @SerializedName(value = "quantityReceived", alternate = {"quantity_received", "received_quantity"})
-        public int quantityReceived;
+        public double quantityReceived;
 
         @SerializedName(value = "unitPrice", alternate = {"unit_price", "purchase_price"})
         public double unitPrice;

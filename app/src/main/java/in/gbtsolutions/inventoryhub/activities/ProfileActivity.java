@@ -10,7 +10,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -31,6 +30,8 @@ import in.gbtsolutions.inventoryhub.Configurations;
 import in.gbtsolutions.inventoryhub.Database;
 import in.gbtsolutions.inventoryhub.GlobalStore;
 import in.gbtsolutions.inventoryhub.R;
+import in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper;
+import in.gbtsolutions.inventoryhub.models.AuditTrail;
 import in.gbtsolutions.inventoryhub.models.Config;
 import in.gbtsolutions.inventoryhub.models.User;
 import in.gbtsolutions.inventoryhub.repository.ConfigRepository;
@@ -46,7 +47,8 @@ public class ProfileActivity extends BaseActivity {
     public static final String KEY_DISTRICT = "district";
     public static final String KEY_STATE = "state";
     public static final String KEY_POSTAL_CODE = "postal_code";
-
+    private final Map<String, String> cachedConfigs = new HashMap<>();
+    private final Handler handler = new Handler(Looper.getMainLooper());
     // User Account Views
     private TextView textProfileAvatar;
     private ImageView iconProfileAvatar;
@@ -55,7 +57,6 @@ public class ProfileActivity extends BaseActivity {
     private TextView textProfileUsername;
     private TextView textProfileEmail;
     private TextView textProfilePhone;
-
     // Company Config Views
     private TextView badgeEditMode;
     private EditText inputCompanyName;
@@ -66,29 +67,22 @@ public class ProfileActivity extends BaseActivity {
     private EditText inputDistrict;
     private EditText inputPostalCode;
     private EditText inputState;
-
     // Banners & Controls
     private View bannerError;
     private TextView textError;
     private View bannerSuccess;
     private TextView textSuccess;
-
     private View layoutEditActions;
     private View btnSaveProfile;
     private View containerSaveIdle;
     private ProgressBar progressSaving;
     private View btnCancelEdit;
     private View btnEnterEditMode;
-
     private NavigationView navView;
     private MenuItem menuEditItem;
-
     private ConfigRepository configRepository;
-    private final Map<String, String> cachedConfigs = new HashMap<>();
     private boolean isEditMode = false;
     private boolean isSaving = false;
-
-    private final Handler handler = new Handler(Looper.getMainLooper());
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -322,7 +316,7 @@ public class ProfileActivity extends BaseActivity {
         editText.setCursorVisible(editable);
         editText.setLongClickable(editable);
         editText.setTextColor(ContextCompat.getColor(this, R.color.fg));
-        editText.setBackgroundResource(editable ? R.drawable.bg_field_normal : R.drawable.bg_field_normal);
+        editText.setBackgroundResource(R.drawable.bg_field_normal);
         editText.setAlpha(editable ? 1.0f : 0.88f);
     }
 
@@ -364,10 +358,7 @@ public class ProfileActivity extends BaseActivity {
                 showSuccess("Company configuration saved successfully!");
                 setEditMode(false);
                 showToast("Profile saved successfully");
-                in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper.logEdit(ProfileActivity.this,
-                        in.gbtsolutions.inventoryhub.models.AuditTrail.MODULE_CONFIG,
-                        companyName,
-                        "Updated company profile and business details for: " + companyName);
+                AuditTrailHelper.logEdit(ProfileActivity.this, AuditTrail.MODULE_CONFIG, companyName, "Updated company profile and business details for: " + companyName);
             }
 
             @Override

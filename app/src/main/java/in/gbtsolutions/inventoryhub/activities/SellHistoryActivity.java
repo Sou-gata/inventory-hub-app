@@ -2,10 +2,10 @@ package in.gbtsolutions.inventoryhub.activities;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
-import java.io.File;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
@@ -21,7 +21,6 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import android.content.res.ColorStateList;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.Toolbar;
@@ -37,6 +36,7 @@ import com.google.android.material.datepicker.MaterialDatePicker;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.navigation.NavigationView;
 
+import java.io.File;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -66,6 +66,7 @@ public class SellHistoryActivity extends BaseActivity {
     private final SimpleDateFormat isoDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
     private final SimpleDateFormat displayDateFormat = new SimpleDateFormat("dd MMM yyyy", Locale.getDefault());
     private final Map<String, String> cachedCompanyConfigs = new HashMap<>();
+    private final Observer<List<SaleWithBuyer>> salesObserver = this::updateSalesList;
     // Views - Filters
     private View boxStartDate;
     private TextView textStartDate;
@@ -92,7 +93,6 @@ public class SellHistoryActivity extends BaseActivity {
     private long endDateMillis = System.currentTimeMillis();
     // Adapter & Repository
     private SellHistoryAdapter adapter;
-    private final Observer<List<SaleWithBuyer>> salesObserver = this::updateSalesList;
     private SaleRepository saleRepository;
     private LiveData<List<SaleWithBuyer>> currentSalesLiveData;
     private ConfigRepository configRepository;
@@ -154,10 +154,7 @@ public class SellHistoryActivity extends BaseActivity {
 
     private void setupDatePickers() {
         boxStartDate.setOnClickListener(v -> {
-            MaterialDatePicker<Long> datePicker = MaterialDatePicker.Builder.datePicker()
-                    .setTitleText("Select Start Date")
-                    .setSelection(startDateMillis)
-                    .build();
+            MaterialDatePicker<Long> datePicker = MaterialDatePicker.Builder.datePicker().setTitleText("Select Start Date").setSelection(startDateMillis).build();
 
             datePicker.addOnPositiveButtonClickListener(selection -> {
                 if (selection != null) {
@@ -191,10 +188,7 @@ public class SellHistoryActivity extends BaseActivity {
         });
 
         boxEndDate.setOnClickListener(v -> {
-            MaterialDatePicker<Long> datePicker = MaterialDatePicker.Builder.datePicker()
-                    .setTitleText("Select End Date")
-                    .setSelection(endDateMillis)
-                    .build();
+            MaterialDatePicker<Long> datePicker = MaterialDatePicker.Builder.datePicker().setTitleText("Select End Date").setSelection(endDateMillis).build();
 
             datePicker.addOnPositiveButtonClickListener(selection -> {
                 if (selection != null) {
@@ -404,9 +398,7 @@ public class SellHistoryActivity extends BaseActivity {
         Button btnPrintBill = view.findViewById(R.id.btn_print_sell_bill);
 
         // Populate Header & Status
-        final String invoiceDisplayId = !TextUtils.isEmpty(sale.invoiceId)
-                ? sale.invoiceId
-                : String.format(Locale.getDefault(), "#SALE-%d", sale.saleId);
+        final String invoiceDisplayId = !TextUtils.isEmpty(sale.invoiceId) ? sale.invoiceId : String.format(Locale.getDefault(), "#SALE-%d", sale.saleId);
         textInvoiceId.setText(invoiceDisplayId);
         textSaleId.setText(String.format(Locale.getDefault(), "#SALE-%d", sale.saleId));
 
@@ -444,42 +436,32 @@ public class SellHistoryActivity extends BaseActivity {
 
         if (btnCancelBill != null) {
             btnCancelBill.setOnClickListener(v -> {
-                new MaterialAlertDialogBuilder(SellHistoryActivity.this)
-                        .setTitle("Cancel Sell Bill")
-                        .setMessage(String.format("Are you sure you want to cancel bill %s?\n\n• All sold items will be returned to inventory.\n• The bill will be marked as 'Cancelled'.\n• This action cannot be undone.", invoiceDisplayId))
-                        .setPositiveButton("Yes, Cancel Bill", (confirmDialog, which) -> {
-                            confirmDialog.dismiss();
-                            btnCancelBill.setEnabled(false);
-                            btnCancelBill.setText("Cancelling...");
+                new MaterialAlertDialogBuilder(SellHistoryActivity.this).setTitle("Cancel Sell Bill").setMessage(String.format("Are you sure you want to cancel bill %s?\n\n• All sold items will be returned to inventory.\n• The bill will be marked as 'Cancelled'.\n• This action cannot be undone.", invoiceDisplayId)).setPositiveButton("Yes, Cancel Bill", (confirmDialog, which) -> {
+                    confirmDialog.dismiss();
+                    btnCancelBill.setEnabled(false);
+                    btnCancelBill.setText("Cancelling...");
 
-                            saleRepository.cancelSale(sale.saleId, new SaleRepository.SaleActionCallback() {
-                                @Override
-                                public void onSuccess() {
-                                    Toast.makeText(SellHistoryActivity.this, "Bill " + invoiceDisplayId + " cancelled and inventory restored.", Toast.LENGTH_SHORT).show();
-                                    dialog.dismiss();
+                    saleRepository.cancelSale(sale.saleId, new SaleRepository.SaleActionCallback() {
+                        @Override
+                        public void onSuccess() {
+                            Toast.makeText(SellHistoryActivity.this, "Bill " + invoiceDisplayId + " cancelled and inventory restored.", Toast.LENGTH_SHORT).show();
+                            dialog.dismiss();
 
-                                    new MaterialAlertDialogBuilder(SellHistoryActivity.this)
-                                            .setTitle("Bill Cancelled")
-                                            .setMessage("Bill " + invoiceDisplayId + " has been cancelled and products returned to inventory.\n\nWould you like to re-issue a new bill now?")
-                                            .setPositiveButton("Re-issue New Bill", (d, w) -> {
-                                                d.dismiss();
-                                                Intent intent = new Intent(SellHistoryActivity.this, SellActivity.class);
-                                                startActivity(intent);
-                                            })
-                                            .setNegativeButton("Close", null)
-                                            .show();
-                                }
+                            new MaterialAlertDialogBuilder(SellHistoryActivity.this).setTitle("Bill Cancelled").setMessage("Bill " + invoiceDisplayId + " has been cancelled and products returned to inventory.\n\nWould you like to re-issue a new bill now?").setPositiveButton("Re-issue New Bill", (d, w) -> {
+                                d.dismiss();
+                                Intent intent = new Intent(SellHistoryActivity.this, SellActivity.class);
+                                startActivity(intent);
+                            }).setNegativeButton("Close", null).show();
+                        }
 
-                                @Override
-                                public void onError(String message) {
-                                    btnCancelBill.setEnabled(true);
-                                    btnCancelBill.setText("Cancel Bill");
-                                    Toast.makeText(SellHistoryActivity.this, "Failed to cancel bill: " + message, Toast.LENGTH_LONG).show();
-                                }
-                            });
-                        })
-                        .setNegativeButton("Keep Bill", null)
-                        .show();
+                        @Override
+                        public void onError(String message) {
+                            btnCancelBill.setEnabled(true);
+                            btnCancelBill.setText("Cancel Bill");
+                            Toast.makeText(SellHistoryActivity.this, "Failed to cancel bill: " + message, Toast.LENGTH_LONG).show();
+                        }
+                    });
+                }).setNegativeButton("Keep Bill", null).show();
             });
         }
 
@@ -683,7 +665,8 @@ public class SellHistoryActivity extends BaseActivity {
                             }
                         }
 
-                        textQtyPrice.setText(String.format(Locale.getDefault(), "Qty: %d × ₹ %,.2f", sItem.quantity, sItem.unitPrice));
+                        String uom = (itemWithProd != null && itemWithProd.product != null && !TextUtils.isEmpty(itemWithProd.product.unitOfMeasure)) ? " " + itemWithProd.product.unitOfMeasure.trim() : "";
+                        textQtyPrice.setText(String.format(Locale.getDefault(), "Qty: %s%s × ₹ %,.2f", CommonFunctions.formatQuantity(sItem.quantity), uom, sItem.unitPrice));
                         textItemTotal.setText(String.format(Locale.getDefault(), "₹ %,.2f", sItem.subtotal));
 
                         // Tax display

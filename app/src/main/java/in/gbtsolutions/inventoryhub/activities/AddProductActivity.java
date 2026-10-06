@@ -35,8 +35,11 @@ import in.gbtsolutions.inventoryhub.adapters.NoFilterArrayAdapter;
 import in.gbtsolutions.inventoryhub.models.Category;
 import in.gbtsolutions.inventoryhub.models.Product;
 import in.gbtsolutions.inventoryhub.models.ProductBatch;
+import in.gbtsolutions.inventoryhub.models.UnitOfMeasure;
+import in.gbtsolutions.inventoryhub.online.config.AppModeManager;
 import in.gbtsolutions.inventoryhub.repository.CategoryRepository;
 import in.gbtsolutions.inventoryhub.repository.ProductBatchRepository;
+import in.gbtsolutions.inventoryhub.repository.UnitOfMeasureRepository;
 import in.gbtsolutions.inventoryhub.repository.ProductRepository;
 import in.gbtsolutions.inventoryhub.views.BatchEntryBottomSheet;
 
@@ -53,7 +56,11 @@ public class AddProductActivity extends BaseActivity {
     private EditText inputSellingPrice;
     private View containerInputQuantity;
     private EditText inputQuantity;
-    private EditText inputUnitOfMeasure;
+    private AutoCompleteTextView dropdownUnitOfMeasure;
+    private View containerUnitOfMeasure;
+    private final List<UnitOfMeasure> uomList = new ArrayList<>();
+    private final List<String> uomNames = new ArrayList<>();
+    private ArrayAdapter<String> uomAdapter;
     private EditText inputReorderLevel;
     private EditText inputReorderQuantity;
     private EditText inputHsnCode;
@@ -118,6 +125,7 @@ public class AddProductActivity extends BaseActivity {
         initViews(isEditMode);
         setupDropdowns();
         observeCategories();
+        observeUnitsOfMeasure();
         setupBatchSection(isEditMode);
     }
 
@@ -132,7 +140,8 @@ public class AddProductActivity extends BaseActivity {
         inputSellingPrice = findViewById(R.id.input_selling_price);
         containerInputQuantity = findViewById(R.id.container_input_quantity);
         inputQuantity = findViewById(R.id.input_quantity);
-        inputUnitOfMeasure = findViewById(R.id.input_unit_of_measure);
+        dropdownUnitOfMeasure = findViewById(R.id.dropdown_unit_of_measure);
+        containerUnitOfMeasure = findViewById(R.id.container_unit_of_measure);
         inputReorderLevel = findViewById(R.id.input_reorder_level);
         inputReorderQuantity = findViewById(R.id.input_reorder_quantity);
         labelHsnCode = findViewById(R.id.label_hsn_code);
@@ -194,7 +203,7 @@ public class AddProductActivity extends BaseActivity {
             inputQuantity.setText(String.valueOf(qty));
 
             String uom = getIntent().getStringExtra("unit_of_measure");
-            if (uom != null) inputUnitOfMeasure.setText(uom);
+            if (uom != null) dropdownUnitOfMeasure.setText(uom, false);
 
             int reorderLvl = getIntent().getIntExtra("reorder_level", 5);
             inputReorderLevel.setText(String.valueOf(reorderLvl));
@@ -229,7 +238,12 @@ public class AddProductActivity extends BaseActivity {
 
         View.OnClickListener showCategoryDropdown = v -> {
             if (categoryList.isEmpty()) {
-                showToast("No categories found in database. Please add a category first.");
+                if (AppModeManager.getInstance(this).isOnlineMode()) {
+                    showToast("Loading categories from server, please wait...");
+                    observeCategories();
+                } else {
+                    showToast("No categories found in database. Please add a category first.");
+                }
                 return;
             }
             dropdownCategory.showDropDown();
@@ -259,55 +273,152 @@ public class AddProductActivity extends BaseActivity {
         if (containerStatus != null) {
             containerStatus.setOnClickListener(v -> dropdownStatus.showDropDown());
         }
+
+        // Unit of Measure Dropdown
+        uomAdapter = new NoFilterArrayAdapter<>(this, R.layout.item_dropdown, uomNames);
+        dropdownUnitOfMeasure.setAdapter(uomAdapter);
+        dropdownUnitOfMeasure.setDropDownBackgroundResource(R.drawable.bg_card);
+
+        View.OnClickListener showUomDropdown = v -> {
+            if (uomNames.isEmpty()) {
+                showToast("No units of measure found. Please add units first.");
+                return;
+            }
+            dropdownUnitOfMeasure.showDropDown();
+        };
+        dropdownUnitOfMeasure.setOnClickListener(showUomDropdown);
+        if (containerUnitOfMeasure != null) {
+            containerUnitOfMeasure.setOnClickListener(showUomDropdown);
+        }
+        dropdownUnitOfMeasure.setOnItemClickListener((parent, view, position, id) -> hideError());
     }
 
     private void observeCategories() {
-        categoryRepository.getAllCategories().observe(this, categories -> {
-            categoryList.clear();
-            categoryNames.clear();
-            if (categories != null && !categories.isEmpty()) {
-                categoryList.addAll(categories);
-                for (Category category : categories) {
-                    if (category.categoryName != null) {
-                        categoryNames.add(category.categoryName);
-                    }
+        if (AppModeManager.getInstance(this).isOnlineMode()) {
+            categoryRepository.fetchCategoriesOnline(new in.gbtsolutions.inventoryhub.online.repository.OnlineCategoryRepository.CategoryListCallback() {
+                @Override
+                public void onSuccess(List<Category> categories) {
+                    populateCategories(categories);
+                }
+
+                @Override
+                public void onError(String errorMessage) {
+                    showToast("Failed to load online categories: " + errorMessage);
+                }
+            });
+            return;
+        }
+
+        categoryRepository.getAllCategories().observe(this, this::populateCategories);
+    }
+
+    private void populateCategories(List<Category> categories) {
+        categoryList.clear();
+        categoryNames.clear();
+        if (categories != null && !categories.isEmpty()) {
+            categoryList.addAll(categories);
+            for (Category category : categories) {
+                if (category.categoryName != null) {
+                    categoryNames.add(category.categoryName);
                 }
             }
-            categoryAdapter.notifyDataSetChanged();
+        }
+        categoryAdapter.notifyDataSetChanged();
 
-            String currentText = dropdownCategory.getText().toString().trim();
-            boolean hasMatch = false;
+        String currentText = dropdownCategory.getText().toString().trim();
+        boolean hasMatch = false;
 
-            if (editCategoryId > 0) {
-                for (Category category : categoryList) {
-                    if (category.categoryId == editCategoryId && category.categoryName != null) {
+        if (editCategoryId > 0) {
+            for (Category category : categoryList) {
+                if (category.categoryId == editCategoryId && category.categoryName != null) {
+                    dropdownCategory.setText(category.categoryName, false);
+                    hasMatch = true;
+                    break;
+                }
+            }
+        }
+
+        if (!hasMatch) {
+            for (Category category : categoryList) {
+                if (category.categoryName != null && category.categoryName.equalsIgnoreCase(currentText)) {
+                    hasMatch = true;
+                    if (!currentText.equals(category.categoryName)) {
                         dropdownCategory.setText(category.categoryName, false);
-                        hasMatch = true;
-                        break;
                     }
+                    break;
                 }
             }
+        }
 
-            if (!hasMatch) {
-                for (Category category : categoryList) {
-                    if (category.categoryName != null && category.categoryName.equalsIgnoreCase(currentText)) {
-                        hasMatch = true;
-                        if (!currentText.equals(category.categoryName)) {
-                            dropdownCategory.setText(category.categoryName, false);
+        if (!hasMatch) {
+            if (!categoryList.isEmpty()) {
+                dropdownCategory.setText(categoryList.get(0).categoryName, false);
+            } else {
+                dropdownCategory.setText("", false);
+            }
+        }
+    }
+
+    private void observeUnitsOfMeasure() {
+        UnitOfMeasureRepository uomRepo = new UnitOfMeasureRepository(getApplication());
+        uomRepo.getAllUnitsOfMeasure().observe(this, this::populateUnitsOfMeasure);
+    }
+
+    private void populateUnitsOfMeasure(List<UnitOfMeasure> units) {
+        uomList.clear();
+        uomNames.clear();
+        if (units != null && !units.isEmpty()) {
+            uomList.addAll(units);
+            for (UnitOfMeasure u : units) {
+                if (u.name != null && !u.name.trim().isEmpty()) {
+                    uomNames.add(u.name.trim());
+                }
+            }
+        }
+        if (uomAdapter != null) {
+            uomAdapter.notifyDataSetChanged();
+        }
+
+        String currentText = dropdownUnitOfMeasure != null ? dropdownUnitOfMeasure.getText().toString().trim() : "";
+        boolean hasMatch = false;
+
+        for (String name : uomNames) {
+            if (name.equalsIgnoreCase(currentText)) {
+                hasMatch = true;
+                if (!currentText.equals(name)) {
+                    dropdownUnitOfMeasure.setText(name, false);
+                }
+                break;
+            }
+        }
+
+        if (!hasMatch && dropdownUnitOfMeasure != null) {
+            if (editProductId > 0) {
+                String existingUom = getIntent().getStringExtra("unit_of_measure");
+                if (existingUom != null && !existingUom.trim().isEmpty()) {
+                    for (String itemUom : uomNames) {
+                        if (itemUom.equalsIgnoreCase(existingUom.trim())) {
+                            dropdownUnitOfMeasure.setText(itemUom, false);
+                            hasMatch = true;
+                            break;
                         }
-                        break;
+                    }
+                    if (!hasMatch) {
+                        dropdownUnitOfMeasure.setText(existingUom.trim(), false);
+                        hasMatch = true;
                     }
                 }
             }
-
-            if (!hasMatch) {
-                if (!categoryList.isEmpty()) {
-                    dropdownCategory.setText(categoryList.get(0).categoryName, false);
+            if (!hasMatch && !uomNames.isEmpty()) {
+                if (uomNames.contains("Pics")) {
+                    dropdownUnitOfMeasure.setText("Pics", false);
+                } else if (uomNames.contains("KG")) {
+                    dropdownUnitOfMeasure.setText("KG", false);
                 } else {
-                    dropdownCategory.setText("", false);
+                    dropdownUnitOfMeasure.setText(uomNames.get(0), false);
                 }
             }
-        });
+        }
     }
 
     /**
@@ -418,9 +529,9 @@ public class AddProductActivity extends BaseActivity {
         String val = GlobalStore.getInstance().getCsvMandatoryField();
         if (val == null || val.trim().isEmpty()) {
             SharedPreferences prefs = getSharedPreferences(Configurations.PREF_NAME, MODE_PRIVATE);
-            val = prefs.getString(Configurations.KEY_CSV_MANDATORY_FIELD, Configurations.MANDATORY_FIELD_SKU);
+            val = prefs.getString(Configurations.KEY_CSV_MANDATORY_FIELD, Configurations.MANDATORY_FIELD_HSN);
         }
-        return val != null ? val.trim().toLowerCase(Locale.ROOT) : Configurations.MANDATORY_FIELD_SKU;
+        return val != null ? val.trim().toLowerCase(Locale.ROOT) : Configurations.MANDATORY_FIELD_HSN;
     }
 
     private CharSequence formatRequired(String label) {
@@ -459,7 +570,7 @@ public class AddProductActivity extends BaseActivity {
         String name = inputProductName.getText().toString().trim();
         String sku = inputSku.getText().toString().trim();
         String brand = inputBrand.getText().toString().trim();
-        String unitOfMeasure = inputUnitOfMeasure.getText().toString().trim();
+        String unitOfMeasure = dropdownUnitOfMeasure != null ? dropdownUnitOfMeasure.getText().toString().trim() : "";
         String description = inputDescription.getText().toString().trim();
         String unitPriceStr = inputUnitPrice.getText().toString().trim();
         String sellingPriceStr = inputSellingPrice.getText().toString().trim();
@@ -628,7 +739,23 @@ public class AddProductActivity extends BaseActivity {
         }
 
         if (TextUtils.isEmpty(unitOfMeasure)) {
-            unitOfMeasure = "pcs";
+            showError("Please select a unit of measure.");
+            if (dropdownUnitOfMeasure != null) dropdownUnitOfMeasure.requestFocus();
+            return;
+        }
+
+        boolean validUnit = false;
+        for (String itemUom : uomNames) {
+            if (itemUom.equalsIgnoreCase(unitOfMeasure)) {
+                unitOfMeasure = itemUom;
+                validUnit = true;
+                break;
+            }
+        }
+
+        if (!validUnit && !uomNames.isEmpty()) {
+            showError("Please select a valid unit of measure from the available list.");
+            return;
         }
 
         long now = System.currentTimeMillis();
@@ -657,6 +784,10 @@ public class AddProductActivity extends BaseActivity {
                 isBatchEnabled
         );
 
+        if (isBatchEnabled && !pendingBatches.isEmpty()) {
+            product.setBatches(new ArrayList<>(pendingBatches));
+        }
+
         setLoading(true);
 
         if (editProductId > 0) {
@@ -668,6 +799,23 @@ public class AddProductActivity extends BaseActivity {
                 @Override
                 public void onSuccess() {
                     if (isBatchEnabled) {
+                        if (AppModeManager.getInstance(AddProductActivity.this).isOnlineMode()) {
+                            List<ProductBatch> newBatches = new ArrayList<>();
+                            for (ProductBatch b : pendingBatches) {
+                                if (b.batchId <= 0) {
+                                    newBatches.add(b);
+                                }
+                            }
+                            if (!newBatches.isEmpty()) {
+                                saveNewOnlineBatches(editProductId, newBatches, 0);
+                                return;
+                            }
+                            setLoading(false);
+                            showToast("Product updated successfully!");
+                            finish();
+                            return;
+                        }
+
                         for (ProductBatch d : deletedBatches) {
                             productBatchRepository.deleteBatch(d, null);
                         }
@@ -705,6 +853,13 @@ public class AddProductActivity extends BaseActivity {
                 public void onSuccess(long rowId) {
                     int newProductId = (int) rowId;
                     if (isBatchEnabled && !pendingBatches.isEmpty()) {
+                        if (AppModeManager.getInstance(AddProductActivity.this).isOnlineMode()) {
+                            setLoading(false);
+                            showToast("Product and batches saved successfully!");
+                            finish();
+                            return;
+                        }
+
                         productBatchRepository.saveBatchesForProduct(newProductId, pendingBatches, new ProductBatchRepository.BatchActionCallback() {
                             @Override
                             public void onSuccess() {
@@ -734,6 +889,27 @@ public class AddProductActivity extends BaseActivity {
                 }
             });
         }
+    }
+
+    private void saveNewOnlineBatches(int productId, List<ProductBatch> newBatches, int index) {
+        if (index >= newBatches.size()) {
+            setLoading(false);
+            showToast("Product and batches updated successfully!");
+            finish();
+            return;
+        }
+        ProductBatch b = newBatches.get(index);
+        productRepository.getOnlineRepository().createBatchForProduct(productId, b, new in.gbtsolutions.inventoryhub.online.repository.OnlineProductRepository.ProductActionCallback() {
+            @Override
+            public void onSuccess(Product product) {
+                saveNewOnlineBatches(productId, newBatches, index + 1);
+            }
+
+            @Override
+            public void onError(String errorMessage) {
+                saveNewOnlineBatches(productId, newBatches, index + 1);
+            }
+        });
     }
 
     private void setLoading(boolean loading) {

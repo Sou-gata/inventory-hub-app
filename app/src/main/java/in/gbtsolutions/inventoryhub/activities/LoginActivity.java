@@ -64,6 +64,7 @@ import in.gbtsolutions.inventoryhub.models.User;
 import in.gbtsolutions.inventoryhub.online.api.OnlineApiClient;
 import in.gbtsolutions.inventoryhub.online.api.OnlineApiService;
 import in.gbtsolutions.inventoryhub.online.config.AppModeManager;
+import in.gbtsolutions.inventoryhub.online.models.ApiResponse;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -240,23 +241,21 @@ public class LoginActivity extends AppCompatActivity {
         hideError();
         setLoading(true);
 
-        in.gbtsolutions.inventoryhub.online.config.AppModeManager modeManager =
-                in.gbtsolutions.inventoryhub.online.config.AppModeManager.getInstance(getApplicationContext());
+        AppModeManager modeManager = AppModeManager.getInstance(getApplicationContext());
 
         if (modeManager.isOnlineMode()) {
             JsonObject req = new JsonObject();
             req.addProperty("username", email);
-            req.addProperty("email", email);
+            req.addProperty("mobile", email);
+            req.addProperty("device_id", Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID));
             req.addProperty("password", password);
 
-            in.gbtsolutions.inventoryhub.online.api.OnlineApiService apiService =
-                    in.gbtsolutions.inventoryhub.online.api.OnlineApiClient.getInstance().getApiService(LoginActivity.this);
+            OnlineApiService apiService = OnlineApiClient.getInstance().getApiService(LoginActivity.this);
 
-            Call<in.gbtsolutions.inventoryhub.online.models.ApiResponse<JsonObject>> call = apiService.login(req);
+            Call<ApiResponse<JsonObject>> call = apiService.login(req);
             call.enqueue(new Callback<>() {
                 @Override
-                public void onResponse(@NonNull Call<in.gbtsolutions.inventoryhub.online.models.ApiResponse<JsonObject>> call,
-                                       @NonNull Response<in.gbtsolutions.inventoryhub.online.models.ApiResponse<JsonObject>> response) {
+                public void onResponse(@NonNull Call<ApiResponse<JsonObject>> call, @NonNull Response<ApiResponse<JsonObject>> response) {
                     if (isFinishing() || isDestroyed()) return;
 
                     if (response.isSuccessful() && response.body() != null && response.body().isSuccess() && response.body().getData() != null) {
@@ -312,7 +311,7 @@ public class LoginActivity extends AppCompatActivity {
                 }
 
                 @Override
-                public void onFailure(@NonNull Call<in.gbtsolutions.inventoryhub.online.models.ApiResponse<JsonObject>> call,
+                public void onFailure(@NonNull Call<ApiResponse<JsonObject>> call,
                                       @NonNull Throwable t) {
                     if (isFinishing() || isDestroyed()) return;
                     setLoading(false);
@@ -585,7 +584,7 @@ public class LoginActivity extends AppCompatActivity {
                                     // Save token if present in handshake response
                                     if (data.has("token") && !data.get("token").isJsonNull()) {
                                         String handshakeToken = data.get("token").getAsString();
-                                        in.gbtsolutions.inventoryhub.online.config.AppModeManager.getInstance(getApplicationContext())
+                                        AppModeManager.getInstance(getApplicationContext())
                                                 .setAuthToken(handshakeToken.trim());
                                         sharedPreferences.edit().putString(Configurations.KEY_AUTH_TOKEN, handshakeToken.trim()).apply();
                                     }

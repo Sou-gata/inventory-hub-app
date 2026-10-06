@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="tag_nav_item_type" type="id" />
+    <item name="tag_nav_item_bg_res" type="id" />
+    <item name="tag_nav_item_drawable" type="id" />
+    <item name="tag_nav_item_textview" type="id" />
+    <item name="tag_nav_item_text_styled" type="id" />
+    <item name="tag_nav_item_listener_added" type="id" />
+</resources>

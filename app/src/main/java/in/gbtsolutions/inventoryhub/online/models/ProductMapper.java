@@ -92,31 +92,43 @@ public class ProductMapper {
         dto.updatedAt = product.updatedAt;
 
         if (product.batches != null && !product.batches.isEmpty()) {
+            dto.batchEnabled = true;
             dto.batches = new ArrayList<>();
             for (in.gbtsolutions.inventoryhub.models.ProductBatch b : product.batches) {
                 if (b == null) continue;
+                Integer batchId = b.batchId > 0 ? Integer.valueOf(b.batchId) : null;
+                Integer productId = b.productId > 0 ? Integer.valueOf(b.productId) : (dto.productId > 0 ? Integer.valueOf(dto.productId) : null);
+                Long expiryDate = b.expiryDate > 0 ? Long.valueOf(b.expiryDate) : null;
+                double purchasePrice = b.purchasePrice > 0 ? b.purchasePrice : product.unitPrice;
+                double sellingPrice = b.sellingPrice > 0 ? b.sellingPrice : product.sellingPrice;
                 OnlineProductDto.OnlineBatchDto bDto = new OnlineProductDto.OnlineBatchDto(
-                        b.batchId, b.productId, b.batchNo, b.quantity, b.purchasePrice, b.sellingPrice, b.expiryDate
+                        batchId, productId, b.batchNo, b.quantity, purchasePrice, sellingPrice, expiryDate
                 );
                 dto.batches.add(bDto);
             }
             // Populate primary batch fields for backward compatibility
             in.gbtsolutions.inventoryhub.models.ProductBatch first = product.batches.get(0);
-            dto.batchId = first.batchId;
+            dto.batchId = first.batchId > 0 ? Integer.valueOf(first.batchId) : null;
             dto.batchNo = first.batchNo;
             dto.batchQuantity = first.quantity;
-            dto.expiryDate = first.expiryDate;
+            dto.expiryDate = first.expiryDate > 0 ? Long.valueOf(first.expiryDate) : null;
         } else if (product.batch != null) {
-            dto.batchId = product.batch.batchId;
+            dto.batchEnabled = true;
+            Integer batchId = product.batch.batchId > 0 ? Integer.valueOf(product.batch.batchId) : null;
+            Integer productId = product.productId > 0 ? Integer.valueOf(product.productId) : (dto.productId > 0 ? Integer.valueOf(dto.productId) : null);
+            Long expiryDate = product.batch.expiryDate > 0 ? Long.valueOf(product.batch.expiryDate) : null;
+            double purchasePrice = product.batch.purchasePrice > 0 ? product.batch.purchasePrice : product.unitPrice;
+            double sellingPrice = product.batch.sellingPrice > 0 ? product.batch.sellingPrice : product.sellingPrice;
+            dto.batchId = batchId;
             dto.batchNo = product.batch.batchNo;
             dto.batchQuantity = product.batch.quantity;
-            dto.expiryDate = product.batch.expiryDate;
+            dto.expiryDate = expiryDate;
 
             dto.batches = new ArrayList<>();
             dto.batches.add(new OnlineProductDto.OnlineBatchDto(
-                    product.batch.batchId, product.productId, product.batch.batchNo,
-                    product.batch.quantity, product.batch.purchasePrice, product.batch.sellingPrice,
-                    product.batch.expiryDate
+                    batchId, productId, product.batch.batchNo,
+                    product.batch.quantity, purchasePrice, sellingPrice,
+                    expiryDate
             ));
         }
 

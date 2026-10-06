@@ -10,10 +10,6 @@ import androidx.annotation.Nullable;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * An {@link ArrayAdapter} that disables filtering on AutoCompleteTextView,
- * ensuring all items remain visible in the dropdown regardless of the current text.
- */
 public class NoFilterArrayAdapter<T> extends ArrayAdapter<T> {
 
     private final List<T> items;

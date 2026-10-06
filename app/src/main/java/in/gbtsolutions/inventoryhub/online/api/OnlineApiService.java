@@ -1,8 +1,11 @@
 package in.gbtsolutions.inventoryhub.online.api;
 
+import com.google.gson.JsonObject;
+
 import java.util.List;
 
 import in.gbtsolutions.inventoryhub.online.models.ApiResponse;
+import in.gbtsolutions.inventoryhub.online.models.OnlineBuyerDto;
 import in.gbtsolutions.inventoryhub.online.models.OnlineCategoryDto;
 import in.gbtsolutions.inventoryhub.online.models.OnlinePendingReceiveDto;
 import in.gbtsolutions.inventoryhub.online.models.OnlineProductDto;
@@ -10,6 +13,7 @@ import in.gbtsolutions.inventoryhub.online.models.OnlinePurchaseDto;
 import in.gbtsolutions.inventoryhub.online.models.OnlineQrLookupRequest;
 import in.gbtsolutions.inventoryhub.online.models.OnlineReceiveItemsRequest;
 import in.gbtsolutions.inventoryhub.online.models.OnlineSaleDto;
+import in.gbtsolutions.inventoryhub.online.models.OnlineSupplierDto;
 import in.gbtsolutions.inventoryhub.online.models.PagedData;
 import retrofit2.Call;
 import retrofit2.http.Body;
@@ -89,6 +93,58 @@ public interface OnlineApiService {
             @Path("id") int categoryId
     );
 
+    @GET("api/v1/buyers")
+    Call<ApiResponse<List<OnlineBuyerDto>>> getBuyers(
+            @Query("search") String search
+    );
+
+    @GET("api/v1/buyers/{id}")
+    Call<ApiResponse<OnlineBuyerDto>> getBuyerById(
+            @Path("id") int buyerId
+    );
+
+    @POST("api/v1/buyers")
+    Call<ApiResponse<OnlineBuyerDto>> createBuyer(
+            @Body OnlineBuyerDto buyerDto
+    );
+
+    @PUT("api/v1/buyers/{id}")
+    Call<ApiResponse<OnlineBuyerDto>> updateBuyer(
+            @Path("id") int buyerId,
+            @Body OnlineBuyerDto buyerDto
+    );
+
+    @DELETE("api/v1/buyers/{id}")
+    Call<ApiResponse<Object>> deleteBuyer(
+            @Path("id") int buyerId
+    );
+
+    @GET("api/v1/suppliers")
+    Call<ApiResponse<List<OnlineSupplierDto>>> getSuppliers(
+            @Query("search") String search
+    );
+
+    @GET("api/v1/suppliers/{id}")
+    Call<ApiResponse<OnlineSupplierDto>> getSupplierById(
+            @Path("id") int supplierId
+    );
+
+    @POST("api/v1/suppliers")
+    Call<ApiResponse<OnlineSupplierDto>> createSupplier(
+            @Body OnlineSupplierDto supplierDto
+    );
+
+    @PUT("api/v1/suppliers/{id}")
+    Call<ApiResponse<OnlineSupplierDto>> updateSupplier(
+            @Path("id") int supplierId,
+            @Body OnlineSupplierDto supplierDto
+    );
+
+    @DELETE("api/v1/suppliers/{id}")
+    Call<ApiResponse<Object>> deleteSupplier(
+            @Path("id") int supplierId
+    );
+
     @POST("api/v1/sales")
     Call<ApiResponse<OnlineSaleDto>> createSale(
             @Body OnlineSaleDto saleDto
@@ -116,12 +172,8 @@ public interface OnlineApiService {
     Call<ApiResponse<Object>> checkHealth();
 
     @POST("api/v1/auth/login")
-    Call<ApiResponse<com.google.gson.JsonObject>> login(
-            @Body com.google.gson.JsonObject credentials
-    );
+    Call<ApiResponse<JsonObject>> login(@Body JsonObject credentials);
 
     @POST("api/v1/devices/lookup")
-    Call<com.google.gson.JsonObject> lookupDevice(
-            @Body com.google.gson.JsonObject body
-    );
+    Call<JsonObject> lookupDevice(@Body JsonObject body);
 }

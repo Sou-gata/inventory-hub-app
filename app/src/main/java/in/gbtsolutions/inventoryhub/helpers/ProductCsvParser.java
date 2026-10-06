@@ -294,9 +294,9 @@ public class ProductCsvParser {
             for (ProductGroup g : orderedGroups) {
                 if (g.product == null) continue;
                 if (!g.batches.isEmpty()) {
-                    int total = 0;
+                    double total = 0;
                     for (ProductBatch b : g.batches) total += b.quantity;
-                    g.product.quantity = total;
+                    g.product.quantity = CommonFunctions.roundTo3Decimals(total);
                     g.product.batchEnabled = true;
                 }
                 result.groups.add(g);
@@ -397,7 +397,7 @@ public class ProductCsvParser {
             p.status = isBlank(row.status) ? "active" : row.status.trim();
             p.unitPrice = parseDouble(row.unitPriceRaw, "unit_price", lineNumber);
             p.sellingPrice = parseDouble(row.sellingPriceRaw, "selling_price", lineNumber);
-            p.quantity = isBlank(row.quantityRaw) ? 0 : parseInt(row.quantityRaw, "quantity", lineNumber);
+            p.quantity = isBlank(row.quantityRaw) ? 0 : CommonFunctions.roundTo3Decimals(parseDouble(row.quantityRaw, "quantity", lineNumber));
             p.reorderLevel = isBlank(row.reorderLevelRaw) ? 0 : parseInt(row.reorderLevelRaw, "reorder_level", lineNumber);
             p.reorderQuantity = isBlank(row.reorderQtyRaw) ? 0 : parseInt(row.reorderQtyRaw, "reorder_quantity", lineNumber);
             p.gstPercent = isBlank(row.gstRaw) ? 0 : parseDouble(row.gstRaw, "gst_percent", lineNumber);
@@ -438,7 +438,7 @@ public class ProductCsvParser {
         try {
             ProductBatch b = new ProductBatch();
             b.batchNo = row.batchNo.trim();
-            b.quantity = parseInt(row.batchQtyRaw, "batch_quantity", lineNumber);
+            b.quantity = CommonFunctions.roundTo3Decimals(parseDouble(row.batchQtyRaw, "batch_quantity", lineNumber));
             b.purchasePrice = isBlank(row.batchPurchaseRaw) ? 0 : parseDouble(row.batchPurchaseRaw, "batch_purchase_price", lineNumber);
             b.sellingPrice = isBlank(row.batchSellingRaw) ? 0 : parseDouble(row.batchSellingRaw, "batch_selling_price", lineNumber);
 
