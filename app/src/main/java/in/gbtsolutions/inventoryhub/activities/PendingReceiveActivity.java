@@ -52,7 +52,7 @@ import in.gbtsolutions.inventoryhub.R;
 import in.gbtsolutions.inventoryhub.adapters.PendingReceiveAdapter;
 import in.gbtsolutions.inventoryhub.helpers.BitmapHelper;
 import in.gbtsolutions.inventoryhub.helpers.CommonFunctions;
-import in.gbtsolutions.inventoryhub.helpers.PrinterHelper;
+import in.gbtsolutions.inventoryhub.helpers.UserHelper;
 import in.gbtsolutions.inventoryhub.models.Config;
 import in.gbtsolutions.inventoryhub.models.Product;
 import in.gbtsolutions.inventoryhub.models.Purchase;
@@ -63,6 +63,7 @@ import in.gbtsolutions.inventoryhub.models.ReceiveItem;
 import in.gbtsolutions.inventoryhub.models.ReceiveRecord;
 import in.gbtsolutions.inventoryhub.models.ReceiveRecordWithItems;
 import in.gbtsolutions.inventoryhub.models.Suppliers;
+import in.gbtsolutions.inventoryhub.models.User;
 import in.gbtsolutions.inventoryhub.online.models.OnlinePendingReceiveDto;
 import in.gbtsolutions.inventoryhub.online.models.OnlineReceiveItemsRequest;
 import in.gbtsolutions.inventoryhub.online.repository.OnlinePurchaseRepository;
@@ -315,6 +316,27 @@ public class PendingReceiveActivity extends BaseActivity implements PendingRecei
 
         btnClose.setOnClickListener(v -> dialog.dismiss());
 
+        // Populate Ordered By
+        TextView textReceiveOrderedBy = sheetView.findViewById(R.id.text_receive_ordered_by);
+        TextView textReceiveOrderedByRole = sheetView.findViewById(R.id.text_receive_ordered_by_role);
+
+        final long orderedById = purchase.createdBy;
+        if (textReceiveOrderedBy != null) {
+            textReceiveOrderedBy.setText(orderedById > 0 ? ("User #" + orderedById) : "Staff");
+        }
+        if (orderedById > 0) {
+            UserHelper.getUserByIdAsync(this, orderedById, user -> {
+                if (user != null) {
+                    if (textReceiveOrderedBy != null) {
+                        textReceiveOrderedBy.setText(UserHelper.formatUserNameAndUsername(user, orderedById));
+                    }
+                    if (textReceiveOrderedByRole != null) {
+                        textReceiveOrderedByRole.setText(UserHelper.formatUserRole(user));
+                    }
+                }
+            });
+        }
+
         // Populate Supplier
         if (supplier != null) {
             textSupplierName.setText(!TextUtils.isEmpty(supplier.supplierName) ? supplier.supplierName : "Supplier");
@@ -426,6 +448,8 @@ public class PendingReceiveActivity extends BaseActivity implements PendingRecei
 
                         TextView textStageTitle = stageView.findViewById(R.id.text_stage_title);
                         TextView textStageDateTime = stageView.findViewById(R.id.text_stage_date_time);
+                        TextView textStageReceivedByUser = stageView.findViewById(R.id.text_stage_received_by_user);
+                        TextView textStageReceivedByRole = stageView.findViewById(R.id.text_stage_received_by_role);
                         LinearLayout containerStageItems = stageView.findViewById(R.id.container_stage_items);
                         TextView textStageNotes = stageView.findViewById(R.id.text_stage_notes);
                         TextView textStageTotalUnits = stageView.findViewById(R.id.text_stage_total_units);
@@ -433,6 +457,27 @@ public class PendingReceiveActivity extends BaseActivity implements PendingRecei
 
                         final int currentStageNumber = stageNumber;
                         textStageTitle.setText(String.format(Locale.getDefault(), "STAGE %d", currentStageNumber));
+
+                        final long stageReceivedBy = record.receivedBy;
+                        if (textStageReceivedByUser != null) {
+                            textStageReceivedByUser.setText(stageReceivedBy > 0 ? ("User #" + stageReceivedBy) : "Staff");
+                        }
+                        if (textStageReceivedByRole != null) {
+                            textStageReceivedByRole.setText("STAFF");
+                        }
+                        if (stageReceivedBy > 0) {
+                            UserHelper.getUserByIdAsync(PendingReceiveActivity.this, stageReceivedBy, user -> {
+                                if (user != null) {
+                                    if (textStageReceivedByUser != null) {
+                                        textStageReceivedByUser.setText(UserHelper.formatUserNameAndUsername(user, stageReceivedBy));
+                                    }
+                                    if (textStageReceivedByRole != null) {
+                                        textStageReceivedByRole.setText(UserHelper.formatUserRole(user));
+                                    }
+                                }
+                            });
+                        }
+
 
                         String dateDisplay = record.createdAt;
                         if (!TextUtils.isEmpty(record.createdAt)) {
@@ -445,7 +490,7 @@ public class PendingReceiveActivity extends BaseActivity implements PendingRecei
                         }
                         textStageDateTime.setText(dateDisplay != null ? dateDisplay : "");
 
-                        int totalStageUnits = 0;
+                        double totalStageUnits = 0.0;
                         containerStageItems.removeAllViews();
 
                         if (recWithItems.items != null) {
@@ -458,7 +503,7 @@ public class PendingReceiveActivity extends BaseActivity implements PendingRecei
                                         : "Product #" + rItem.productId;
 
                                 TextView itemRow = new TextView(PendingReceiveActivity.this);
-                                itemRow.setText(String.format(Locale.getDefault(), "• %d × %s", rItem.quantityReceived, prodName));
+                                itemRow.setText(String.format(Locale.getDefault(), "• %s × %s", CommonFunctions.formatQuantity(rItem.quantityReceived), prodName));
                                 itemRow.setTextColor(ContextCompat.getColor(PendingReceiveActivity.this, R.color.fg));
                                 itemRow.setTextSize(12f);
                                 itemRow.setPadding(0, 2, 0, 2);
@@ -466,8 +511,8 @@ public class PendingReceiveActivity extends BaseActivity implements PendingRecei
                             }
                         }
 
-                        textStageTotalUnits.setText(String.format(Locale.getDefault(), "Total Received: %d Unit%s",
-                                totalStageUnits, totalStageUnits == 1 ? "" : "s"));
+                        textStageTotalUnits.setText(String.format(Locale.getDefault(), "Total Received: %s Unit%s",
+                                CommonFunctions.formatQuantity(totalStageUnits), totalStageUnits == 1.0 ? "" : "s"));
 
                         if (!TextUtils.isEmpty(record.notes)) {
                             textStageNotes.setVisibility(View.VISIBLE);
@@ -585,7 +630,8 @@ public class PendingReceiveActivity extends BaseActivity implements PendingRecei
                     .setPositiveButton("Yes, Cancel Order", (d, which) -> {
                         d.dismiss();
                         btnCancel.setEnabled(false);
-                        purchaseRepository.cancelPurchase(purchase.purchaseId, new PurchaseRepository.PurchaseActionCallback() {
+                        long cancelUserId = UserHelper.getCurrentUserId(PendingReceiveActivity.this);
+                        purchaseRepository.cancelPurchase(purchase.purchaseId, cancelUserId, new PurchaseRepository.PurchaseActionCallback() {
                             @Override
                             public void onSuccess() {
                                 Toast.makeText(PendingReceiveActivity.this, "Order cancelled.", Toast.LENGTH_SHORT).show();
@@ -618,10 +664,7 @@ public class PendingReceiveActivity extends BaseActivity implements PendingRecei
         btnConfirmReceive.setEnabled(false);
         btnConfirmReceive.setText("Processing...");
 
-        long currentUserId = 1;
-        if (GlobalStore.getInstance().getLoggedInUser() != null) {
-            currentUserId = GlobalStore.getInstance().getLoggedInUser().id;
-        }
+        long currentUserId = UserHelper.getCurrentUserId(PendingReceiveActivity.this);
 
         final int purchaseId = purchase.purchaseId;
 

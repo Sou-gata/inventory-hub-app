@@ -100,10 +100,16 @@ public class SaleRepository {
     }
 
     public void insert(Sale sale) {
+        if (sale.createdBy <= 0) {
+            sale.createdBy = in.gbtsolutions.inventoryhub.helpers.UserHelper.getCurrentUserId(application);
+        }
         executorService.execute(() -> saleDao.insert(sale));
     }
 
     public void insert(Sale sale, SaleInsertCallback callback) {
+        if (sale.createdBy <= 0) {
+            sale.createdBy = in.gbtsolutions.inventoryhub.helpers.UserHelper.getCurrentUserId(application);
+        }
         executorService.execute(() -> {
             try {
                 long saleId = saleDao.insert(sale);
@@ -119,6 +125,9 @@ public class SaleRepository {
     }
 
     public void insertSaleWithItems(Sale sale, List<SaleItem> items, SaleInsertCallback callback) {
+        if (sale.createdBy <= 0) {
+            sale.createdBy = in.gbtsolutions.inventoryhub.helpers.UserHelper.getCurrentUserId(application);
+        }
         if (appModeManager.isOnlineMode()) {
             onlineSaleRepository.createSale(sale, items, new in.gbtsolutions.inventoryhub.online.repository.OnlineSaleRepository.SaleCreateCallback() {
                 @Override
@@ -215,6 +224,10 @@ public class SaleRepository {
     }
 
     public void cancelSale(int saleId, SaleActionCallback callback) {
+        cancelSale(saleId, in.gbtsolutions.inventoryhub.helpers.UserHelper.getCurrentUserId(application), callback);
+    }
+
+    public void cancelSale(int saleId, long userId, SaleActionCallback callback) {
         executorService.execute(() -> {
             try {
                 db.runInTransaction(() -> {
@@ -282,7 +295,9 @@ public class SaleRepository {
                         }
                     }
 
+                    long finalUserId = userId > 0 ? userId : in.gbtsolutions.inventoryhub.helpers.UserHelper.getCurrentUserId(application);
                     sale.status = "Cancelled";
+                    sale.cancelledBy = finalUserId;
                     sale.updatedAt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
                     saleDao.update(sale);
                 });

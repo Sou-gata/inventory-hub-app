@@ -1,0 +1,451 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_dialog_rounded"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <!-- Header: User Avatar, Name & Role Badge -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="@drawable/bg_icon_badge_blue"
+            android:padding="7dp"
+            android:src="@drawable/ic_nav_user"
+            app:tint="@color/material_blue" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tv_detail_user_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-black"
+                android:textColor="@color/fg"
+                android:textSize="16sp"
+                tools:text="Sougata Talukdar" />
+
+            <TextView
+                android:id="@+id/tv_detail_user_subtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:fontFamily="sans-serif"
+                android:textColor="@color/fg_dim"
+                android:textSize="11sp"
+                tools:text="@sougata • +91 9876543210" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tv_detail_role_badge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_badge_edit"
+            android:fontFamily="sans-serif-medium"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="4dp"
+            android:text="ADMIN"
+            android:textColor="@color/material_blue"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginVertical="12dp"
+        android:background="@color/border" />
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:maxHeight="420dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- 1. SALES BREAKDOWN CARD -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_field_normal"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:fontFamily="sans-serif-bold"
+                        android:text="SALES PERFORMANCE"
+                        android:textColor="@color/material_blue"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/tv_detail_sales_count"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:textColor="@color/fg_dim"
+                        android:textSize="11sp"
+                        tools:text="14 Invoices" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Gross Sales Turnover"
+                        android:textColor="@color/fg"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/tv_detail_sales_gross"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-bold"
+                        android:textColor="@color/fg"
+                        android:textSize="12sp"
+                        tools:text="₹ 45,200.00" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Taxable Turnover"
+                        android:textColor="@color/fg_dim"
+                        android:textSize="11sp" />
+
+                    <TextView
+                        android:id="@+id/tv_detail_sales_taxable"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/fg_dim"
+                        android:textSize="11sp"
+                        tools:text="₹ 38,305.08" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="CGST / SGST / IGST"
+                        android:textColor="@color/fg_dim"
+                        android:textSize="11sp" />
+
+                    <TextView
+                        android:id="@+id/tv_detail_sales_tax_breakup"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/fg_dim"
+                        android:textSize="11sp"
+                        tools:text="₹ 3,447.46 / ₹ 3,447.46 / ₹ 0.00" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="Total Output Sales GST"
+                        android:textColor="@color/material_blue"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/tv_detail_sales_total_gst"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-bold"
+                        android:textColor="@color/material_blue"
+                        android:textSize="12sp"
+                        tools:text="₹ 6,894.92" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- 2. PURCHASES BREAKDOWN CARD -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_field_normal"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:fontFamily="sans-serif-bold"
+                        android:text="PURCHASES RECORDED"
+                        android:textColor="@color/status_orange"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/tv_detail_purchase_count"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:textColor="@color/fg_dim"
+                        android:textSize="11sp"
+                        tools:text="8 Orders" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Gross Purchases Value"
+                        android:textColor="@color/fg"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/tv_detail_purchase_gross"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-bold"
+                        android:textColor="@color/fg"
+                        android:textSize="12sp"
+                        tools:text="₹ 28,500.00" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Taxable Purchase Value"
+                        android:textColor="@color/fg_dim"
+                        android:textSize="11sp" />
+
+                    <TextView
+                        android:id="@+id/tv_detail_purchase_taxable"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/fg_dim"
+                        android:textSize="11sp"
+                        tools:text="₹ 24,152.54" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="CGST / SGST / IGST"
+                        android:textColor="@color/fg_dim"
+                        android:textSize="11sp" />
+
+                    <TextView
+                        android:id="@+id/tv_detail_purchase_tax_breakup"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/fg_dim"
+                        android:textSize="11sp"
+                        tools:text="₹ 2,173.73 / ₹ 2,173.73 / ₹ 0.00" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="Total Input Purchase GST"
+                        android:textColor="@color/status_orange"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/tv_detail_purchase_total_gst"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-bold"
+                        android:textColor="@color/status_orange"
+                        android:textSize="12sp"
+                        tools:text="₹ 4,347.46" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- 3. NET SUMMARY CARD -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_field_normal"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-bold"
+                    android:text="NET TOTALS &amp; GST LIABILITY"
+                    android:textColor="@color/status_green"
+                    android:textSize="12sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Combined Total GST Handled"
+                        android:textColor="@color/fg"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/tv_detail_combined_gst"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-bold"
+                        android:textColor="@color/fg"
+                        android:textSize="12sp"
+                        tools:text="₹ 11,242.38" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Net GST (Output - Input)"
+                        android:textColor="@color/fg_dim"
+                        android:textSize="11sp" />
+
+                    <TextView
+                        android:id="@+id/tv_detail_net_gst_liability"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/fg"
+                        android:textSize="11sp"
+                        tools:text="₹ 2,547.46" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginVertical="6dp"
+                    android:background="@color/border" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:fontFamily="sans-serif-bold"
+                        android:text="Net Turnover (Sales - Purchases)"
+                        android:textColor="@color/status_green"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:id="@+id/tv_detail_net_turnover"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-black"
+                        android:textColor="@color/status_green"
+                        android:textSize="14sp"
+                        tools:text="₹ 16,700.00" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Close Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_close_detail"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:layout_marginTop="16dp"
+        android:backgroundTint="@color/material_blue"
+        android:fontFamily="sans-serif-bold"
+        android:text="Close"
+        android:textColor="@color/white"
+        android:textSize="13sp"
+        app:cornerRadius="8dp" />
+
+</LinearLayout>

@@ -71,7 +71,7 @@ public abstract class BaseActivity extends AppCompatActivity {
 
     private final Map<Integer, CollapsibleMenuSection> collapsibleSections = new HashMap<>();
     private final Map<Integer, CollapsibleMenuSection> childToSectionMap = new HashMap<>();
-    protected final int[] userMenus = {R.id.nav_home, R.id.nav_inventory, R.id.nav_purchase, R.id.nav_purchase_new_order, R.id.nav_purchase_history, R.id.nav_receive, R.id.nav_sell, R.id.nav_sell_create, R.id.nav_sell_history, R.id.nav_reports, R.id.nav_reports_gstr1, R.id.nav_reports_sales_register, R.id.nav_reports_purchase_register, R.id.nav_audit_trail, R.id.nav_profile, R.id.nav_about};
+    protected final int[] userMenus = {R.id.nav_home, R.id.nav_inventory, R.id.nav_purchase, R.id.nav_purchase_new_order, R.id.nav_purchase_history, R.id.nav_receive, R.id.nav_sell, R.id.nav_sell_create, R.id.nav_sell_history, R.id.nav_reports, R.id.nav_reports_gstr1, R.id.nav_reports_sales_register, R.id.nav_reports_purchase_register, R.id.nav_reports_user_summary, R.id.nav_audit_trail, R.id.nav_profile, R.id.nav_about};
     @Nullable
     private NavigationView activeNavView = null;
     @Nullable
@@ -160,6 +160,7 @@ public abstract class BaseActivity extends AppCompatActivity {
                     R.id.nav_reports_gstr1,
                     R.id.nav_reports_sales_register,
                     R.id.nav_reports_purchase_register,
+                    R.id.nav_reports_user_summary,
                     R.id.nav_audit_trail));
         }
     }
@@ -560,6 +561,14 @@ public abstract class BaseActivity extends AppCompatActivity {
                 drawerLayout.closeDrawer(GravityCompat.START);
                 if (!(this instanceof PurchaseRegisterActivity)) {
                     Intent intent = new Intent(this, PurchaseRegisterActivity.class);
+                    startActivity(intent);
+                    applyTransition(this);
+                }
+                return true;
+            } else if (id == R.id.nav_reports_user_summary) {
+                drawerLayout.closeDrawer(GravityCompat.START);
+                if (!(this instanceof UserWiseReportActivity)) {
+                    Intent intent = new Intent(this, UserWiseReportActivity.class);
                     startActivity(intent);
                     applyTransition(this);
                 }
@@ -1183,7 +1192,7 @@ public abstract class BaseActivity extends AppCompatActivity {
         editor.remove(Configurations.KEY_AUTH_TOKEN);
         editor.apply();
         AppModeManager.getInstance(this).clearAuthToken();
-        GlobalStore.getInstance().clearLoggedInUser();
+        in.gbtsolutions.inventoryhub.helpers.UserHelper.clearLoggedInUser(this);
 
         Intent intent = new Intent(this, LoginActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -1253,7 +1262,7 @@ public abstract class BaseActivity extends AppCompatActivity {
         TextView initialsView = headerView.findViewById(R.id.nav_header_avatar_text);
         ImageView iconView = headerView.findViewById(R.id.nav_header_icon);
 
-        User user = GlobalStore.getInstance().getLoggedInUser();
+        User user = in.gbtsolutions.inventoryhub.helpers.UserHelper.getCurrentUser(this);
         if (user != null) {
             bindUserDetails(nameView, emailView, roleView, initialsView, iconView, user);
             if (activeNavView != null) {
@@ -1263,27 +1272,20 @@ public abstract class BaseActivity extends AppCompatActivity {
             return;
         }
 
-        // Fallback: check SharedPreferences or database if memory store was cleared
-        SharedPreferences preferences = getSharedPreferences(Configurations.PREF_NAME, MODE_PRIVATE);
-        long userId = preferences.getLong("user_id", -1);
+        // Fallback: load asynchronously from database using resolved user ID
+        long userId = in.gbtsolutions.inventoryhub.helpers.UserHelper.getCurrentUserId(this);
+        if (userId <= 0) return;
         Executors.newSingleThreadExecutor().execute(() -> {
             try {
                 Database db = Database.getInstance(getApplicationContext());
-                User dbUser = null;
-                if (userId > 0) {
-                    dbUser = db.userDao().getUserById(userId);
-                }
-                if (dbUser == null) {
-                    dbUser = db.userDao().getUserForLogin("admin");
-                }
-                final User resolvedUser = dbUser;
-                if (resolvedUser != null) {
-                    GlobalStore.getInstance().setLoggedInUser(resolvedUser);
+                User dbUser = db.userDao().getUserById(userId);
+                if (dbUser != null) {
+                    GlobalStore.getInstance().setLoggedInUser(dbUser);
                     runOnUiThread(() -> {
                         if (!isFinishing() && !isDestroyed()) {
-                            bindUserDetails(nameView, emailView, roleView, initialsView, iconView, resolvedUser);
+                            bindUserDetails(nameView, emailView, roleView, initialsView, iconView, dbUser);
                             if (activeNavView != null) {
-                                boolean isAdmin = resolvedUser.role != null && resolvedUser.role.trim().equalsIgnoreCase("admin");
+                                boolean isAdmin = dbUser.role != null && dbUser.role.trim().equalsIgnoreCase("admin");
                                 applyMenuVisibility(activeNavView, isAdmin);
                             }
                         }

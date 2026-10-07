@@ -84,6 +84,9 @@ public interface SaleDao {
             "  AND status = 'Cancelled'")
     int countCancelledSales(String startDate, String endDate);
 
+    @Query("UPDATE sales SET status = :status, cancelled_by = :cancelledBy, updated_at = :updatedAt WHERE sale_id = :saleId")
+    void updateCancellation(int saleId, String status, long cancelledBy, String updatedAt);
+
     @Insert(onConflict = androidx.room.OnConflictStrategy.REPLACE)
     void upsert(Sale sale);
 }

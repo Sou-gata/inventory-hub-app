@@ -57,6 +57,58 @@
             tools:text="23 Sep 2026, 04:30 PM" />
     </LinearLayout>
 
+    <!-- Received By User Info Row -->
+    <LinearLayout
+        android:id="@+id/layout_stage_received_by"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:src="@drawable/ic_nav_user"
+            app:tint="@color/accent_teal" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="5dp"
+            android:fontFamily="sans-serif"
+            android:text="Received by:"
+            android:textColor="@color/fg_dim"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/text_stage_received_by_user"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:fontFamily="sans-serif-bold"
+            android:maxLines="1"
+            android:textColor="@color/fg"
+            android:textSize="11sp"
+            tools:text="Sougata Talukdar (@sougata)" />
+
+        <TextView
+            android:id="@+id/text_stage_received_by_role"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/bg_glass_pill"
+            android:fontFamily="sans-serif-bold"
+            android:paddingHorizontal="6dp"
+            android:paddingVertical="1dp"
+            android:textColor="@color/accent_teal"
+            android:textSize="10sp"
+            tools:text="STAFF" />
+
+    </LinearLayout>
+
     <!-- Items Received Container -->
     <LinearLayout
         android:id="@+id/container_stage_items"

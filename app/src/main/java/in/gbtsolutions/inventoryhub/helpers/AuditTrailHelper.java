@@ -95,8 +95,7 @@ public class AuditTrailHelper {
             }
 
             if (context != null) {
-                SharedPreferences prefs = context.getSharedPreferences(Configurations.PREF_NAME, Context.MODE_PRIVATE);
-                long userId = prefs.getLong("user_id", -1);
+                long userId = UserHelper.getCurrentUserId(context);
                 if (userId > 0) {
                     Database db = Database.getInstance(context);
                     User dbUser = db.userDao().getUserById(userId);

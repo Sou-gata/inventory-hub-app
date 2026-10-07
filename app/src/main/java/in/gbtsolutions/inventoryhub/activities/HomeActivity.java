@@ -342,7 +342,7 @@ public class HomeActivity extends BaseActivity {
     }
 
     private void showReportsSelectionDialog() {
-        String[] options = {"GSTR-1 Summary Report", "Sales Register", "Purchase Register", "Audit Trail"};
+        String[] options = {"GSTR-1 Summary Report", "Sales Register", "Purchase Register", "User Wise Report", "Audit Trail"};
         new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
                 .setTitle("Select Report")
                 .setItems(options, (dialog, which) -> {
@@ -353,6 +353,8 @@ public class HomeActivity extends BaseActivity {
                     } else if (which == 2) {
                         navigateTo(PurchaseRegisterActivity.class, false);
                     } else if (which == 3) {
+                        navigateTo(UserWiseReportActivity.class, false);
+                    } else if (which == 4) {
                         navigateTo(AuditTrailActivity.class, false);
                     }
                 })

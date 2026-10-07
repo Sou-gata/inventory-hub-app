@@ -35,9 +35,9 @@ public class SeedDB {
             Database db = Database.getInstance(context);
 
 //            seedUsers(db);
-//            seedCategoriesAndProducts(db);
-//            seedBuyers(db);
-//            seedSuppliers(db);
+            seedCategoriesAndProducts(db);
+            seedBuyers(db);
+            seedSuppliers(db);
             seedConfigs(db);
             seedUnitsOfMeasure(db);
         } catch (Exception e) {

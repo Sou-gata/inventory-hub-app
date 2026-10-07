@@ -112,6 +112,9 @@ public class PurchaseRepository {
 
         executorService.execute(() -> {
             try {
+                if (purchase.createdBy <= 0) {
+                    purchase.createdBy = in.gbtsolutions.inventoryhub.helpers.UserHelper.getCurrentUserId(application);
+                }
                 final long[] generatedPurchaseId = new long[1];
                 db.runInTransaction(() -> {
                     long purchaseId = purchaseDao.insert(purchase);
@@ -124,10 +127,20 @@ public class PurchaseRepository {
                         }
                         purchaseItemDao.insertAll(items);
 
-                        // If marked completed immediately, increment inventory stock
+                        // If marked completed immediately, increment inventory stock and record receive transaction
                         if ("Completed".equalsIgnoreCase(purchase.status)) {
+                            String now = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
+                            String dateStr = !TextUtils.isEmpty(purchase.billingDate) ? purchase.billingDate : new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+                            long receiveUserId = purchase.createdBy > 0 ? purchase.createdBy : in.gbtsolutions.inventoryhub.helpers.UserHelper.getCurrentUserId(application);
+                            ReceiveRecord record = new ReceiveRecord((int) purchaseId, dateStr, receiveUserId, "Initial purchase receipt", now);
+                            long recId = receiveRecordDao.insert(record);
+
                             for (PurchaseItem item : items) {
                                 item.setReceivedQuantity(item.quantity);
+                                purchaseItemDao.updateReceivedQuantity(item.purchaseItemId, item.quantity);
+                                ReceiveItem rItem = new ReceiveItem((int) recId, item.purchaseItemId, item.productId, item.quantity);
+                                receiveItemDao.insert(rItem);
+
                                 Product prod = productDao.getProductById(item.productId);
                                 if (prod != null) {
                                     prod.quantity += item.quantity;
@@ -193,8 +206,9 @@ public class PurchaseRepository {
                     String now = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
                     String dateStr = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
 
-                    // Create receive record
-                    ReceiveRecord record = new ReceiveRecord(purchaseId, dateStr, userId, notes, now);
+                    // Create receive record with active user id
+                    long receiveUserId = userId > 0 ? userId : in.gbtsolutions.inventoryhub.helpers.UserHelper.getCurrentUserId(application);
+                    ReceiveRecord record = new ReceiveRecord(purchaseId, dateStr, receiveUserId, notes, now);
                     long recId = receiveRecordDao.insert(record);
                     createdRecordId[0] = recId;
 
@@ -330,6 +344,10 @@ public class PurchaseRepository {
     }
 
     public void cancelPurchase(int purchaseId, PurchaseActionCallback callback) {
+        cancelPurchase(purchaseId, in.gbtsolutions.inventoryhub.helpers.UserHelper.getCurrentUserId(application), callback);
+    }
+
+    public void cancelPurchase(int purchaseId, long userId, PurchaseActionCallback callback) {
         executorService.execute(() -> {
             try {
                 db.runInTransaction(() -> {
@@ -351,7 +369,8 @@ public class PurchaseRepository {
 
                     String newStatus = someReceived ? "Partially Cancelled" : "Cancelled";
                     String now = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
-                    purchaseDao.updateStatus(purchaseId, newStatus, now);
+                    long finalUserId = userId > 0 ? userId : in.gbtsolutions.inventoryhub.helpers.UserHelper.getCurrentUserId(application);
+                    purchaseDao.updateCancellation(purchaseId, newStatus, finalUserId, now);
                 });
 
                 in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper.logEdit(application,
@@ -411,6 +430,64 @@ public class PurchaseRepository {
                 if (callback != null) {
                     mainHandler.post(() -> callback.onError(e.getMessage() != null ? e.getMessage() : "Failed to delete purchase."));
                 }
+            }
+        });
+    }
+
+    public void updateStageReceiver(int recordId, long userId, PurchaseActionCallback callback) {
+        executorService.execute(() -> {
+            try {
+                receiveRecordDao.updateReceivedBy(recordId, userId);
+                if (callback != null) {
+                    mainHandler.post(callback::onSuccess);
+                }
+            } catch (Exception e) {
+                if (callback != null) {
+                    mainHandler.post(() -> callback.onError(e.getMessage() != null ? e.getMessage() : "Failed to update stage receiver."));
+                }
+            }
+        });
+    }
+
+    public void updateStageReceiver(int recordId, long userId, Runnable onComplete) {
+        updateStageReceiver(recordId, userId, new PurchaseActionCallback() {
+            @Override
+            public void onSuccess() {
+                if (onComplete != null) onComplete.run();
+            }
+
+            @Override
+            public void onError(String message) {
+                if (onComplete != null) onComplete.run();
+            }
+        });
+    }
+
+    public void updatePurchaseCreator(int purchaseId, long userId, PurchaseActionCallback callback) {
+        executorService.execute(() -> {
+            try {
+                purchaseDao.updateCreatedBy(purchaseId, userId);
+                if (callback != null) {
+                    mainHandler.post(callback::onSuccess);
+                }
+            } catch (Exception e) {
+                if (callback != null) {
+                    mainHandler.post(() -> callback.onError(e.getMessage() != null ? e.getMessage() : "Failed to update purchase creator."));
+                }
+            }
+        });
+    }
+
+    public void updatePurchaseCreator(int purchaseId, long userId, Runnable onComplete) {
+        updatePurchaseCreator(purchaseId, userId, new PurchaseActionCallback() {
+            @Override
+            public void onSuccess() {
+                if (onComplete != null) onComplete.run();
+            }
+
+            @Override
+            public void onError(String message) {
+                if (onComplete != null) onComplete.run();
             }
         });
     }

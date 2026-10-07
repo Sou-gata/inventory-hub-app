@@ -604,7 +604,7 @@ public class PurchaseRegisterActivity extends BaseActivity {
         badge.setText(text);
         badge.setTextSize(TypedValue.COMPLEX_UNIT_SP, 9.5f);
         badge.setTypeface(null, Typeface.BOLD);
-        badge.setBackgroundResource(R.drawable.bg_badge_b2b);
+        badge.setBackgroundResource(R.drawable.bg_badge_edit);
         badge.setTextColor(ContextCompat.getColor(this, isB2B ? R.color.material_blue : R.color.fg_muted));
         badge.setPadding(dpToPx(6), dpToPx(2), dpToPx(6), dpToPx(2));
 
@@ -827,138 +827,247 @@ public class PurchaseRegisterActivity extends BaseActivity {
 
     private void showExportDialog() {
         if (currentReportData == null || currentReportData.rows.isEmpty()) {
-            Toast.makeText(this, "No records to export for this period.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "No data available to export.", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        String[] options = {"Excel Spreadsheet (.xlsx)", "PDF Document (.pdf)", "CSV Text File (.csv)"};
-        new MaterialAlertDialogBuilder(this).setTitle("Export Purchase Register").setItems(options, (dialog, which) -> {
-            switch (which) {
-                case 0:
-                    exportExcel();
-                    break;
-                case 1:
-                    exportPdf();
-                    break;
-                case 2:
-                    exportCsv();
-                    break;
-            }
-        }).show();
+        String[] options = {"Excel (.xlsx) Spreadsheet", "PDF Document (.pdf)", "CSV Document (.csv)"};
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Export Purchase Register")
+                .setItems(options, (dialog, which) -> {
+                    switch (which) {
+                        case 0:
+                            exportExcel();
+                            break;
+                        case 1:
+                            exportPdf();
+                            break;
+                        case 2:
+                            exportCsv();
+                            break;
+                    }
+                })
+                .show();
     }
 
     private void exportExcel() {
-        Toast.makeText(this, "Exporting to Excel...", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Generating Excel...", Toast.LENGTH_SHORT).show();
         Executors.newSingleThreadExecutor().execute(() -> {
             try {
                 File file = PurchaseRegisterExcelExporter.exportToExcel(PurchaseRegisterActivity.this, currentReportData);
-                new Handler(Looper.getMainLooper()).post(() -> showExportSuccessDialog(file, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+                new Handler(Looper.getMainLooper()).post(() ->
+                        showExportSuccess(file, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
             } catch (Exception e) {
-                new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(PurchaseRegisterActivity.this, "Excel Export failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                new Handler(Looper.getMainLooper()).post(() ->
+                        Toast.makeText(PurchaseRegisterActivity.this, "Excel Export failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
             }
         });
     }
 
     private void exportPdf() {
-        Toast.makeText(this, "Exporting to PDF...", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Generating PDF...", Toast.LENGTH_SHORT).show();
         Executors.newSingleThreadExecutor().execute(() -> {
             try {
                 File file = PurchaseRegisterPdfExporter.exportToPdf(PurchaseRegisterActivity.this, currentReportData);
-                new Handler(Looper.getMainLooper()).post(() -> showExportSuccessDialog(file, "application/pdf"));
+                new Handler(Looper.getMainLooper()).post(() ->
+                        showExportSuccess(file, "application/pdf"));
             } catch (Exception e) {
-                new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(PurchaseRegisterActivity.this, "PDF Export failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                new Handler(Looper.getMainLooper()).post(() ->
+                        Toast.makeText(PurchaseRegisterActivity.this, "PDF Export failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
             }
         });
     }
 
     private void exportCsv() {
-        Toast.makeText(this, "Exporting to CSV...", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Generating CSV...", Toast.LENGTH_SHORT).show();
         Executors.newSingleThreadExecutor().execute(() -> {
             try {
                 File file = PurchaseRegisterCsvExporter.exportToCsv(PurchaseRegisterActivity.this, currentReportData);
-                new Handler(Looper.getMainLooper()).post(() -> showExportSuccessDialog(file, "text/csv"));
+                new Handler(Looper.getMainLooper()).post(() ->
+                        showExportSuccess(file, "text/csv"));
             } catch (Exception e) {
-                new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(PurchaseRegisterActivity.this, "CSV Export failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                new Handler(Looper.getMainLooper()).post(() ->
+                        Toast.makeText(PurchaseRegisterActivity.this, "CSV Export failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
             }
         });
     }
 
-    private void showExportSuccessDialog(File file, String mimeType) {
-        new MaterialAlertDialogBuilder(this).setTitle("Report Generated").setMessage("Purchase Register report successfully created:\n" + file.getName()).setPositiveButton("Share", (dialog, which) -> shareFile(file, mimeType)).setNeutralButton("Save to Downloads", (dialog, which) -> checkPermissionAndSave(file, mimeType)).setNegativeButton("Close", null).show();
+    private void showExportSuccess(File file, String mimeType) {
+        if (file == null || !file.exists() || isFinishing() || isDestroyed()) return;
+
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_export_success, null);
+        TextView tvFileName = dialogView.findViewById(R.id.tv_dialog_file_name);
+        TextView tvFileInfo = dialogView.findViewById(R.id.tv_dialog_file_info);
+        ImageView ivFileIcon = dialogView.findViewById(R.id.iv_dialog_file_icon);
+        View btnSave = dialogView.findViewById(R.id.btn_dialog_save);
+        View btnShare = dialogView.findViewById(R.id.btn_dialog_share);
+        View btnClose = dialogView.findViewById(R.id.btn_dialog_close);
+
+        tvFileName.setText(file.getName());
+
+        String typeLabel = "Document";
+        if (mimeType != null) {
+            if (mimeType.contains("pdf")) {
+                typeLabel = "PDF Document";
+                ivFileIcon.setColorFilter(ContextCompat.getColor(this, R.color.error_red));
+            } else if (mimeType.contains("sheet") || mimeType.contains("excel")) {
+                typeLabel = "Excel Workbook";
+                ivFileIcon.setColorFilter(ContextCompat.getColor(this, R.color.status_green));
+            } else if (mimeType.contains("csv")) {
+                typeLabel = "CSV Spreadsheet";
+                ivFileIcon.setColorFilter(ContextCompat.getColor(this, R.color.status_orange));
+            }
+        }
+        tvFileInfo.setText(typeLabel + " • " + formatFileSize(file.length()));
+
+        AlertDialog dialog = new MaterialAlertDialogBuilder(this)
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+
+        btnSave.setOnClickListener(v -> {
+            dialog.dismiss();
+            saveFileToDownloads(file, mimeType);
+        });
+
+        btnShare.setOnClickListener(v -> {
+            dialog.dismiss();
+            shareFile(file, mimeType);
+        });
+
+        btnClose.setOnClickListener(v -> dialog.dismiss());
+
+        dialog.show();
+    }
+
+    private String formatFileSize(long bytes) {
+        if (bytes <= 0) return "0 B";
+        if (bytes < 1024) return bytes + " B";
+        int exp = (int) (Math.log(bytes) / Math.log(1024));
+        String pre = "KMGTPE".charAt(exp - 1) + "";
+        return String.format(Locale.US, "%.1f %sB", bytes / Math.pow(1024, exp), pre);
+    }
+
+    private void saveFileToDownloads(File file, String mimeType) {
+        if (file == null || !file.exists()) {
+            Toast.makeText(this, "File not found.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    != PackageManager.PERMISSION_GRANTED) {
+                pendingFileToSave = file;
+                pendingMimeTypeToSave = mimeType;
+                storagePermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+                return;
+            }
+        }
+
+        Toast.makeText(this, "Saving to Downloads...", Toast.LENGTH_SHORT).show();
+
+        Executors.newSingleThreadExecutor().execute(() -> {
+            boolean success = false;
+            String savedPath = "Download/Inventory Hub/Report/" + file.getName();
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    ContentResolver resolver = getContentResolver();
+                    ContentValues contentValues = new ContentValues();
+                    contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, file.getName());
+                    contentValues.put(MediaStore.MediaColumns.MIME_TYPE, mimeType);
+                    contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/Inventory Hub/Report");
+                    contentValues.put(MediaStore.MediaColumns.IS_PENDING, 1);
+
+                    Uri fileUri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues);
+                    if (fileUri == null) {
+                        throw new IOException("Failed to create MediaStore entry in Downloads.");
+                    }
+
+                    try {
+                        try (InputStream in = new FileInputStream(file);
+                             OutputStream out = resolver.openOutputStream(fileUri)) {
+                            if (out == null) {
+                                throw new IOException("Failed to open output stream for download URI.");
+                            }
+                            byte[] buffer = new byte[8192];
+                            int bytesRead;
+                            while ((bytesRead = in.read(buffer)) != -1) {
+                                out.write(buffer, 0, bytesRead);
+                            }
+                            out.flush();
+                        }
+
+                        ContentValues finishValues = new ContentValues();
+                        finishValues.put(MediaStore.MediaColumns.IS_PENDING, 0);
+                        resolver.update(fileUri, finishValues, null, null);
+                        success = true;
+                    } catch (Exception e) {
+                        try {
+                            resolver.delete(fileUri, null, null);
+                        } catch (Exception ignored) {
+                        }
+                        throw e;
+                    }
+                } else {
+                    File downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                    File targetDir = new File(downloadDir, "Inventory Hub" + File.separator + "Report");
+                    if (!targetDir.exists() && !targetDir.mkdirs()) {
+                        throw new IOException("Failed to create directory: " + targetDir.getAbsolutePath());
+                    }
+                    File destFile = new File(targetDir, file.getName());
+                    try (InputStream in = new FileInputStream(file);
+                         OutputStream out = new FileOutputStream(destFile)) {
+                        byte[] buffer = new byte[8192];
+                        int bytesRead;
+                        while ((bytesRead = in.read(buffer)) != -1) {
+                            out.write(buffer, 0, bytesRead);
+                        }
+                        out.flush();
+                    }
+                    MediaScannerConnection.scanFile(
+                            PurchaseRegisterActivity.this,
+                            new String[]{destFile.getAbsolutePath()},
+                            new String[]{mimeType},
+                            null
+                    );
+                    savedPath = destFile.getAbsolutePath();
+                    success = true;
+                }
+            } catch (Exception e) {
+                new Handler(Looper.getMainLooper()).post(() ->
+                        Toast.makeText(PurchaseRegisterActivity.this, "Failed to save file: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                return;
+            }
+
+            if (success) {
+                final String finalPath = savedPath;
+                new Handler(Looper.getMainLooper()).post(() ->
+                        Toast.makeText(PurchaseRegisterActivity.this, "File saved to " + finalPath, Toast.LENGTH_LONG).show());
+            }
+        });
     }
 
     private void shareFile(File file, String mimeType) {
         try {
-            Uri contentUri = FileProvider.getUriForFile(this, getApplicationContext().getPackageName() + ".provider", file);
+            Uri fileUri = FileProvider.getUriForFile(
+                    this,
+                    getApplicationContext().getPackageName() + ".fileprovider",
+                    file
+            );
 
             Intent shareIntent = new Intent(Intent.ACTION_SEND);
             shareIntent.setType(mimeType);
-            shareIntent.putExtra(Intent.EXTRA_STREAM, contentUri);
-            shareIntent.putExtra(Intent.EXTRA_SUBJECT, "Purchase Register Report - " + currentReportData.companyName);
+            shareIntent.putExtra(Intent.EXTRA_STREAM, fileUri);
+            shareIntent.putExtra(Intent.EXTRA_SUBJECT, file.getName());
             shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            startActivity(Intent.createChooser(shareIntent, "Share Purchase Register via"));
+            startActivity(Intent.createChooser(shareIntent, "Share Purchase Register"));
         } catch (Exception e) {
-            Toast.makeText(this, "Unable to share file: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Failed to share file: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
-    }
-
-    private void checkPermissionAndSave(File file, String mimeType) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            saveFileToDownloads(file, mimeType);
-        } else {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
-                saveFileToDownloads(file, mimeType);
-            } else {
-                pendingFileToSave = file;
-                pendingMimeTypeToSave = mimeType;
-                storagePermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE);
-            }
-        }
-    }
-
-    private void saveFileToDownloads(File sourceFile, String mimeType) {
-        Executors.newSingleThreadExecutor().execute(() -> {
-            try {
-                String savedPath;
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    ContentResolver resolver = getContentResolver();
-                    ContentValues contentValues = new ContentValues();
-                    contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, sourceFile.getName());
-                    contentValues.put(MediaStore.MediaColumns.MIME_TYPE, mimeType);
-                    contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
-
-                    Uri uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues);
-                    if (uri == null) throw new IOException("Failed to create download URI");
-
-                    try (InputStream in = new FileInputStream(sourceFile); OutputStream out = resolver.openOutputStream(uri)) {
-                        byte[] buffer = new byte[8192];
-                        int bytesRead;
-                        while ((bytesRead = in.read(buffer)) != -1) {
-                            out.write(buffer, 0, bytesRead);
-                        }
-                    }
-                    savedPath = Environment.DIRECTORY_DOWNLOADS + "/" + sourceFile.getName();
-                } else {
-                    File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-                    if (!downloadsDir.exists()) downloadsDir.mkdirs();
-                    File dest = new File(downloadsDir, sourceFile.getName());
-
-                    try (InputStream in = new FileInputStream(sourceFile); OutputStream out = new FileOutputStream(dest)) {
-                        byte[] buffer = new byte[8192];
-                        int bytesRead;
-                        while ((bytesRead = in.read(buffer)) != -1) {
-                            out.write(buffer, 0, bytesRead);
-                        }
-                    }
-                    MediaScannerConnection.scanFile(PurchaseRegisterActivity.this, new String[]{dest.getAbsolutePath()}, new String[]{mimeType}, null);
-                    savedPath = dest.getAbsolutePath();
-                }
-
-                new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(PurchaseRegisterActivity.this, "File saved to " + savedPath, Toast.LENGTH_LONG).show());
-            } catch (Exception e) {
-                new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(PurchaseRegisterActivity.this, "Failed to save file: " + e.getMessage(), Toast.LENGTH_LONG).show());
-            }
-        });
     }
 
     private String formatCurrency(double amount) {

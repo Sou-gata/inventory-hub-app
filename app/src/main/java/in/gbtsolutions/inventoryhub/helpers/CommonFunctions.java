@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import in.gbtsolutions.inventoryhub.Configurations;
 import in.gbtsolutions.inventoryhub.R;
 import in.gbtsolutions.inventoryhub.models.Buyer;
 import in.gbtsolutions.inventoryhub.models.CartItem;
@@ -410,7 +411,10 @@ public class CommonFunctions {
             }
         }
 
-        // 6. Measure and create bitmap of width 360dp using BitmapHelper
+        // 6. Apply Custom Bill Footers
+        applyCustomBillFooters(billView, cachedCompanyConfigs);
+
+        // 7. Measure and create bitmap of width 360dp using BitmapHelper
         int widthPx = BitmapHelper.convertDpToPx(context, 360f);
         return BitmapHelper.createBitmapFromView(billView, widthPx, 0);
     }
@@ -714,7 +718,7 @@ public class CommonFunctions {
 
         TextView tvTotalUnits = billView.findViewById(R.id.tv_bill_total_units_received);
         if (tvTotalUnits != null) {
-            tvTotalUnits.setText(String.format(Locale.getDefault(), "%d Units", totalUnitsReceived));
+            tvTotalUnits.setText(String.format(Locale.getDefault(), "%s Units", formatQuantity(totalUnitsReceived)));
         }
 
         // 6. Notes
@@ -727,12 +731,8 @@ public class CommonFunctions {
             layoutNotes.setVisibility(View.GONE);
         }
 
-        // 7. Footer time
-        TextView tvFooter = billView.findViewById(R.id.tv_bill_footer_time);
-        if (tvFooter != null) {
-            tvFooter.setText(String.format("Generated electronically via Inventory Hub on %s",
-                    new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(new Date())));
-        }
+        // 7. Apply Custom Bill Footers
+        applyCustomBillFooters(billView, cachedCompanyConfigs);
 
         // 8. Render view to bitmap
         int widthPx = BitmapHelper.convertDpToPx(context, 360f);
@@ -1024,7 +1024,54 @@ public class CommonFunctions {
             }
         }
 
+        // 6. Apply Custom Bill Footers
+        applyCustomBillFooters(billView, cachedCompanyConfigs);
+
         int widthPx = BitmapHelper.convertDpToPx(context, 360f);
         return BitmapHelper.createBitmapFromView(billView, widthPx, 0);
+    }
+
+    public static void applyCustomBillFooters(View billView, Map<String, String> cachedCompanyConfigs) {
+        if (billView == null) return;
+        TextView tvFooter1 = billView.findViewById(R.id.tv_bill_footer_1);
+        TextView tvFooter2 = billView.findViewById(R.id.tv_bill_footer_2);
+        TextView tvFooter3 = billView.findViewById(R.id.tv_bill_footer_3);
+        TextView tvFooter4 = billView.findViewById(R.id.tv_bill_footer_4);
+
+        if (tvFooter1 != null) {
+            tvFooter1.setGravity(android.view.Gravity.CENTER);
+            tvFooter1.setTypeface(null, android.graphics.Typeface.BOLD);
+            tvFooter1.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 14f);
+        }
+        if (tvFooter2 != null) {
+            tvFooter2.setGravity(android.view.Gravity.CENTER);
+            tvFooter2.setTypeface(null, android.graphics.Typeface.BOLD);
+            tvFooter2.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 14f);
+        }
+        if (tvFooter3 != null) {
+            tvFooter3.setGravity(android.view.Gravity.CENTER);
+            tvFooter3.setTypeface(null, android.graphics.Typeface.NORMAL);
+            tvFooter3.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12f);
+        }
+        if (tvFooter4 != null) {
+            tvFooter4.setGravity(android.view.Gravity.CENTER);
+            tvFooter4.setTypeface(null, android.graphics.Typeface.NORMAL);
+            tvFooter4.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12f);
+        }
+
+        setupFooterView(tvFooter1, cachedCompanyConfigs != null ? cachedCompanyConfigs.get(Configurations.KEY_FOOTER_1) : null);
+        setupFooterView(tvFooter2, cachedCompanyConfigs != null ? cachedCompanyConfigs.get(Configurations.KEY_FOOTER_2) : null);
+        setupFooterView(tvFooter3, cachedCompanyConfigs != null ? cachedCompanyConfigs.get(Configurations.KEY_FOOTER_3) : null);
+        setupFooterView(tvFooter4, cachedCompanyConfigs != null ? cachedCompanyConfigs.get(Configurations.KEY_FOOTER_4) : null);
+    }
+
+    private static void setupFooterView(TextView textView, String value) {
+        if (textView == null) return;
+        if (!TextUtils.isEmpty(value) && !value.trim().isEmpty()) {
+            textView.setText(value.trim());
+            textView.setVisibility(View.VISIBLE);
+        } else {
+            textView.setVisibility(View.GONE);
+        }
     }
 }

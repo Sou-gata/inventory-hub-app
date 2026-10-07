@@ -359,6 +359,8 @@ public class SellHistoryActivity extends BaseActivity {
         View viewStatusDot = view.findViewById(R.id.view_detail_status_dot);
         TextView textStatus = view.findViewById(R.id.text_detail_status);
         TextView textSaleId = view.findViewById(R.id.text_detail_sale_id);
+        TextView textCreatorName = view.findViewById(R.id.text_detail_creator_name);
+        TextView textCreatorRole = view.findViewById(R.id.text_detail_creator_role);
 
         // Cancellation Banner
         LinearLayout layoutCancellationBanner = view.findViewById(R.id.layout_sell_cancellation_banner);
@@ -402,6 +404,27 @@ public class SellHistoryActivity extends BaseActivity {
         textInvoiceId.setText(invoiceDisplayId);
         textSaleId.setText(String.format(Locale.getDefault(), "#SALE-%d", sale.saleId));
 
+        // Populate Responsible Person (Billed By)
+        final long creatorId = sale.createdBy;
+        if (textCreatorName != null) {
+            textCreatorName.setText(creatorId > 0 ? ("User #" + creatorId) : "Admin");
+        }
+        if (textCreatorRole != null) {
+            textCreatorRole.setText("STAFF");
+        }
+        if (creatorId > 0) {
+            in.gbtsolutions.inventoryhub.helpers.UserHelper.getUserByIdAsync(this, creatorId, user -> {
+                if (user != null) {
+                    if (textCreatorName != null) {
+                        textCreatorName.setText(in.gbtsolutions.inventoryhub.helpers.UserHelper.formatUserNameAndUsername(user, creatorId));
+                    }
+                    if (textCreatorRole != null) {
+                        textCreatorRole.setText(in.gbtsolutions.inventoryhub.helpers.UserHelper.formatUserRole(user));
+                    }
+                }
+            });
+        }
+
         boolean isCancelled = "Cancelled".equalsIgnoreCase(sale.status);
         String displayStatus = !TextUtils.isEmpty(sale.status) ? sale.status : "Completed";
         textStatus.setText(displayStatus);
@@ -419,9 +442,20 @@ public class SellHistoryActivity extends BaseActivity {
         if (isCancelled) {
             if (layoutCancellationBanner != null) {
                 layoutCancellationBanner.setVisibility(View.VISIBLE);
-                String cancelDate = !TextUtils.isEmpty(sale.updatedAt) ? sale.updatedAt : sale.billingDate;
-                if (textCancellationDetails != null) {
-                    textCancellationDetails.setText(String.format("Cancelled on %s. All items were returned to inventory.", cancelDate != null ? cancelDate : ""));
+                final String cancelDate = !TextUtils.isEmpty(sale.updatedAt) ? sale.updatedAt : sale.billingDate;
+                final long cancelledById = sale.cancelledBy;
+                if (cancelledById > 0) {
+                    in.gbtsolutions.inventoryhub.helpers.UserHelper.getUserByIdAsync(this, cancelledById, user -> {
+                        String cancelUserName = in.gbtsolutions.inventoryhub.helpers.UserHelper.formatUserNameAndUsername(user, cancelledById);
+                        if (textCancellationDetails != null) {
+                            textCancellationDetails.setText(String.format("Cancelled on %s by %s. All items were returned to inventory.",
+                                    cancelDate != null ? cancelDate : "", cancelUserName));
+                        }
+                    });
+                } else {
+                    if (textCancellationDetails != null) {
+                        textCancellationDetails.setText(String.format("Cancelled on %s. All items were returned to inventory.", cancelDate != null ? cancelDate : ""));
+                    }
                 }
             }
             if (btnCancelBill != null) btnCancelBill.setVisibility(View.GONE);
@@ -441,7 +475,8 @@ public class SellHistoryActivity extends BaseActivity {
                     btnCancelBill.setEnabled(false);
                     btnCancelBill.setText("Cancelling...");
 
-                    saleRepository.cancelSale(sale.saleId, new SaleRepository.SaleActionCallback() {
+                    long currentUserId = in.gbtsolutions.inventoryhub.helpers.UserHelper.getCurrentUserId(SellHistoryActivity.this);
+                    saleRepository.cancelSale(sale.saleId, currentUserId, new SaleRepository.SaleActionCallback() {
                         @Override
                         public void onSuccess() {
                             Toast.makeText(SellHistoryActivity.this, "Bill " + invoiceDisplayId + " cancelled and inventory restored.", Toast.LENGTH_SHORT).show();

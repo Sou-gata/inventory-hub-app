@@ -345,6 +345,9 @@ public class PurchaseHistoryActivity extends BaseActivity {
         View viewStatusDot = view.findViewById(R.id.view_status_dot);
         TextView textStatus = view.findViewById(R.id.text_detail_status);
         TextView textSaleId = view.findViewById(R.id.text_detail_sale_id);
+        TextView textCreatorName = view.findViewById(R.id.text_detail_creator_name);
+        TextView textCreatorRole = view.findViewById(R.id.text_detail_creator_role);
+        TextView textCreatorSummary = view.findViewById(R.id.text_detail_creator_summary);
 
         // Cancellation Banner
         LinearLayout layoutCancellationBanner = view.findViewById(R.id.layout_cancellation_banner);
@@ -390,6 +393,26 @@ public class PurchaseHistoryActivity extends BaseActivity {
         textInvoiceId.setText(!TextUtils.isEmpty(purchase.invoiceId) ? purchase.invoiceId : String.format(Locale.getDefault(), "#PO-%d", purchase.purchaseId));
         textSaleId.setText(String.format(Locale.getDefault(), "#PO-%d", purchase.purchaseId));
 
+        final long creatorId = purchase.createdBy;
+        if (textCreatorName != null) {
+            textCreatorName.setText(creatorId > 0 ? ("User #" + creatorId) : "Admin");
+        }
+        if (textCreatorRole != null) {
+            textCreatorRole.setText("STAFF");
+        }
+        if (creatorId > 0) {
+            in.gbtsolutions.inventoryhub.helpers.UserHelper.getUserByIdAsync(this, creatorId, user -> {
+                if (user != null) {
+                    if (textCreatorName != null) {
+                        textCreatorName.setText(in.gbtsolutions.inventoryhub.helpers.UserHelper.formatUserNameAndUsername(user, creatorId));
+                    }
+                    if (textCreatorRole != null) {
+                        textCreatorRole.setText(in.gbtsolutions.inventoryhub.helpers.UserHelper.formatUserRole(user));
+                    }
+                }
+            });
+        }
+
         // Status badge color coding
         String status = !TextUtils.isEmpty(purchase.status) ? purchase.status : "Completed";
         textStatus.setText(status);
@@ -420,16 +443,37 @@ public class PurchaseHistoryActivity extends BaseActivity {
         }
 
         // Cancellation banner setup
+        final long cancelledById = purchase.cancelledBy;
         if ("Partially Cancelled".equalsIgnoreCase(status)) {
             layoutCancellationBanner.setVisibility(View.VISIBLE);
             textCancellationTitle.setText("ORDER PARTIALLY CANCELLED");
-            String cancelDate = !TextUtils.isEmpty(purchase.updatedAt) ? purchase.updatedAt : purchase.billingDate;
-            textCancellationDetails.setText(String.format("Cancelled on %s. Remaining unreceived units were cancelled.", cancelDate != null ? cancelDate : ""));
+            final String cancelDate = !TextUtils.isEmpty(purchase.updatedAt) ? purchase.updatedAt : purchase.billingDate;
+            if (cancelledById > 0) {
+                in.gbtsolutions.inventoryhub.helpers.UserHelper.getUserByIdAsync(this, cancelledById, user -> {
+                    String cancelUserName = in.gbtsolutions.inventoryhub.helpers.UserHelper.formatUserNameAndUsername(user, cancelledById);
+                    if (textCancellationDetails != null) {
+                        textCancellationDetails.setText(String.format("Cancelled on %s by %s. Remaining unreceived units were cancelled.",
+                                cancelDate != null ? cancelDate : "", cancelUserName));
+                    }
+                });
+            } else {
+                textCancellationDetails.setText(String.format("Cancelled on %s. Remaining unreceived units were cancelled.", cancelDate != null ? cancelDate : ""));
+            }
         } else if ("Cancelled".equalsIgnoreCase(status)) {
             layoutCancellationBanner.setVisibility(View.VISIBLE);
             textCancellationTitle.setText("ORDER CANCELLED");
-            String cancelDate = !TextUtils.isEmpty(purchase.updatedAt) ? purchase.updatedAt : purchase.billingDate;
-            textCancellationDetails.setText(String.format("This purchase order was cancelled on %s. 0 units received.", cancelDate != null ? cancelDate : ""));
+            final String cancelDate = !TextUtils.isEmpty(purchase.updatedAt) ? purchase.updatedAt : purchase.billingDate;
+            if (cancelledById > 0) {
+                in.gbtsolutions.inventoryhub.helpers.UserHelper.getUserByIdAsync(this, cancelledById, user -> {
+                    String cancelUserName = in.gbtsolutions.inventoryhub.helpers.UserHelper.formatUserNameAndUsername(user, cancelledById);
+                    if (textCancellationDetails != null) {
+                        textCancellationDetails.setText(String.format("This purchase order was cancelled on %s by %s. 0 units received.",
+                                cancelDate != null ? cancelDate : "", cancelUserName));
+                    }
+                });
+            } else {
+                textCancellationDetails.setText(String.format("This purchase order was cancelled on %s. 0 units received.", cancelDate != null ? cancelDate : ""));
+            }
         } else {
             layoutCancellationBanner.setVisibility(View.GONE);
         }
@@ -551,6 +595,7 @@ public class PurchaseHistoryActivity extends BaseActivity {
 
         // Load items purchased
         final List<PurchaseItemWithProduct> loadedPurchaseItems = new ArrayList<>();
+        final List<ReceiveRecordWithItems> loadedStageRecords = new ArrayList<>();
         progressItems.setVisibility(View.VISIBLE);
         containerItems.removeAllViews();
 
@@ -572,6 +617,14 @@ public class PurchaseHistoryActivity extends BaseActivity {
                             totalOrdered += piwp.purchaseItem.quantity;
                             totalReceived += piwp.purchaseItem.receivedQuantity;
                         }
+                    }
+
+                    if (textCreatorSummary != null) {
+                        textCreatorSummary.setText(String.format(Locale.getDefault(), "%s Units ordered", CommonFunctions.formatQuantity(totalOrdered)));
+                    }
+
+                    if (!loadedStageRecords.isEmpty()) {
+                        renderReceiveStages(loadedStageRecords, loadedPurchaseItems, containerStages, textStagesCount, sectionStages, purchase, supplier);
                     }
 
                     if ("Partially Cancelled".equalsIgnoreCase(status)) {
@@ -680,125 +733,168 @@ public class PurchaseHistoryActivity extends BaseActivity {
             @Override
             public void onChanged(List<ReceiveRecordWithItems> stageRecords) {
                 progressStages.setVisibility(View.GONE);
-                containerStages.removeAllViews();
-
-                if (stageRecords == null || stageRecords.isEmpty()) {
-                    sectionStages.setVisibility(View.GONE);
-                    return;
+                loadedStageRecords.clear();
+                if (stageRecords != null) {
+                    loadedStageRecords.addAll(stageRecords);
                 }
-
-                sectionStages.setVisibility(View.VISIBLE);
-                textStagesCount.setText(String.format(Locale.getDefault(), "%d stage%s", stageRecords.size(), stageRecords.size() == 1 ? "" : "s"));
-
-                LayoutInflater inflater = LayoutInflater.from(PurchaseHistoryActivity.this);
-                SimpleDateFormat dtDisplayFormat = new SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault());
-                SimpleDateFormat parseFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
-
-                int stageNumber = 1;
-                for (ReceiveRecordWithItems recWithItems : stageRecords) {
-                    ReceiveRecord record = recWithItems.record;
-                    if (record == null) continue;
-
-                    View stageView = inflater.inflate(R.layout.item_receive_stage, containerStages, false);
-
-                    TextView textStageTitle = stageView.findViewById(R.id.text_stage_title);
-                    TextView textStageDateTime = stageView.findViewById(R.id.text_stage_date_time);
-                    LinearLayout containerStageItems = stageView.findViewById(R.id.container_stage_items);
-                    TextView textStageNotes = stageView.findViewById(R.id.text_stage_notes);
-                    TextView textStageTotalUnits = stageView.findViewById(R.id.text_stage_total_units);
-                    View btnDownloadBill = stageView.findViewById(R.id.btn_download_stage_bill);
-
-                    final int currentStageNumber = stageNumber;
-                    textStageTitle.setText(String.format(Locale.getDefault(), "STAGE %d", currentStageNumber));
-
-                    String dateDisplay = record.createdAt;
-                    if (!TextUtils.isEmpty(record.createdAt)) {
-                        try {
-                            Date d = parseFormat.parse(record.createdAt);
-                            if (d != null) dateDisplay = dtDisplayFormat.format(d);
-                        } catch (ParseException ignored) {
-                        }
-                    } else if (!TextUtils.isEmpty(record.receiveDate)) {
-                        dateDisplay = record.receiveDate;
-                    }
-                    textStageDateTime.setText(dateDisplay != null ? dateDisplay : "");
-
-                    double totalStageUnits = 0.0;
-                    containerStageItems.removeAllViews();
-
-                    if (recWithItems.items != null) {
-                        for (ReceiveItem rItem : recWithItems.items) {
-                            totalStageUnits += rItem.quantityReceived;
-
-                            String prodName = "Product #" + rItem.productId;
-                            for (PurchaseItemWithProduct piwp : loadedPurchaseItems) {
-                                if (piwp.purchaseItem != null && piwp.purchaseItem.purchaseItemId == rItem.purchaseItemId) {
-                                    if (piwp.product != null && !TextUtils.isEmpty(piwp.product.productName)) {
-                                        prodName = piwp.product.productName;
-                                    }
-                                    break;
-                                }
-                            }
-
-                            TextView itemRow = new TextView(PurchaseHistoryActivity.this);
-                            itemRow.setText(String.format(Locale.getDefault(), "• %s × %s", CommonFunctions.formatQuantity(rItem.quantityReceived), prodName));
-                            itemRow.setTextColor(ContextCompat.getColor(PurchaseHistoryActivity.this, R.color.fg));
-                            itemRow.setTextSize(12f);
-                            itemRow.setPadding(0, 2, 0, 2);
-                            containerStageItems.addView(itemRow);
-                        }
-                    }
-
-                    textStageTotalUnits.setText(String.format(Locale.getDefault(), "Total Received: %s Unit%s", CommonFunctions.formatQuantity(totalStageUnits), totalStageUnits == 1.0 ? "" : "s"));
-
-                    if (!TextUtils.isEmpty(record.notes)) {
-                        textStageNotes.setVisibility(View.VISIBLE);
-                        textStageNotes.setText(String.format("Notes: %s", record.notes));
-                    } else {
-                        textStageNotes.setVisibility(View.GONE);
-                    }
-
-                    // Bill Download / Save for this specific stage
-                    final int recordId = record.receiveRecordId;
-                    btnDownloadBill.setOnClickListener(v -> {
-                        btnDownloadBill.setEnabled(false);
-                        purchaseRepository.getReceiveDetailsForBill(recordId, new PurchaseRepository.ReceiveDetailsCallback() {
-                            @Override
-                            public void onLoaded(ReceiveRecord r, List<ReceiveItem> items, Purchase p, List<PurchaseItemWithProduct> allItems) {
-                                btnDownloadBill.setEnabled(true);
-                                Bitmap billBitmap = CommonFunctions.createReceiveBillBitmap(PurchaseHistoryActivity.this, r, items, p != null ? p : purchase, supplier, allItems != null ? allItems : loadedPurchaseItems, cachedCompanyConfigs);
-
-                                if (billBitmap != null) {
-                                    String fileName = "GRN_Stage" + currentStageNumber + "_" + r.receiveRecordId + "_" + System.currentTimeMillis() + ".png";
-                                    BitmapHelper.saveBitmapToDownloads(billBitmap, PurchaseHistoryActivity.this, fileName);
-                                    Toast.makeText(PurchaseHistoryActivity.this, String.format(Locale.getDefault(), "Stage %d GRN Bill saved to Downloads!", currentStageNumber), Toast.LENGTH_LONG).show();
-                                    File pngFile = BitmapHelper.saveBitmapAsPng(PurchaseHistoryActivity.this, billBitmap, fileName);
-                                    if (pngFile != null) {
-                                        String title = "GRN Stage " + currentStageNumber;
-                                        BillViewerActivity.start(PurchaseHistoryActivity.this, pngFile.getAbsolutePath(), title, fileName);
-                                    }
-                                } else {
-                                    Toast.makeText(PurchaseHistoryActivity.this, "Failed to create bill bitmap.", Toast.LENGTH_SHORT).show();
-                                }
-                            }
-
-                            @Override
-                            public void onError(String message) {
-                                btnDownloadBill.setEnabled(true);
-                                Toast.makeText(PurchaseHistoryActivity.this, "Error generating bill: " + message, Toast.LENGTH_LONG).show();
-                            }
-                        });
-                    });
-
-                    containerStages.addView(stageView);
-                    stageNumber++;
-                }
+                renderReceiveStages(loadedStageRecords, loadedPurchaseItems, containerStages, textStagesCount, sectionStages, purchase, supplier);
             }
         });
 
         btnClose.setOnClickListener(v -> dialog.dismiss());
         btnDone.setOnClickListener(v -> dialog.dismiss());
         dialog.show();
+    }
+
+    private void renderReceiveStages(
+            @NonNull List<ReceiveRecordWithItems> stageRecords,
+            @NonNull List<PurchaseItemWithProduct> loadedPurchaseItems,
+            @NonNull LinearLayout containerStages,
+            @NonNull TextView textStagesCount,
+            @NonNull LinearLayout sectionStages,
+            @NonNull Purchase purchase,
+            @Nullable Suppliers supplier
+    ) {
+        containerStages.removeAllViews();
+
+        if (stageRecords.isEmpty()) {
+            sectionStages.setVisibility(View.GONE);
+            return;
+        }
+
+        sectionStages.setVisibility(View.VISIBLE);
+        textStagesCount.setText(String.format(Locale.getDefault(), "%d stage%s", stageRecords.size(), stageRecords.size() == 1 ? "" : "s"));
+
+        LayoutInflater inflater = LayoutInflater.from(this);
+        SimpleDateFormat dtDisplayFormat = new SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault());
+        SimpleDateFormat parseFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+
+        int stageNumber = 1;
+        for (ReceiveRecordWithItems recWithItems : stageRecords) {
+            ReceiveRecord record = recWithItems.record;
+            if (record == null) continue;
+
+            View stageView = inflater.inflate(R.layout.item_receive_stage, containerStages, false);
+
+            TextView textStageTitle = stageView.findViewById(R.id.text_stage_title);
+            TextView textStageDateTime = stageView.findViewById(R.id.text_stage_date_time);
+            TextView textStageReceivedByUser = stageView.findViewById(R.id.text_stage_received_by_user);
+            TextView textStageReceivedByRole = stageView.findViewById(R.id.text_stage_received_by_role);
+            LinearLayout containerStageItems = stageView.findViewById(R.id.container_stage_items);
+            TextView textStageNotes = stageView.findViewById(R.id.text_stage_notes);
+            TextView textStageTotalUnits = stageView.findViewById(R.id.text_stage_total_units);
+            View btnDownloadBill = stageView.findViewById(R.id.btn_download_stage_bill);
+
+            final int currentStageNumber = stageNumber;
+            if (textStageTitle != null) {
+                textStageTitle.setText(String.format(Locale.getDefault(), "STAGE %d", currentStageNumber));
+            }
+
+            // Stage receiver UI
+            final long sUid = record.receivedBy;
+            if (textStageReceivedByUser != null) {
+                textStageReceivedByUser.setText(sUid > 0 ? ("User #" + sUid) : "Staff");
+            }
+            if (textStageReceivedByRole != null) {
+                textStageReceivedByRole.setText("STAFF");
+            }
+            if (sUid > 0) {
+                in.gbtsolutions.inventoryhub.helpers.UserHelper.getUserByIdAsync(PurchaseHistoryActivity.this, sUid, user -> {
+                    if (user != null) {
+                        if (textStageReceivedByUser != null) {
+                            textStageReceivedByUser.setText(in.gbtsolutions.inventoryhub.helpers.UserHelper.formatUserNameAndUsername(user, sUid));
+                        }
+                        if (textStageReceivedByRole != null) {
+                            textStageReceivedByRole.setText(in.gbtsolutions.inventoryhub.helpers.UserHelper.formatUserRole(user));
+                        }
+                    }
+                });
+            }
+
+            // Date formatting
+            String dateDisplay = record.createdAt;
+            if (!TextUtils.isEmpty(record.createdAt)) {
+                try {
+                    Date d = parseFormat.parse(record.createdAt);
+                    if (d != null) dateDisplay = dtDisplayFormat.format(d);
+                } catch (ParseException ignored) {
+                }
+            } else if (!TextUtils.isEmpty(record.receiveDate)) {
+                dateDisplay = record.receiveDate;
+            }
+            textStageDateTime.setText(dateDisplay != null ? dateDisplay : "");
+
+            // Stage items and total units
+            double totalStageUnits = 0.0;
+            containerStageItems.removeAllViews();
+
+            if (recWithItems.items != null) {
+                for (ReceiveItem rItem : recWithItems.items) {
+                    totalStageUnits += rItem.quantityReceived;
+
+                    String prodName = "Product #" + rItem.productId;
+                    for (PurchaseItemWithProduct piwp : loadedPurchaseItems) {
+                        if (piwp.purchaseItem != null && piwp.purchaseItem.purchaseItemId == rItem.purchaseItemId) {
+                            if (piwp.product != null && !TextUtils.isEmpty(piwp.product.productName)) {
+                                prodName = piwp.product.productName;
+                            }
+                            break;
+                        }
+                    }
+
+                    TextView itemRow = new TextView(PurchaseHistoryActivity.this);
+                    itemRow.setText(String.format(Locale.getDefault(), "• %s × %s", CommonFunctions.formatQuantity(rItem.quantityReceived), prodName));
+                    itemRow.setTextColor(ContextCompat.getColor(PurchaseHistoryActivity.this, R.color.fg));
+                    itemRow.setTextSize(12f);
+                    itemRow.setPadding(0, 2, 0, 2);
+                    containerStageItems.addView(itemRow);
+                }
+            }
+
+            textStageTotalUnits.setText(String.format(Locale.getDefault(), "Total Received: %s Unit%s", CommonFunctions.formatQuantity(totalStageUnits), totalStageUnits == 1.0 ? "" : "s"));
+
+            if (!TextUtils.isEmpty(record.notes)) {
+                textStageNotes.setVisibility(View.VISIBLE);
+                textStageNotes.setText(String.format("Notes: %s", record.notes));
+            } else {
+                textStageNotes.setVisibility(View.GONE);
+            }
+
+            // Bill Download / Save for this specific stage
+            final int recordId = record.receiveRecordId;
+            btnDownloadBill.setOnClickListener(v -> {
+                btnDownloadBill.setEnabled(false);
+                purchaseRepository.getReceiveDetailsForBill(recordId, new PurchaseRepository.ReceiveDetailsCallback() {
+                    @Override
+                    public void onLoaded(ReceiveRecord r, List<ReceiveItem> items, Purchase p, List<PurchaseItemWithProduct> allItems) {
+                        btnDownloadBill.setEnabled(true);
+                        Bitmap billBitmap = CommonFunctions.createReceiveBillBitmap(PurchaseHistoryActivity.this, r, items, p != null ? p : purchase, supplier, allItems != null ? allItems : loadedPurchaseItems, cachedCompanyConfigs);
+
+                        if (billBitmap != null) {
+                            String fileName = "GRN_Stage" + currentStageNumber + "_" + r.receiveRecordId + "_" + System.currentTimeMillis() + ".png";
+                            BitmapHelper.saveBitmapToDownloads(billBitmap, PurchaseHistoryActivity.this, fileName);
+                            Toast.makeText(PurchaseHistoryActivity.this, String.format(Locale.getDefault(), "Stage %d GRN Bill saved to Downloads!", currentStageNumber), Toast.LENGTH_LONG).show();
+                            File pngFile = BitmapHelper.saveBitmapAsPng(PurchaseHistoryActivity.this, billBitmap, fileName);
+                            if (pngFile != null) {
+                                String title = "GRN Stage " + currentStageNumber;
+                                BillViewerActivity.start(PurchaseHistoryActivity.this, pngFile.getAbsolutePath(), title, fileName);
+                            }
+                        } else {
+                            Toast.makeText(PurchaseHistoryActivity.this, "Failed to create bill bitmap.", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        btnDownloadBill.setEnabled(true);
+                        Toast.makeText(PurchaseHistoryActivity.this, "Error generating bill: " + message, Toast.LENGTH_LONG).show();
+                    }
+                });
+            });
+
+            containerStages.addView(stageView);
+            stageNumber++;
+        }
     }
 
     private void hideKeyboard() {

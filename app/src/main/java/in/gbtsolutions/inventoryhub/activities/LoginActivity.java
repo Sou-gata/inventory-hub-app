@@ -145,7 +145,7 @@ public class LoginActivity extends AppCompatActivity {
                 Database db = Database.getInstance(getApplicationContext());
                 User user = db.userDao().getUserById(userId);
                 if (user != null) {
-                    GlobalStore.getInstance().setLoggedInUser(user);
+                    in.gbtsolutions.inventoryhub.helpers.UserHelper.saveLoggedInUser(LoginActivity.this, user);
                     runOnUiThread(() -> {
                         if (!isFinishing() && !isDestroyed()) {
                             onLoginSuccess();
@@ -363,6 +363,7 @@ public class LoginActivity extends AppCompatActivity {
     private void onLoginSuccess() {
         User user = GlobalStore.getInstance().getLoggedInUser();
         if (user == null) return;
+        in.gbtsolutions.inventoryhub.helpers.UserHelper.saveLoggedInUser(this, user);
         GlobalStore.getInstance().loadSettings(this);
         if (rememberMe) {
             SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -684,6 +685,10 @@ public class LoginActivity extends AppCompatActivity {
         putIfPresent(configs, "licence_start_date", agency, "licence_start_date");
         putIfPresent(configs, "licence_end_date", agency, "licence_end_date");
         putIfPresent(configs, "agency_is_active", agency, "is_active");
+        putIfPresent(configs, Configurations.KEY_FOOTER_1, agency, "footer_1");
+        putIfPresent(configs, Configurations.KEY_FOOTER_2, agency, "footer_2");
+        putIfPresent(configs, Configurations.KEY_FOOTER_3, agency, "footer_3");
+        putIfPresent(configs, Configurations.KEY_FOOTER_4, agency, "footer_4");
         if (agencyId > 0) {
             configs.put("agency_id", String.valueOf(agencyId));
         }

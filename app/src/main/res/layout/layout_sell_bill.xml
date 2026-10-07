@@ -6,11 +6,9 @@
     android:layout_height="wrap_content"
     android:background="@color/white"
     android:orientation="vertical"
-    android:padding="12dp">
+    android:paddingHorizontal="4dp"
+    android:paddingVertical="12dp">
 
-    <!-- ================================================================= -->
-    <!--                         HEADER SECTION                            -->
-    <!-- ================================================================= -->
     <LinearLayout
         android:id="@+id/layout_bill_header"
         android:layout_width="match_parent"
@@ -18,7 +16,6 @@
         android:gravity="center_horizontal"
         android:orientation="vertical">
 
-        <!-- Company Name -->
         <TextView
             android:id="@+id/tv_bill_company_name"
             android:layout_width="match_parent"
@@ -791,41 +788,64 @@
             android:layout_marginBottom="8dp"
             android:background="@color/black" />
 
-        <!-- Thank You Message -->
-        <TextView
-            android:id="@+id/tv_bill_thank_you"
+        <!-- Dynamic Bill Footers -->
+        <LinearLayout
+            android:id="@+id/layout_bill_custom_footers"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:fontFamily="sans-serif-black"
-            android:gravity="center"
-            android:letterSpacing="0.05"
-            android:text="THANK YOU! VISIT AGAIN"
-            android:textColor="@color/black"
-            android:textSize="12sp" />
+            android:orientation="vertical">
 
-        <!-- Terms & Conditions Note -->
-        <TextView
-            android:id="@+id/tv_bill_terms"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:fontFamily="sans-serif"
-            android:gravity="center"
-            android:text="Terms: Goods once sold will not be taken back without original bill. Warranty claims as per manufacturer policy."
-            android:textColor="@color/black"
-            android:textSize="9sp" />
+            <TextView
+                android:id="@+id/tv_bill_footer_1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="@color/black"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:visibility="gone"
+                tools:text="THANK YOU! VISIT AGAIN"
+                tools:visibility="visible" />
 
-        <!-- System Branding / Software Footer -->
-        <TextView
-            android:id="@+id/tv_bill_system_footer"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:fontFamily="monospace"
-            android:gravity="center"
-            android:text="*** Powered by InventoryHub ***"
-            android:textColor="@color/black"
-            android:textSize="9sp" />
+            <TextView
+                android:id="@+id/tv_bill_footer_2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:gravity="center"
+                android:textColor="@color/black"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:visibility="gone"
+                tools:text="Goods once sold will not be returned"
+                tools:visibility="visible" />
+
+            <TextView
+                android:id="@+id/tv_bill_footer_3"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:gravity="center"
+                android:textColor="@color/black"
+                android:textSize="12sp"
+                android:textStyle="normal"
+                android:visibility="gone"
+                tools:text="Subject to local jurisdiction"
+                tools:visibility="visible" />
+
+            <TextView
+                android:id="@+id/tv_bill_footer_4"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:gravity="center"
+                android:textColor="@color/black"
+                android:textSize="12sp"
+                android:textStyle="normal"
+                android:visibility="gone"
+                tools:text="Computer Generated Invoice"
+                tools:visibility="visible" />
+        </LinearLayout>
 
         <!-- End of Bill Cut Marker -->
         <TextView

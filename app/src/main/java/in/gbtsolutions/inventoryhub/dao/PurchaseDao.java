@@ -74,6 +74,12 @@ public interface PurchaseDao {
     @Query("UPDATE purchases SET status = :status, updated_at = :updatedAt WHERE purchase_id = :purchaseId")
     void updateStatus(int purchaseId, String status, String updatedAt);
 
+    @Query("UPDATE purchases SET status = :status, cancelled_by = :cancelledBy, updated_at = :updatedAt WHERE purchase_id = :purchaseId")
+    void updateCancellation(int purchaseId, String status, long cancelledBy, String updatedAt);
+
+    @Query("UPDATE purchases SET created_by = :userId WHERE purchase_id = :purchaseId")
+    void updateCreatedBy(int purchaseId, long userId);
+
     @Transaction
     @Query("SELECT purchases.* FROM purchases " +
             "WHERE (:startDate IS NULL OR :startDate = '' OR billing_date >= :startDate) " +

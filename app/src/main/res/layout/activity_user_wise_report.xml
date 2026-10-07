@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/bg"
-    tools:context=".activities.SalesRegisterActivity">
+    tools:context=".activities.UserWiseReportActivity">
 
     <!-- Main content container -->
     <LinearLayout
@@ -28,15 +28,16 @@
                 android:layout_height="?attr/actionBarSize"
                 android:background="@android:color/transparent"
                 app:navigationIconTint="@color/white"
-                app:title="Sales Register"
+                app:title="User Wise Report"
                 app:titleTextColor="@color/white" />
         </FrameLayout>
 
         <androidx.core.widget.NestedScrollView
-            android:id="@+id/sales_register_scroll_view"
+            android:id="@+id/user_wise_report_scroll_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:fillViewport="true">
+            android:fillViewport="true"
+            android:visibility="visible">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -85,7 +86,7 @@
                                 android:layout_width="18dp"
                                 android:layout_height="18dp"
                                 android:contentDescription="@null"
-                                android:src="@drawable/ic_nav_sub_sales_register"
+                                android:src="@drawable/ic_calendar"
                                 app:tint="@color/material_blue" />
 
                             <LinearLayout
@@ -107,7 +108,7 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:fontFamily="sans-serif-medium"
-                                    android:text="01 Sep 2026"
+                                    android:text="01 Oct 2026"
                                     android:textColor="@color/fg"
                                     android:textSize="12sp" />
                             </LinearLayout>
@@ -130,7 +131,7 @@
                                 android:layout_width="18dp"
                                 android:layout_height="18dp"
                                 android:contentDescription="@null"
-                                android:src="@drawable/ic_nav_sub_sales_register"
+                                android:src="@drawable/ic_calendar"
                                 app:tint="@color/material_blue" />
 
                             <LinearLayout
@@ -152,7 +153,7 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:fontFamily="sans-serif-medium"
-                                    android:text="30 Sep 2026"
+                                    android:text="31 Oct 2026"
                                     android:textColor="@color/fg"
                                     android:textSize="12sp" />
                             </LinearLayout>
@@ -283,19 +284,94 @@
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- 2. SEARCH & TYPE FILTER CARD -->
+                <!-- 2. USER & ROLE FILTER CARD -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
                     android:background="@drawable/bg_card"
                     android:orientation="vertical"
-                    android:padding="12dp">
+                    android:padding="14dp">
 
-                    <!-- Search Input -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-black"
+                        android:letterSpacing="0.06"
+                        android:text="USER &amp; SEARCH FILTER"
+                        android:textColor="@color/fg_muted"
+                        android:textSize="11sp" />
+
+                    <!-- User Picker Row -->
+                    <LinearLayout
+                        android:id="@+id/btn_select_user"
+                        android:layout_width="match_parent"
+                        android:layout_height="46dp"
+                        android:layout_marginTop="10dp"
+                        android:background="@drawable/bg_field_normal"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:paddingHorizontal="10dp">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_nav_user"
+                            app:tint="@color/material_blue" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="10dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif"
+                                android:text="Target User Filter"
+                                android:textColor="@color/fg_dim"
+                                android:textSize="10sp" />
+
+                            <TextView
+                                android:id="@+id/tv_selected_user_name"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:ellipsize="end"
+                                android:fontFamily="sans-serif-medium"
+                                android:maxLines="1"
+                                android:text="All Users (Staff &amp; Admins)"
+                                android:textColor="@color/fg"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:id="@+id/btn_clear_user_filter"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_marginEnd="4dp"
+                            android:contentDescription="Clear user filter"
+                            android:padding="2dp"
+                            android:src="@drawable/ic_close"
+                            android:visibility="gone"
+                            app:tint="@color/fg_dim" />
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_arrow_drop_down"
+                            app:tint="@color/fg_dim" />
+                    </LinearLayout>
+
+                    <!-- Real-Time Search Bar -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="42dp"
+                        android:layout_marginTop="10dp"
                         android:background="@drawable/bg_field_normal"
                         android:gravity="center_vertical"
                         android:paddingHorizontal="10dp">
@@ -314,7 +390,7 @@
                             android:layout_marginStart="8dp"
                             android:layout_weight="1"
                             android:background="@null"
-                            android:hint="Search customer, invoice #, phone, GSTIN..."
+                            android:hint="Search user name, username, or role..."
                             android:imeOptions="actionDone"
                             android:inputType="text"
                             android:maxLines="1"
@@ -333,48 +409,67 @@
                             app:tint="@color/fg_dim" />
                     </LinearLayout>
 
-                    <!-- Filter Chips: All, B2B, B2C -->
-                    <LinearLayout
+                    <!-- Role Filter Chips -->
+                    <HorizontalScrollView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:orientation="horizontal">
+                        android:overScrollMode="never"
+                        android:scrollbars="none">
 
-                        <TextView
-                            android:id="@+id/chip_filter_all"
+                        <LinearLayout
                             android:layout_width="wrap_content"
-                            android:layout_height="26dp"
-                            android:background="@drawable/bg_tab_active"
-                            android:gravity="center"
-                            android:paddingHorizontal="10dp"
-                            android:text="All Sales"
-                            android:textColor="@color/white"
-                            android:textSize="10.5sp" />
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
 
-                        <TextView
-                            android:id="@+id/chip_filter_b2b"
-                            android:layout_width="wrap_content"
-                            android:layout_height="26dp"
-                            android:layout_marginStart="6dp"
-                            android:background="@drawable/bg_tab_inactive"
-                            android:gravity="center"
-                            android:paddingHorizontal="10dp"
-                            android:text="B2B (Registered)"
-                            android:textColor="@color/fg_muted"
-                            android:textSize="10.5sp" />
+                            <TextView
+                                android:id="@+id/chip_filter_all_roles"
+                                android:layout_width="wrap_content"
+                                android:layout_height="26dp"
+                                android:layout_marginEnd="6dp"
+                                android:background="@drawable/bg_tab_active"
+                                android:gravity="center"
+                                android:paddingHorizontal="10dp"
+                                android:text="All Roles"
+                                android:textColor="@color/white"
+                                android:textSize="11sp" />
 
-                        <TextView
-                            android:id="@+id/chip_filter_b2c"
-                            android:layout_width="wrap_content"
-                            android:layout_height="26dp"
-                            android:layout_marginStart="6dp"
-                            android:background="@drawable/bg_tab_inactive"
-                            android:gravity="center"
-                            android:paddingHorizontal="10dp"
-                            android:text="B2C (Retail)"
-                            android:textColor="@color/fg_muted"
-                            android:textSize="10.5sp" />
-                    </LinearLayout>
+                            <TextView
+                                android:id="@+id/chip_filter_admin"
+                                android:layout_width="wrap_content"
+                                android:layout_height="26dp"
+                                android:layout_marginEnd="6dp"
+                                android:background="@drawable/bg_tab_inactive"
+                                android:gravity="center"
+                                android:paddingHorizontal="10dp"
+                                android:text="Admin"
+                                android:textColor="@color/fg_muted"
+                                android:textSize="11sp" />
+
+                            <TextView
+                                android:id="@+id/chip_filter_staff"
+                                android:layout_width="wrap_content"
+                                android:layout_height="26dp"
+                                android:layout_marginEnd="6dp"
+                                android:background="@drawable/bg_tab_inactive"
+                                android:gravity="center"
+                                android:paddingHorizontal="10dp"
+                                android:text="Staff"
+                                android:textColor="@color/fg_muted"
+                                android:textSize="11sp" />
+
+                            <TextView
+                                android:id="@+id/chip_filter_active_only"
+                                android:layout_width="wrap_content"
+                                android:layout_height="26dp"
+                                android:background="@drawable/bg_tab_inactive"
+                                android:gravity="center"
+                                android:paddingHorizontal="10dp"
+                                android:text="With Transactions"
+                                android:textColor="@color/fg_muted"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+                    </HorizontalScrollView>
                 </LinearLayout>
 
                 <!-- 3. KPI SUMMARY CARDS -->
@@ -382,185 +477,245 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:orientation="horizontal">
+                    android:orientation="vertical">
 
-                    <!-- Gross Sales -->
-                    <LinearLayout
-                        android:layout_width="0dp"
+                    <TextView
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginEnd="4dp"
-                        android:layout_weight="1"
-                        android:background="@drawable/bg_card"
-                        android:orientation="vertical"
-                        android:padding="12dp">
+                        android:layout_marginStart="2dp"
+                        android:layout_marginBottom="6dp"
+                        android:fontFamily="sans-serif-black"
+                        android:letterSpacing="0.06"
+                        android:text="EXECUTIVE SUMMARY"
+                        android:textColor="@color/fg_muted"
+                        android:textSize="11sp" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-black"
-                            android:letterSpacing="0.05"
-                            android:text="GROSS SALES"
-                            android:textColor="@color/fg_muted"
-                            android:textSize="9.5sp" />
+                    <!-- KPI Row 1: Gross Sales & Gross Purchases -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
 
-                        <TextView
-                            android:id="@+id/kpi_gross_sales"
-                            android:layout_width="wrap_content"
+                        <!-- Gross Sales -->
+                        <LinearLayout
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:fontFamily="sans-serif-black"
-                            android:textColor="@color/material_blue"
-                            android:textSize="15sp"
-                            tools:text="₹1,24,500.00" />
+                            android:layout_marginEnd="4dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_card"
+                            android:orientation="vertical"
+                            android:padding="12dp">
 
-                        <TextView
-                            android:id="@+id/kpi_invoices_count"
-                            android:layout_width="wrap_content"
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="GROSS SALES"
+                                android:textColor="@color/fg_dim"
+                                android:textSize="10sp" />
+
+                            <TextView
+                                android:id="@+id/kpi_gross_sales"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:fontFamily="sans-serif-black"
+                                android:text="₹ 0.00"
+                                android:textColor="@color/fg"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:id="@+id/kpi_sales_count"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:fontFamily="sans-serif"
+                                android:text="0 invoices"
+                                android:textColor="@color/material_blue"
+                                android:textSize="10sp" />
+                        </LinearLayout>
+
+                        <!-- Gross Purchases -->
+                        <LinearLayout
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:fontFamily="sans-serif"
-                            android:textColor="@color/fg_dim"
-                            android:textSize="10sp"
-                            tools:text="14 Invoices" />
+                            android:layout_marginStart="4dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_card"
+                            android:orientation="vertical"
+                            android:padding="12dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="GROSS PURCHASES"
+                                android:textColor="@color/fg_dim"
+                                android:textSize="10sp" />
+
+                            <TextView
+                                android:id="@+id/kpi_gross_purchases"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:fontFamily="sans-serif-black"
+                                android:text="₹ 0.00"
+                                android:textColor="@color/fg"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:id="@+id/kpi_purchase_count"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:fontFamily="sans-serif"
+                                android:text="0 purchase orders"
+                                android:textColor="@color/status_orange"
+                                android:textSize="10sp" />
+                        </LinearLayout>
                     </LinearLayout>
 
-                    <!-- Taxable Value -->
+                    <!-- KPI Row 2: Sales GST & Purchase GST -->
                     <LinearLayout
-                        android:layout_width="0dp"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="4dp"
-                        android:layout_weight="1"
-                        android:background="@drawable/bg_card"
-                        android:orientation="vertical"
-                        android:padding="12dp">
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
 
-                        <TextView
-                            android:layout_width="wrap_content"
+                        <!-- Sales GST -->
+                        <LinearLayout
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-black"
-                            android:letterSpacing="0.05"
-                            android:text="TAXABLE VALUE"
-                            android:textColor="@color/fg_muted"
-                            android:textSize="9.5sp" />
+                            android:layout_marginEnd="4dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_card"
+                            android:orientation="vertical"
+                            android:padding="12dp">
 
-                        <TextView
-                            android:id="@+id/kpi_taxable_value"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:fontFamily="sans-serif-black"
-                            android:textColor="@color/fg"
-                            android:textSize="15sp"
-                            tools:text="₹1,05,508.00" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="SALES GST (OUTPUT TAX)"
+                                android:textColor="@color/fg_dim"
+                                android:textSize="10sp" />
 
-                        <TextView
-                            android:id="@+id/kpi_taxable_sub"
-                            android:layout_width="wrap_content"
+                            <TextView
+                                android:id="@+id/kpi_sales_gst"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:fontFamily="sans-serif-bold"
+                                android:text="₹ 0.00"
+                                android:textColor="@color/fg"
+                                android:textSize="15sp" />
+                        </LinearLayout>
+
+                        <!-- Purchase GST -->
+                        <LinearLayout
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:fontFamily="sans-serif"
-                            android:textColor="@color/fg_dim"
-                            android:textSize="10sp"
-                            android:text="Turnover Excl. Tax" />
+                            android:layout_marginStart="4dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_card"
+                            android:orientation="vertical"
+                            android:padding="12dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="PURCHASE GST (INPUT TAX)"
+                                android:textColor="@color/fg_dim"
+                                android:textSize="10sp" />
+
+                            <TextView
+                                android:id="@+id/kpi_purchase_gst"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:fontFamily="sans-serif-bold"
+                                android:text="₹ 0.00"
+                                android:textColor="@color/fg"
+                                android:textSize="15sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- KPI Row 3: Total Combined GST & Net Turnover -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
+
+                        <!-- Combined GST -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="4dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_card"
+                            android:orientation="vertical"
+                            android:padding="12dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="COMBINED GST HANDLED"
+                                android:textColor="@color/fg_dim"
+                                android:textSize="10sp" />
+
+                            <TextView
+                                android:id="@+id/kpi_total_gst"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:fontFamily="sans-serif-bold"
+                                android:text="₹ 0.00"
+                                android:textColor="@color/material_blue"
+                                android:textSize="15sp" />
+                        </LinearLayout>
+
+                        <!-- Net Turnover (Sales - Purchases) -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_card"
+                            android:orientation="vertical"
+                            android:padding="12dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="NET TURNOVER (SALES - PUR)"
+                                android:textColor="@color/fg_dim"
+                                android:textSize="10sp" />
+
+                            <TextView
+                                android:id="@+id/kpi_net_turnover"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:fontFamily="sans-serif-black"
+                                android:text="₹ 0.00"
+                                android:textColor="@color/status_green"
+                                android:textSize="15sp" />
+                        </LinearLayout>
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- KPI Row 2: Total Tax & Tax Breakdown -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:orientation="horizontal">
-
-                    <!-- Total Tax Card -->
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="4dp"
-                        android:layout_weight="1"
-                        android:background="@drawable/bg_card"
-                        android:orientation="vertical"
-                        android:padding="12dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-black"
-                            android:letterSpacing="0.05"
-                            android:text="TOTAL GST TAX"
-                            android:textColor="@color/fg_muted"
-                            android:textSize="9.5sp" />
-
-                        <TextView
-                            android:id="@+id/kpi_total_tax"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:fontFamily="sans-serif-black"
-                            android:textColor="@color/status_green"
-                            android:textSize="15sp"
-                            tools:text="₹18,992.00" />
-
-                        <TextView
-                            android:id="@+id/kpi_cgst_sgst"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:fontFamily="sans-serif"
-                            android:textColor="@color/fg_dim"
-                            android:textSize="10sp"
-                            tools:text="CGST: ₹9,496 | SGST: ₹9,496" />
-                    </LinearLayout>
-
-                    <!-- Breakdown / IGST Card -->
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="4dp"
-                        android:layout_weight="1"
-                        android:background="@drawable/bg_card"
-                        android:orientation="vertical"
-                        android:padding="12dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-black"
-                            android:letterSpacing="0.05"
-                            android:text="IGST &amp; CESS"
-                            android:textColor="@color/fg_muted"
-                            android:textSize="9.5sp" />
-
-                        <TextView
-                            android:id="@+id/kpi_igst_cess"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:fontFamily="sans-serif-black"
-                            android:textColor="@color/status_orange"
-                            android:textSize="15sp"
-                            tools:text="₹0.00" />
-
-                        <TextView
-                            android:id="@+id/kpi_b2b_b2c_split"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:fontFamily="sans-serif"
-                            android:textColor="@color/fg_dim"
-                            android:textSize="10sp"
-                            tools:text="6 B2B • 8 B2C Retail" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <!-- 4. DATA TABLE SECTION -->
+                <!-- 4. USER DETAILS TABLE CARD -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="14dp"
                     android:background="@drawable/bg_card"
                     android:orientation="vertical"
-                    android:padding="14dp">
+                    android:padding="12dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -573,43 +728,31 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:fontFamily="sans-serif-black"
-                            android:letterSpacing="0.05"
-                            android:text="INVOICE-WISE REGISTER"
-                            android:textColor="@color/fg"
-                            android:textSize="12sp" />
+                            android:letterSpacing="0.06"
+                            android:text="USER BREAKDOWN TABLE"
+                            android:textColor="@color/fg_muted"
+                            android:textSize="11sp" />
 
                         <TextView
                             android:id="@+id/tv_table_records_count"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:background="@drawable/bg_badge_edit"
-                            android:fontFamily="sans-serif-medium"
-                            android:paddingHorizontal="8dp"
-                            android:paddingVertical="2dp"
-                            android:textColor="@color/material_blue"
-                            android:textSize="10.5sp"
-                            tools:text="14 Invoices" />
+                            android:fontFamily="sans-serif"
+                            android:text="0 users"
+                            android:textColor="@color/fg_dim"
+                            android:textSize="11sp" />
                     </LinearLayout>
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:fontFamily="sans-serif"
-                        android:text="Tap any invoice row to view item details and bill."
-                        android:textColor="@color/fg_dim"
-                        android:textSize="10.5sp" />
-
-                    <!-- Horizontal Scrollable Table -->
+                    <!-- Horizontal scrollable table -->
                     <HorizontalScrollView
-                        android:id="@+id/horizontal_table_scroll"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
+                        android:overScrollMode="never"
                         android:scrollbars="horizontal">
 
                         <TableLayout
-                            android:id="@+id/table_sales_register"
+                            android:id="@+id/table_user_report"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:stretchColumns="*" />
@@ -628,110 +771,43 @@
                         <ImageView
                             android:layout_width="48dp"
                             android:layout_height="48dp"
-                            android:alpha="0.4"
                             android:contentDescription="@null"
-                            android:src="@drawable/ic_nav_sub_sales_register"
+                            android:src="@drawable/ic_nav_user"
                             app:tint="@color/fg_dim" />
 
                         <TextView
                             android:id="@+id/tv_empty_message"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
-                            android:fontFamily="sans-serif-medium"
-                            android:text="No sales records found for selected period."
-                            android:textColor="@color/fg_muted"
-                            android:textSize="13sp" />
+                            android:layout_marginTop="8dp"
+                            android:gravity="center"
+                            android:text="No transactions found for the selected user and date range."
+                            android:textColor="@color/fg_dim"
+                            android:textSize="12sp" />
                     </LinearLayout>
                 </LinearLayout>
 
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp" />
             </LinearLayout>
         </androidx.core.widget.NestedScrollView>
     </LinearLayout>
 
-    <!-- Navigation Drawer Sidebar -->
-    <LinearLayout
-        android:id="@+id/drawer_container"
-        android:layout_width="280dp"
+    <!-- Navigation Drawer -->
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/nav_view"
+        android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_gravity="start"
-        android:background="@color/nav_bg"
-        android:clickable="true"
         android:fitsSystemWindows="false"
-        android:focusable="true"
-        android:orientation="vertical">
-
-        <com.google.android.material.navigation.NavigationView
-            android:id="@+id/nav_view"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:background="@color/nav_bg"
-            android:fitsSystemWindows="false"
-            app:headerLayout="@layout/nav_header"
-            app:itemBackground="@drawable/bg_nav_item_selector"
-            app:itemHorizontalPadding="24dp"
-            app:itemIconPadding="16dp"
-            app:itemIconTint="@color/nav_item_icon_tint"
-            app:itemTextColor="@color/nav_item_text_color"
-            app:itemVerticalPadding="10dp"
-            app:menu="@menu/drawer_menu" />
-
-        <LinearLayout
-            android:id="@+id/nav_footer_container"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@color/nav_bg"
-            android:orientation="vertical"
-            android:paddingStart="16dp"
-            android:paddingTop="12dp"
-            android:paddingEnd="16dp"
-            android:paddingBottom="16dp">
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginBottom="12dp"
-                android:background="@color/border" />
-
-            <LinearLayout
-                android:id="@+id/btn_nav_logout"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:background="@drawable/bg_nav_logout_button"
-                android:clickable="true"
-                android:focusable="true"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:contentDescription="@null"
-                    android:src="@drawable/ic_logout"
-                    app:tint="@color/error_red" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="14dp"
-                    android:layout_weight="1"
-                    android:fontFamily="sans-serif-medium"
-                    android:text="@string/logout"
-                    android:textColor="@color/error_red"
-                    android:textSize="14sp" />
-
-                <ImageView
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:alpha="0.6"
-                    android:contentDescription="@null"
-                    android:src="@drawable/ic_arrow_forward"
-                    app:tint="@color/error_red" />
-            </LinearLayout>
-        </LinearLayout>
-    </LinearLayout>
+        app:headerLayout="@layout/nav_header"
+        app:itemIconTint="@color/fg_muted"
+        app:itemShapeInsetBottom="0dp"
+        app:itemShapeInsetEnd="0dp"
+        app:itemShapeInsetStart="0dp"
+        app:itemShapeInsetTop="0dp"
+        app:itemTextColor="@color/fg"
+        app:menu="@menu/drawer_menu" />
 
 </androidx.drawerlayout.widget.DrawerLayout>

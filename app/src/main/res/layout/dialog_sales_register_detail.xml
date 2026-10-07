@@ -54,7 +54,7 @@
             android:id="@+id/tv_detail_type_badge"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@drawable/bg_badge_b2b"
+            android:background="@drawable/bg_badge_edit"
             android:fontFamily="sans-serif-medium"
             android:paddingHorizontal="8dp"
             android:paddingVertical="3dp"

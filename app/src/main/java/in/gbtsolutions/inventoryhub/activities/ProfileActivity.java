@@ -47,6 +47,10 @@ public class ProfileActivity extends BaseActivity {
     public static final String KEY_DISTRICT = "district";
     public static final String KEY_STATE = "state";
     public static final String KEY_POSTAL_CODE = "postal_code";
+    public static final String KEY_FOOTER_1 = Configurations.KEY_FOOTER_1;
+    public static final String KEY_FOOTER_2 = Configurations.KEY_FOOTER_2;
+    public static final String KEY_FOOTER_3 = Configurations.KEY_FOOTER_3;
+    public static final String KEY_FOOTER_4 = Configurations.KEY_FOOTER_4;
     private final Map<String, String> cachedConfigs = new HashMap<>();
     private final Handler handler = new Handler(Looper.getMainLooper());
     // User Account Views
@@ -67,6 +71,10 @@ public class ProfileActivity extends BaseActivity {
     private EditText inputDistrict;
     private EditText inputPostalCode;
     private EditText inputState;
+    private EditText inputFooter1;
+    private EditText inputFooter2;
+    private EditText inputFooter3;
+    private EditText inputFooter4;
     // Banners & Controls
     private View bannerError;
     private TextView textError;
@@ -142,6 +150,10 @@ public class ProfileActivity extends BaseActivity {
         inputDistrict = findViewById(R.id.input_district);
         inputPostalCode = findViewById(R.id.input_postal_code);
         inputState = findViewById(R.id.input_state);
+        inputFooter1 = findViewById(R.id.input_footer_1);
+        inputFooter2 = findViewById(R.id.input_footer_2);
+        inputFooter3 = findViewById(R.id.input_footer_3);
+        inputFooter4 = findViewById(R.id.input_footer_4);
 
         // Banners & Action Buttons
         bannerError = findViewById(R.id.banner_error);
@@ -282,6 +294,10 @@ public class ProfileActivity extends BaseActivity {
         inputDistrict.setText(cachedConfigs.getOrDefault(KEY_DISTRICT, ""));
         inputPostalCode.setText(cachedConfigs.getOrDefault(KEY_POSTAL_CODE, ""));
         inputState.setText(cachedConfigs.getOrDefault(KEY_STATE, ""));
+        inputFooter1.setText(cachedConfigs.getOrDefault(KEY_FOOTER_1, ""));
+        inputFooter2.setText(cachedConfigs.getOrDefault(KEY_FOOTER_2, ""));
+        inputFooter3.setText(cachedConfigs.getOrDefault(KEY_FOOTER_3, ""));
+        inputFooter4.setText(cachedConfigs.getOrDefault(KEY_FOOTER_4, ""));
     }
 
     private void setEditMode(boolean edit) {
@@ -298,9 +314,18 @@ public class ProfileActivity extends BaseActivity {
         setFieldEditable(inputDistrict, edit);
         setFieldEditable(inputPostalCode, edit);
         setFieldEditable(inputState, edit);
+        setFieldEditable(inputFooter1, edit);
+        setFieldEditable(inputFooter2, edit);
+        setFieldEditable(inputFooter3, edit);
+        setFieldEditable(inputFooter4, edit);
 
         btnEnterEditMode.setVisibility(edit ? View.GONE : View.VISIBLE);
         layoutEditActions.setVisibility(edit ? View.VISIBLE : View.GONE);
+
+
+        if(!isCurrentUserAdmin()) {
+            btnEnterEditMode.setVisibility(View.GONE);
+        }
 
         if (edit) {
             inputCompanyName.requestFocus();
@@ -331,6 +356,10 @@ public class ProfileActivity extends BaseActivity {
         String district = inputDistrict.getText() != null ? inputDistrict.getText().toString().trim() : "";
         String postalCode = inputPostalCode.getText() != null ? inputPostalCode.getText().toString().trim() : "";
         String state = inputState.getText() != null ? inputState.getText().toString().trim() : "";
+        String footer1 = inputFooter1.getText() != null ? inputFooter1.getText().toString().trim() : "";
+        String footer2 = inputFooter2.getText() != null ? inputFooter2.getText().toString().trim() : "";
+        String footer3 = inputFooter3.getText() != null ? inputFooter3.getText().toString().trim() : "";
+        String footer4 = inputFooter4.getText() != null ? inputFooter4.getText().toString().trim() : "";
 
         if (TextUtils.isEmpty(companyName)) {
             showError("Company / Business Name cannot be empty.");
@@ -349,6 +378,10 @@ public class ProfileActivity extends BaseActivity {
         configsToSave.put(KEY_DISTRICT, district);
         configsToSave.put(KEY_POSTAL_CODE, postalCode);
         configsToSave.put(KEY_STATE, state);
+        configsToSave.put(KEY_FOOTER_1, footer1);
+        configsToSave.put(KEY_FOOTER_2, footer2);
+        configsToSave.put(KEY_FOOTER_3, footer3);
+        configsToSave.put(KEY_FOOTER_4, footer4);
 
         configRepository.saveConfigs(configsToSave, new ConfigRepository.ConfigActionCallback() {
             @Override
@@ -404,6 +437,7 @@ public class ProfileActivity extends BaseActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+        if (!isCurrentUserAdmin()) return true;
         getMenuInflater().inflate(R.menu.menu_profile, menu);
         menuEditItem = menu.findItem(R.id.action_edit_profile);
         updateMenuIcon();

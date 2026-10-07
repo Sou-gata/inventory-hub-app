@@ -574,6 +574,126 @@
                         android:textSize="14sp" />
                 </LinearLayout>
 
+                <!-- SECTION 4: BILL PRINT FOOTER SETTINGS -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginBottom="8dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:letterSpacing="0.04"
+                    android:text="PRINTABLE BILL FOOTER SETTINGS"
+                    android:textColor="@color/fg_muted"
+                    android:textSize="12sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="24dp"
+                    android:background="@drawable/bg_card"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <!-- Footer 1 -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="6dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="Footer 1 (Bold)"
+                        android:textColor="@color/fg"
+                        android:textSize="13sp" />
+
+                    <EditText
+                        android:id="@+id/input_footer_1"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:background="@drawable/bg_field_normal"
+                        android:fontFamily="sans-serif"
+                        android:hint="e.g. THANK YOU! VISIT AGAIN"
+                        android:inputType="textCapSentences"
+                        android:maxLines="1"
+                        android:paddingHorizontal="14dp"
+                        android:textColor="@color/fg"
+                        android:textColorHint="@color/fg_dim"
+                        android:textSize="14sp" />
+
+                    <!-- Footer 2 -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:layout_marginBottom="6dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="Footer 2 (Bold)"
+                        android:textColor="@color/fg"
+                        android:textSize="13sp" />
+
+                    <EditText
+                        android:id="@+id/input_footer_2"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:background="@drawable/bg_field_normal"
+                        android:fontFamily="sans-serif"
+                        android:hint="e.g. Goods once sold will not be returned"
+                        android:inputType="textCapSentences"
+                        android:maxLines="1"
+                        android:paddingHorizontal="14dp"
+                        android:textColor="@color/fg"
+                        android:textColorHint="@color/fg_dim"
+                        android:textSize="14sp" />
+
+                    <!-- Footer 3 -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:layout_marginBottom="6dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="Footer 3 (Normal)"
+                        android:textColor="@color/fg"
+                        android:textSize="13sp" />
+
+                    <EditText
+                        android:id="@+id/input_footer_3"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:background="@drawable/bg_field_normal"
+                        android:fontFamily="sans-serif"
+                        android:hint="e.g. Subject to local jurisdiction"
+                        android:inputType="textCapSentences"
+                        android:maxLines="1"
+                        android:paddingHorizontal="14dp"
+                        android:textColor="@color/fg"
+                        android:textColorHint="@color/fg_dim"
+                        android:textSize="14sp" />
+
+                    <!-- Footer 4 -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:layout_marginBottom="6dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="Footer 4 (Normal)"
+                        android:textColor="@color/fg"
+                        android:textSize="13sp" />
+
+                    <EditText
+                        android:id="@+id/input_footer_4"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:background="@drawable/bg_field_normal"
+                        android:fontFamily="sans-serif"
+                        android:hint="e.g. Computer generated bill, signature not required"
+                        android:inputType="textCapSentences"
+                        android:maxLines="1"
+                        android:paddingHorizontal="14dp"
+                        android:textColor="@color/fg"
+                        android:textColorHint="@color/fg_dim"
+                        android:textSize="14sp" />
+                </LinearLayout>
+
                 <!-- ACTIONS CONTAINER -->
                 <LinearLayout
                     android:id="@+id/layout_edit_actions"

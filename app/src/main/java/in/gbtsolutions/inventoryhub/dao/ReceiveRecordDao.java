@@ -33,4 +33,7 @@ public interface ReceiveRecordDao {
 
     @Query("SELECT * FROM receive_records WHERE purchase_id = :purchaseId ORDER BY receive_record_id DESC LIMIT 1")
     ReceiveRecord getLatestRecordByPurchaseId(int purchaseId);
+
+    @Query("UPDATE receive_records SET received_by = :userId WHERE receive_record_id = :recordId")
+    void updateReceivedBy(int recordId, long userId);
 }

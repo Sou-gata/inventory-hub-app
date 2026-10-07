@@ -59,6 +59,10 @@ public class Purchase {
 
     @ColumnInfo(name = "discount_percent")
     public double discountPercent;
+
+    @ColumnInfo(name = "cancelled_by", defaultValue = "0")
+    public long cancelledBy = 0;
+
     public Purchase() {
     }
 
@@ -149,4 +153,7 @@ public class Purchase {
 
     public double getDiscountPercent() { return discountPercent; }
     public void setDiscountPercent(double discountPercent) { this.discountPercent = discountPercent; }
+
+    public long getCancelledBy() { return cancelledBy; }
+    public void setCancelledBy(long cancelledBy) { this.cancelledBy = cancelledBy; }
 }

@@ -624,7 +624,7 @@ public class SalesRegisterActivity extends BaseActivity {
         badge.setText(text);
         badge.setTextSize(TypedValue.COMPLEX_UNIT_SP, 9.5f);
         badge.setTypeface(null, Typeface.BOLD);
-        badge.setBackgroundResource(R.drawable.bg_badge_b2b);
+        badge.setBackgroundResource(R.drawable.bg_badge_edit);
         badge.setTextColor(ContextCompat.getColor(this, isB2B ? R.color.material_blue : R.color.fg_muted));
         badge.setPadding(dpToPx(6), dpToPx(2), dpToPx(6), dpToPx(2));
 

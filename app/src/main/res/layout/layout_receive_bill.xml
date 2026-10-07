@@ -6,11 +6,9 @@
     android:layout_height="wrap_content"
     android:background="@color/white"
     android:orientation="vertical"
-    android:padding="12dp">
+    android:paddingHorizontal="4dp"
+    android:paddingVertical="12dp">
 
-    <!-- ================================================================= -->
-    <!--                         HEADER SECTION                            -->
-    <!-- ================================================================= -->
     <LinearLayout
         android:id="@+id/layout_bill_header"
         android:layout_width="match_parent"
@@ -18,7 +16,6 @@
         android:gravity="center_horizontal"
         android:orientation="vertical">
 
-        <!-- Company Name -->
         <TextView
             android:id="@+id/tv_bill_company_name"
             android:layout_width="match_parent"
@@ -31,7 +28,6 @@
             android:textSize="18sp"
             tools:text="INVENTORY HUB STORE" />
 
-        <!-- Company Address -->
         <TextView
             android:id="@+id/tv_bill_company_address"
             android:layout_width="match_parent"
@@ -43,7 +39,6 @@
             android:textSize="11sp"
             tools:text="123 Commercial Street, Market Area\nBengaluru, Karnataka - 560001" />
 
-        <!-- Contact Numbers / Email -->
         <TextView
             android:id="@+id/tv_bill_company_contact"
             android:layout_width="match_parent"
@@ -55,7 +50,6 @@
             android:textSize="11sp"
             tools:text="Ph: +91 98765 43210" />
 
-        <!-- Company GSTIN -->
         <TextView
             android:id="@+id/tv_bill_company_gstin"
             android:layout_width="match_parent"
@@ -68,7 +62,6 @@
             android:textStyle="bold"
             tools:text="GSTIN: 29AAAAA0000A1Z5" />
 
-        <!-- Solid Divider -->
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
@@ -76,7 +69,6 @@
             android:layout_marginBottom="6dp"
             android:background="@color/black" />
 
-        <!-- Document Title Banner -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -87,7 +79,6 @@
             android:textColor="@color/black"
             android:textSize="12sp" />
 
-        <!-- Solid Divider -->
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
@@ -95,7 +86,6 @@
             android:layout_marginBottom="8dp"
             android:background="@color/black" />
 
-        <!-- GRN Meta Row 1: GRN No & Date -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -140,7 +130,6 @@
                 tools:text="23/09/2026 16:30" />
         </LinearLayout>
 
-        <!-- GRN Meta Row 2: PO Ref & Order Status -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -186,7 +175,6 @@
                 tools:text="[ COMPLETED ]" />
         </LinearLayout>
 
-        <!-- Supplier Section -->
         <LinearLayout
             android:id="@+id/layout_bill_supplier_section"
             android:layout_width="match_parent"
@@ -194,14 +182,12 @@
             android:layout_marginTop="6dp"
             android:orientation="vertical">
 
-            <!-- Subtle Thin Divider -->
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:layout_marginBottom="6dp"
                 android:background="@color/black" />
 
-            <!-- Supplier Details Header -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -269,9 +255,6 @@
 
     </LinearLayout>
 
-    <!-- ================================================================= -->
-    <!--                         MAIN BODY SECTION                         -->
-    <!-- ================================================================= -->
     <LinearLayout
         android:id="@+id/layout_bill_body"
         android:layout_width="match_parent"
@@ -279,13 +262,11 @@
         android:layout_marginTop="6dp"
         android:orientation="vertical">
 
-        <!-- Solid Header Divider -->
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:background="@color/black" />
 
-        <!-- Products Table Column Headers -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -336,20 +317,17 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- Divider Below Table Header -->
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:background="@color/black" />
 
-        <!-- Dynamic Items Container (Populated at Runtime) -->
         <LinearLayout
             android:id="@+id/container_bill_items"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- SAMPLE PREVIEW ITEM 1 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -429,7 +407,6 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- SAMPLE PREVIEW ITEM 2 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -513,9 +490,7 @@
 
     </LinearLayout>
 
-    <!-- ================================================================= -->
     <!--                         FOOTER SECTION                            -->
-    <!-- ================================================================= -->
     <LinearLayout
         android:id="@+id/layout_bill_footer"
         android:layout_width="match_parent"
@@ -523,13 +498,11 @@
         android:layout_marginTop="8dp"
         android:orientation="vertical">
 
-        <!-- Top Divider of Footer -->
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:background="@color/black" />
 
-        <!-- Total Items and Quantity Count -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -576,13 +549,11 @@
                 tools:text="15 Units" />
         </LinearLayout>
 
-        <!-- Divider Below Count -->
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:background="@color/black" />
 
-        <!-- Monetary Summary Section (Subtotal, Total GST, Received Value) -->
         <LinearLayout
             android:id="@+id/layout_bill_monetary_summary"
             android:layout_width="match_parent"
@@ -616,7 +587,6 @@
                     tools:text="₹ 2,490.00" />
             </LinearLayout>
 
-            <!-- Total GST Row -->
             <LinearLayout
                 android:id="@+id/layout_bill_total_gst_row"
                 android:layout_width="match_parent"
@@ -643,7 +613,6 @@
                     tools:text="₹ 448.20" />
             </LinearLayout>
 
-            <!-- Round Off Row -->
             <LinearLayout
                 android:id="@+id/layout_bill_round_off"
                 android:layout_width="match_parent"
@@ -670,7 +639,6 @@
                     tools:text="0.00" />
             </LinearLayout>
 
-            <!-- Total Received Value Row -->
             <LinearLayout
                 android:id="@+id/layout_bill_received_value"
                 android:layout_width="match_parent"
@@ -701,14 +669,12 @@
 
         </LinearLayout>
 
-        <!-- Double Line / Thick Divider for Grand Total -->
         <View
             android:layout_width="match_parent"
             android:layout_height="2dp"
             android:layout_marginTop="6dp"
             android:background="@color/black" />
 
-        <!-- Total Units Received Highlight Row (Matches Grand Total in Sell Bill) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -735,14 +701,12 @@
                 tools:text="15 Units" />
         </LinearLayout>
 
-        <!-- Bottom Border of Highlight Row -->
         <View
             android:layout_width="match_parent"
             android:layout_height="2dp"
             android:layout_marginBottom="6dp"
             android:background="@color/black" />
 
-        <!-- Amount in Words Section -->
         <LinearLayout
             android:id="@+id/layout_bill_amount_words"
             android:layout_width="match_parent"
@@ -770,7 +734,6 @@
                 tools:text="Rupees Two Thousand Nine Hundred Thirty-Eight Only" />
         </LinearLayout>
 
-        <!-- Status & Verification Row -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -806,7 +769,6 @@
                 android:textSize="11sp" />
         </LinearLayout>
 
-        <!-- Notes / Remarks Section -->
         <LinearLayout
             android:id="@+id/layout_bill_notes"
             android:layout_width="match_parent"
@@ -834,7 +796,6 @@
                 tools:text="All items inspected and accepted in good condition." />
         </LinearLayout>
 
-        <!-- Signatures Section -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -888,7 +849,6 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Divider Before Terms -->
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
@@ -896,42 +856,65 @@
             android:layout_marginBottom="8dp"
             android:background="@color/black" />
 
-        <!-- Verification Banner Message -->
-        <TextView
+        <!-- Dynamic Bill Footers -->
+        <LinearLayout
+            android:id="@+id/layout_bill_custom_footers"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:fontFamily="sans-serif-black"
-            android:gravity="center"
-            android:letterSpacing="0.05"
-            android:text="GOODS VERIFIED &amp; RECEIVED IN STORE"
-            android:textColor="@color/black"
-            android:textSize="12sp" />
+            android:orientation="vertical">
 
-        <!-- System Generated Timestamp -->
-        <TextView
-            android:id="@+id/tv_bill_footer_time"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:fontFamily="sans-serif"
-            android:gravity="center"
-            android:textColor="@color/black"
-            android:textSize="9sp"
-            tools:text="Generated electronically via Inventory Hub on 23/09/2026 16:30" />
+            <TextView
+                android:id="@+id/tv_bill_footer_1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="@color/black"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:visibility="gone"
+                tools:text="GOODS VERIFIED &amp; RECEIVED"
+                tools:visibility="visible" />
 
-        <!-- System Branding / Software Footer -->
-        <TextView
-            android:id="@+id/tv_bill_system_footer"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:fontFamily="monospace"
-            android:gravity="center"
-            android:text="*** Powered by InventoryHub ***"
-            android:textColor="@color/black"
-            android:textSize="9sp" />
+            <TextView
+                android:id="@+id/tv_bill_footer_2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:gravity="center"
+                android:textColor="@color/black"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:visibility="gone"
+                tools:text="Inspected and Verified By Store"
+                tools:visibility="visible" />
 
-        <!-- End of Bill Cut Marker -->
+            <TextView
+                android:id="@+id/tv_bill_footer_3"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:gravity="center"
+                android:textColor="@color/black"
+                android:textSize="12sp"
+                android:textStyle="normal"
+                android:visibility="gone"
+                tools:text="Subject to local jurisdiction"
+                tools:visibility="visible" />
+
+            <TextView
+                android:id="@+id/tv_bill_footer_4"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:gravity="center"
+                android:textColor="@color/black"
+                android:textSize="12sp"
+                android:textStyle="normal"
+                android:visibility="gone"
+                tools:text="Computer Generated Goods Receipt Note"
+                tools:visibility="visible" />
+        </LinearLayout>
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

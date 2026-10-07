@@ -142,6 +142,10 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
         <activity
+            android:name=".activities.UserWiseReportActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
             android:name=".activities.BackupRestoreActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />

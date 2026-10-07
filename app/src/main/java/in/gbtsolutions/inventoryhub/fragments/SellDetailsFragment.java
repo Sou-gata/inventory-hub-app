@@ -902,10 +902,7 @@ public class SellDetailsFragment extends Fragment {
         }
         String now = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
 
-        long createdBy = 1;
-        if (GlobalStore.getInstance().getLoggedInUser() != null) {
-            createdBy = GlobalStore.getInstance().getLoggedInUser().id;
-        }
+        long createdBy = in.gbtsolutions.inventoryhub.helpers.UserHelper.getCurrentUserId(getContext());
 
         double grossSubtotal = SellCartManager.getInstance().getGrossSubtotal();
         double totalDiscount = SellCartManager.getInstance().getTotalDiscount();

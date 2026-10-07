@@ -84,6 +84,9 @@ public class Sale {
     @ColumnInfo(name = "payment_method", defaultValue = "'Cash'")
     public String paymentMethod = "Cash";
 
+    @ColumnInfo(name = "cancelled_by", defaultValue = "0")
+    public long cancelledBy = 0;
+
     public Sale() {
     }
 
@@ -328,5 +331,13 @@ public class Sale {
 
     public void setPaymentMethod(String paymentMethod) {
         this.paymentMethod = paymentMethod;
+    }
+
+    public long getCancelledBy() {
+        return cancelledBy;
+    }
+
+    public void setCancelledBy(long cancelledBy) {
+        this.cancelledBy = cancelledBy;
     }
 }

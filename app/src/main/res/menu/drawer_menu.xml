@@ -87,6 +87,10 @@
             android:icon="@drawable/ic_nav_sub_purchase_register"
             android:title="Purchase Register" />
         <item
+            android:id="@+id/nav_reports_user_summary"
+            android:icon="@drawable/ic_nav_sub_user_report"
+            android:title="User Wise Report" />
+        <item
             android:id="@+id/nav_audit_trail"
             android:icon="@drawable/ic_nav_audit_trail"
             android:title="Audit Trail" />

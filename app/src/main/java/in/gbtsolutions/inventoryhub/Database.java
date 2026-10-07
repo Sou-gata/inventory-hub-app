@@ -5,6 +5,7 @@ import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
+import androidx.room.migration.Migration;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 
 import in.gbtsolutions.inventoryhub.dao.AuditTrailDao;
@@ -59,17 +60,26 @@ import in.gbtsolutions.inventoryhub.models.User;
                 AuditTrail.class,
                 UnitOfMeasure.class
         },
-        version = 1,
+        version = 2,
         exportSchema = false
 )
 public abstract class Database extends RoomDatabase {
     private static volatile Database INSTANCE;
+
+    public static final Migration MIGRATION_1_2 = new Migration(1, 2) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase database) {
+            database.execSQL("ALTER TABLE sales ADD COLUMN cancelled_by INTEGER NOT NULL DEFAULT 0");
+            database.execSQL("ALTER TABLE purchases ADD COLUMN cancelled_by INTEGER NOT NULL DEFAULT 0");
+        }
+    };
 
     public static Database getInstance(Context context) {
         if (INSTANCE == null) {
             synchronized (Database.class) {
                 if (INSTANCE == null) {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(), Database.class, "app_database")
+                            .addMigrations(MIGRATION_1_2)
                             .fallbackToDestructiveMigration()
                             .addCallback(new Callback() {
                                 @Override

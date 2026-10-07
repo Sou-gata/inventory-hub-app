@@ -121,6 +121,60 @@
                 tools:text="#PO-4" />
         </LinearLayout>
 
+        <!-- Responsible Person Info (Ordered By & Receiving As) -->
+        <!-- Responsible Person Info (Ordered By Only) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_search_box"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="9dp">
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_nav_user"
+                app:tint="@color/accent_teal" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:fontFamily="sans-serif"
+                android:text="Ordered by:"
+                android:textColor="@color/fg_dim"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/text_receive_ordered_by"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:fontFamily="sans-serif-bold"
+                android:maxLines="1"
+                android:textColor="@color/fg"
+                android:textSize="12sp"
+                tools:text="Sougata (@sougata)" />
+
+            <TextView
+                android:id="@+id/text_receive_ordered_by_role"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:background="@drawable/bg_glass_pill"
+                android:fontFamily="sans-serif-bold"
+                android:paddingHorizontal="6dp"
+                android:paddingVertical="1dp"
+                android:textColor="@color/accent_teal"
+                android:textSize="10sp"
+                tools:text="ADMIN" />
+        </LinearLayout>
+
         <!-- Divider -->
         <View
             android:layout_width="match_parent"

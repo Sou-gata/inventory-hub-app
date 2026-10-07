@@ -121,6 +121,77 @@
                 tools:text="#PO-12" />
         </LinearLayout>
 
+        <!-- Responsible Person Card (Purchased & Received By) -->
+        <!-- Responsible Person Card (Ordered By Only) -->
+        <LinearLayout
+            android:id="@+id/layout_detail_creator"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_search_box"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="9dp">
+
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/ic_nav_user"
+                app:tint="@color/accent_teal" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/label_detail_creator"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif"
+                    android:text="Ordered by"
+                    android:textColor="@color/fg_dim"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/text_detail_creator_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="1dp"
+                    android:ellipsize="end"
+                    android:fontFamily="sans-serif-bold"
+                    android:maxLines="1"
+                    android:textColor="@color/fg"
+                    android:textSize="13sp"
+                    tools:text="Sougata Talukdar (@sougata)" />
+
+                <TextView
+                    android:id="@+id/text_detail_creator_summary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="1dp"
+                    android:fontFamily="sans-serif"
+                    android:textColor="@color/fg_dim"
+                    android:textSize="11sp"
+                    tools:text="10 Units ordered" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/text_detail_creator_role"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_glass_pill"
+                android:fontFamily="sans-serif-bold"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="3dp"
+                android:textColor="@color/accent_teal"
+                android:textSize="11sp"
+                tools:text="ADMIN" />
+        </LinearLayout>
+
         <!-- Cancellation Banner (Visible when Partially Cancelled or Cancelled) -->
         <LinearLayout
             android:id="@+id/layout_cancellation_banner"

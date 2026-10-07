@@ -3,7 +3,6 @@ package in.gbtsolutions.inventoryhub;
 public class Configurations {
     public static final String KEY_ALLOW_OUT_OF_STOCK_SELL = "allow_out_of_stock_sell";
     public static final String KEY_CSV_MANDATORY_FIELD = "csv_mandatory_field";
-    public static final String MANDATORY_FIELD_SKU = "sku";
     public static final String MANDATORY_FIELD_HSN = "hsn";
     public static final String MANDATORY_FIELD_BOTH = "both";
     public static final String mkFixed = "F42B7169C8053EA271D94F6C18A507BE";
@@ -20,9 +19,14 @@ public class Configurations {
     // Application Operating Mode (Online vs Offline)
     public static final String KEY_APP_MODE = "app_mode";
     public static final String MODE_OFFLINE = "offline";
-    public static final String MODE_ONLINE = "online";
     public static final String KEY_ONLINE_SERVER_URL = "online_server_url";
-    public static final String DEFAULT_ONLINE_SERVER_URL = "https://imgbt.gbtsolutions.in/";
-    // public static final String DEFAULT_ONLINE_SERVER_URL = "http://192.168.0.181:3000/";
+     public static final String DEFAULT_ONLINE_SERVER_URL = "https://imgbt.gbtsolutions.in/";
+//    public static final String DEFAULT_ONLINE_SERVER_URL = "http://192.168.0.181:3000/";
     public static final String KEY_AUTH_TOKEN = "auth_token";
+
+    // Bill Footer Config Keys
+    public static final String KEY_FOOTER_1 = "footer_1";
+    public static final String KEY_FOOTER_2 = "footer_2";
+    public static final String KEY_FOOTER_3 = "footer_3";
+    public static final String KEY_FOOTER_4 = "footer_4";
 }
