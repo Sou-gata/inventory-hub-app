@@ -73,6 +73,47 @@ public class PurchaseRepository {
         return purchaseDao.getFilteredPurchases(startDate, endDate, supplierQuery);
     }
 
+    public void fetchPurchasesOnline(String startDate, String endDate, String supplierQuery,
+                                     in.gbtsolutions.inventoryhub.online.repository.OnlinePurchaseRepository.PurchaseListCallback callback) {
+        if (onlinePurchaseRepository != null) {
+            onlinePurchaseRepository.fetchPurchases(startDate, endDate, supplierQuery, new in.gbtsolutions.inventoryhub.online.repository.OnlinePurchaseRepository.PurchaseListCallback() {
+                @Override
+                public void onSuccess(List<PurchaseWithSupplier> purchases) {
+                    executorService.execute(() -> {
+                        try {
+                            db.runInTransaction(() -> {
+                                if (purchases != null) {
+                                    for (PurchaseWithSupplier pws : purchases) {
+                                        try {
+                                            if (pws.purchase != null) {
+                                                purchaseDao.insert(pws.purchase);
+                                            }
+                                        } catch (Exception ignored) {}
+                                        try {
+                                            if (pws.supplier != null && pws.supplier.supplierId > 0) {
+                                                db.supplierDao().insert(pws.supplier);
+                                            }
+                                        } catch (Exception ignored) {}
+                                    }
+                                }
+                            });
+                        } catch (Exception ignored) {}
+                    });
+                    if (callback != null) {
+                        mainHandler.post(() -> callback.onSuccess(purchases));
+                    }
+                }
+
+                @Override
+                public void onError(String errorMessage) {
+                    if (callback != null) {
+                        mainHandler.post(() -> callback.onError(errorMessage));
+                    }
+                }
+            });
+        }
+    }
+
     public LiveData<List<PurchaseWithSupplier>> getPendingPurchasesWithSupplier() {
         return purchaseDao.getPendingPurchasesWithSupplier();
     }
@@ -348,6 +389,21 @@ public class PurchaseRepository {
     }
 
     public void cancelPurchase(int purchaseId, long userId, PurchaseActionCallback callback) {
+        if (isOnlineMode()) {
+            getOnlineRepository().cancelPurchase(purchaseId, new in.gbtsolutions.inventoryhub.online.repository.OnlinePurchaseRepository.ReceiveActionCallback() {
+                @Override
+                public void onSuccess() {
+                    if (callback != null) callback.onSuccess();
+                }
+
+                @Override
+                public void onError(String errorMessage) {
+                    if (callback != null) callback.onError(errorMessage);
+                }
+            });
+            return;
+        }
+
         executorService.execute(() -> {
             try {
                 db.runInTransaction(() -> {

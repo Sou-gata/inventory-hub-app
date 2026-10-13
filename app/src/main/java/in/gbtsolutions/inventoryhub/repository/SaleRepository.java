@@ -14,20 +14,25 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import in.gbtsolutions.inventoryhub.Database;
+import in.gbtsolutions.inventoryhub.dao.ProductBatchDao;
+import in.gbtsolutions.inventoryhub.dao.ProductDao;
 import in.gbtsolutions.inventoryhub.dao.SaleDao;
 import in.gbtsolutions.inventoryhub.dao.SaleItemDao;
+import in.gbtsolutions.inventoryhub.helpers.UserHelper;
 import in.gbtsolutions.inventoryhub.models.Sale;
 import in.gbtsolutions.inventoryhub.models.SaleItem;
 import in.gbtsolutions.inventoryhub.models.SaleItemWithProduct;
 import in.gbtsolutions.inventoryhub.models.SaleWithBuyer;
+import in.gbtsolutions.inventoryhub.online.config.AppModeManager;
+import in.gbtsolutions.inventoryhub.online.repository.OnlineSaleRepository;
 
 public class SaleRepository {
 
     private final Database db;
     private final SaleDao saleDao;
     private final SaleItemDao saleItemDao;
-    private final in.gbtsolutions.inventoryhub.dao.ProductDao productDao;
-    private final in.gbtsolutions.inventoryhub.dao.ProductBatchDao productBatchDao;
+    private final ProductDao productDao;
+    private final ProductBatchDao productBatchDao;
     private final LiveData<List<Sale>> allSales;
     private final ExecutorService executorService;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
@@ -43,8 +48,8 @@ public class SaleRepository {
     }
 
     private final Application application;
-    private final in.gbtsolutions.inventoryhub.online.repository.OnlineSaleRepository onlineSaleRepository;
-    private final in.gbtsolutions.inventoryhub.online.config.AppModeManager appModeManager;
+    private final OnlineSaleRepository onlineSaleRepository;
+    private final AppModeManager appModeManager;
 
     public SaleRepository(Application application) {
         this.application = application;
@@ -55,15 +60,15 @@ public class SaleRepository {
         this.productBatchDao = db.productBatchDao();
         this.allSales = saleDao.getAllSales();
         this.executorService = Executors.newFixedThreadPool(4);
-        this.onlineSaleRepository = new in.gbtsolutions.inventoryhub.online.repository.OnlineSaleRepository(application);
-        this.appModeManager = in.gbtsolutions.inventoryhub.online.config.AppModeManager.getInstance(application);
+        this.onlineSaleRepository = new OnlineSaleRepository(application);
+        this.appModeManager = AppModeManager.getInstance(application);
     }
 
     public boolean isOnlineMode() {
         return appModeManager.isOnlineMode();
     }
 
-    public in.gbtsolutions.inventoryhub.online.repository.OnlineSaleRepository getOnlineRepository() {
+    public OnlineSaleRepository getOnlineRepository() {
         return onlineSaleRepository;
     }
 
@@ -95,13 +100,59 @@ public class SaleRepository {
         return saleDao.getFilteredSales(startDate, endDate, buyerQuery);
     }
 
+    public void fetchSalesOnline(int page, int limit, String startDate, String endDate, String buyerQuery, OnlineSaleRepository.SaleListCallback callback) {
+        if (onlineSaleRepository != null) {
+            onlineSaleRepository.fetchSales(page, limit, buyerQuery, startDate, endDate, new OnlineSaleRepository.SaleListCallback() {
+                @Override
+                public void onSuccess(List<SaleWithBuyer> sales, int currentPage, int totalPages, int totalRecords, boolean hasMore) {
+                    executorService.execute(() -> {
+                        try {
+                            db.runInTransaction(() -> {
+                                if (sales != null) {
+                                    for (SaleWithBuyer swb : sales) {
+                                        if (swb.sale != null) {
+                                            saleDao.insert(swb.sale);
+                                        }
+                                        if (swb.buyer != null && swb.buyer.buyerId > 0) {
+                                            db.buyerDao().insert(swb.buyer);
+                                        }
+                                    }
+                                }
+                            });
+                        } catch (Exception ignored) {}
+                    });
+                    if (callback != null) {
+                        mainHandler.post(() -> callback.onSuccess(sales, currentPage, totalPages, totalRecords, hasMore));
+                    }
+                }
+
+                @Override
+                public void onError(String errorMessage) {
+                    if (callback != null) {
+                        mainHandler.post(() -> callback.onError(errorMessage));
+                    }
+                }
+            });
+        }
+    }
+
+    public void fetchSalesOnline(String startDate, String endDate, String buyerQuery, OnlineSaleRepository.SaleListCallback callback) {
+        fetchSalesOnline(1, in.gbtsolutions.inventoryhub.online.paging.EndlessRecyclerScrollListener.PAGE_SIZE, startDate, endDate, buyerQuery, callback);
+    }
+
+    public void fetchSaleDetailsOnline(int saleId, OnlineSaleRepository.SaleDetailCallback callback) {
+        if (onlineSaleRepository != null) {
+            onlineSaleRepository.fetchSaleById(saleId, callback);
+        }
+    }
+
     public LiveData<List<SaleItemWithProduct>> getSaleItemsWithProduct(int saleId) {
         return saleItemDao.getSaleItemsWithProduct(saleId);
     }
 
     public void insert(Sale sale) {
         if (sale.createdBy <= 0) {
-            sale.createdBy = in.gbtsolutions.inventoryhub.helpers.UserHelper.getCurrentUserId(application);
+            sale.createdBy = UserHelper.getCurrentUserId(application);
         }
         executorService.execute(() -> saleDao.insert(sale));
     }
@@ -136,6 +187,19 @@ public class SaleRepository {
                     if (invoiceNo != null && !invoiceNo.isEmpty()) {
                         sale.invoiceId = invoiceNo;
                     }
+                    executorService.execute(() -> {
+                        try {
+                            db.runInTransaction(() -> {
+                                saleDao.insert(sale);
+                                if (items != null) {
+                                    for (SaleItem item : items) {
+                                        item.saleId = saleId;
+                                    }
+                                    saleItemDao.insertAll(items);
+                                }
+                            });
+                        } catch (Exception ignored) {}
+                    });
                     if (callback != null) {
                         callback.onSuccess(saleId);
                     }
@@ -228,6 +292,36 @@ public class SaleRepository {
     }
 
     public void cancelSale(int saleId, long userId, SaleActionCallback callback) {
+        if (appModeManager.isOnlineMode()) {
+            onlineSaleRepository.cancelSale(saleId, new in.gbtsolutions.inventoryhub.online.repository.OnlineSaleRepository.SaleActionCallback() {
+                @Override
+                public void onSuccess() {
+                    executorService.execute(() -> {
+                        try {
+                            Sale s = saleDao.getSaleById(saleId);
+                            if (s != null) {
+                                s.status = "Cancelled";
+                                s.cancelledBy = userId > 0 ? userId : in.gbtsolutions.inventoryhub.helpers.UserHelper.getCurrentUserId(application);
+                                s.updatedAt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
+                                saleDao.update(s);
+                            }
+                        } catch (Exception ignored) {}
+                    });
+                    if (callback != null) {
+                        mainHandler.post(callback::onSuccess);
+                    }
+                }
+
+                @Override
+                public void onError(String errorMessage) {
+                    if (callback != null) {
+                        mainHandler.post(() -> callback.onError(errorMessage));
+                    }
+                }
+            });
+            return;
+        }
+
         executorService.execute(() -> {
             try {
                 db.runInTransaction(() -> {

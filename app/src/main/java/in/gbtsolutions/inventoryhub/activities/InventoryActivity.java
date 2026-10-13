@@ -50,6 +50,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Executors;
 
@@ -65,6 +66,7 @@ import in.gbtsolutions.inventoryhub.dao.ProductDao;
 import in.gbtsolutions.inventoryhub.helpers.BitmapHelper;
 import in.gbtsolutions.inventoryhub.helpers.CategoryIconHelper;
 import in.gbtsolutions.inventoryhub.helpers.CommonFunctions;
+import in.gbtsolutions.inventoryhub.helpers.Mode;
 import in.gbtsolutions.inventoryhub.helpers.ProductCsvParser;
 import in.gbtsolutions.inventoryhub.helpers.ProductQRHelper;
 import in.gbtsolutions.inventoryhub.helpers.ThemeManager;
@@ -646,7 +648,12 @@ public class InventoryActivity extends BaseActivity {
     }
 
     private void openAddProduct() {
-        navigateTo(AddProductActivity.class, false);
+        boolean willNavigate = !(appModeManager.isOfflineMode() && GlobalStore.getInstance().getTier().equalsIgnoreCase(Mode.OfflineTier.STANDARD.name()) && allProducts.size() >= 10);
+        if (willNavigate) {
+            navigateTo(AddProductActivity.class, false);
+        } else {
+            showToast("Free tire can only hold 10 items.");
+        }
     }
 
     private void openEditProduct(@NonNull Product product) {
@@ -842,7 +849,8 @@ public class InventoryActivity extends BaseActivity {
                     }
 
                     @Override
-                    public void onError(String errorMessage) {}
+                    public void onError(String errorMessage) {
+                    }
                 });
             } else {
                 productBatchRepository.getAllBatchesForProduct(product.productId).observe(this, batches -> {

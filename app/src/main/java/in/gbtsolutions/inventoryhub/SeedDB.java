@@ -7,6 +7,7 @@ import android.util.Log;
 import java.util.concurrent.Executors;
 
 import in.gbtsolutions.inventoryhub.helpers.HelperMethods;
+import in.gbtsolutions.inventoryhub.helpers.Mode;
 import in.gbtsolutions.inventoryhub.models.Buyer;
 import in.gbtsolutions.inventoryhub.models.Category;
 import in.gbtsolutions.inventoryhub.models.Config;
@@ -35,9 +36,9 @@ public class SeedDB {
             Database db = Database.getInstance(context);
 
 //            seedUsers(db);
-            seedCategoriesAndProducts(db);
-            seedBuyers(db);
-            seedSuppliers(db);
+//            seedCategoriesAndProducts(db);
+//            seedBuyers(db);
+//            seedSuppliers(db);
             seedConfigs(db);
             seedUnitsOfMeasure(db);
         } catch (Exception e) {
@@ -437,6 +438,8 @@ public class SeedDB {
             db.configDao().insert(new Config(Configurations.KEY_UPI_ID, ""));
             db.configDao().insert(new Config(Configurations.KEY_SAVE_BILL_TO_GALLERY, "true"));
             db.configDao().insert(new Config(Configurations.KEY_PRINT_BILL, "false"));
+            db.configDao().insert(new Config(Configurations.KEY_MODE, Mode.OFFLINE.name()));
+            db.configDao().insert(new Config(Configurations.KEY_TIER, Mode.OfflineTier.STANDARD.name()));
             Log.d(TAG, "Seeded initial configs.");
         }
     }

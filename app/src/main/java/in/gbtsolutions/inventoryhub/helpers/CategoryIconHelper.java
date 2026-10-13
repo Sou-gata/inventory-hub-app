@@ -113,7 +113,7 @@ public class CategoryIconHelper {
      */
     @NonNull
     public static String sanitizeIconKey(@Nullable String rawKey) {
-        if (TextUtils.isEmpty(rawKey)) {
+        if (rawKey == null || rawKey.trim().isEmpty()) {
             return DEFAULT_ICON_KEY;
         }
         String clean = rawKey.trim().toLowerCase(Locale.ROOT);

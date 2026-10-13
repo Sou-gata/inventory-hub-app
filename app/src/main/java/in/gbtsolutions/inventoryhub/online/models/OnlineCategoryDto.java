@@ -13,15 +13,19 @@ public class OnlineCategoryDto {
     @SerializedName(value = "description", alternate = {"desc"})
     public String description;
 
+    @SerializedName(value = "icon", alternate = {"category_icon", "categoryIcon"})
+    public String icon;
+
     @SerializedName(value = "isActive", alternate = {"is_active"})
     public boolean isActive = true;
 
     public OnlineCategoryDto() {
     }
 
-    public OnlineCategoryDto(int id, String name, String description) {
+    public OnlineCategoryDto(int id, String name, String description, String icon) {
         this.id = id;
         this.name = name;
         this.description = description;
+        this.icon = icon;
     }
 }

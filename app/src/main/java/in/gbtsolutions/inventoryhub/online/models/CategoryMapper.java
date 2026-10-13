@@ -3,6 +3,7 @@ package in.gbtsolutions.inventoryhub.online.models;
 import java.util.ArrayList;
 import java.util.List;
 
+import in.gbtsolutions.inventoryhub.helpers.CategoryIconHelper;
 import in.gbtsolutions.inventoryhub.models.Category;
 
 public class CategoryMapper {
@@ -13,6 +14,7 @@ public class CategoryMapper {
         category.categoryId = dto.id;
         category.categoryName = dto.name != null ? dto.name : "";
         category.description = dto.description != null ? dto.description : "";
+        category.icon = CategoryIconHelper.sanitizeIconKey(dto.icon);
         return category;
     }
 
@@ -22,6 +24,7 @@ public class CategoryMapper {
         dto.id = category.categoryId;
         dto.name = category.categoryName;
         dto.description = category.description;
+        dto.icon = CategoryIconHelper.sanitizeIconKey(category.icon);
         return dto;
     }
 

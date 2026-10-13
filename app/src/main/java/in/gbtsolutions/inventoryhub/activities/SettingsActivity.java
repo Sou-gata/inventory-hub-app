@@ -27,8 +27,6 @@ import in.gbtsolutions.inventoryhub.GlobalStore;
 import in.gbtsolutions.inventoryhub.R;
 import in.gbtsolutions.inventoryhub.adapters.NoFilterArrayAdapter;
 import in.gbtsolutions.inventoryhub.helpers.ThemeManager;
-import in.gbtsolutions.inventoryhub.online.config.AppMode;
-import in.gbtsolutions.inventoryhub.online.config.AppModeManager;
 import in.gbtsolutions.inventoryhub.repository.ConfigRepository;
 
 public class SettingsActivity extends BaseActivity {
@@ -70,7 +68,6 @@ public class SettingsActivity extends BaseActivity {
         // Load settings state
         GlobalStore.getInstance().loadSettings(this);
 
-        setupOperatingModeSetting();
         setupMandatoryFieldSetting();
         setupPaymentSettings();
         setupBillPrintSettings();
@@ -402,110 +399,6 @@ public class SettingsActivity extends BaseActivity {
         }
     }
 
-    private void setupOperatingModeSetting() {
-        MaterialSwitch swOnlineMode = findViewById(R.id.sw_online_mode);
-        View rowOnlineMode = findViewById(R.id.row_online_mode);
-        TextView textModeTitle = findViewById(R.id.text_mode_title);
-        TextView textModeDesc = findViewById(R.id.text_mode_desc);
-        ImageView iconModeStatus = findViewById(R.id.icon_mode_status);
-
-        View rowServerUrl = findViewById(R.id.row_server_url);
-        TextView textServerUrl = findViewById(R.id.text_server_url);
-
-        View rowTestConnection = findViewById(R.id.row_test_connection);
-        TextView textConnectionStatus = findViewById(R.id.text_connection_status);
-        View progressTestConnection = findViewById(R.id.progress_test_connection);
-
-        AppModeManager modeManager = AppModeManager.getInstance(this);
-
-        if (textServerUrl != null) {
-            textServerUrl.setText(modeManager.getServerUrl());
-        }
-
-        Runnable updateUiForMode = () -> {
-            boolean isOnline = modeManager.isOnlineMode();
-            if (swOnlineMode != null && swOnlineMode.isChecked() != isOnline) {
-                swOnlineMode.setChecked(isOnline);
-            }
-            if (textModeTitle != null) {
-                textModeTitle.setText(isOnline ? "Online Mode (Cloud Server)" : "Offline Mode (Local Database)");
-            }
-            if (textModeDesc != null) {
-                textModeDesc.setText(isOnline ? "Active: All data is loaded, saved, and searched via Cloud API" : "Active: All data is saved and read from device's local database");
-            }
-            if (iconModeStatus != null) {
-                iconModeStatus.setColorFilter(ContextCompat.getColor(this, isOnline ? R.color.status_green : R.color.material_blue));
-            }
-        };
-
-        updateUiForMode.run();
-
-        if (swOnlineMode != null) {
-            swOnlineMode.setOnCheckedChangeListener((btn, isChecked) -> {
-                AppMode newMode = isChecked ? AppMode.ONLINE : AppMode.OFFLINE;
-                if (newMode != modeManager.getCurrentMode()) {
-                    modeManager.setAppMode(newMode);
-                    updateUiForMode.run();
-                    Toast.makeText(this, isChecked ? "Switched to Online Mode (Cloud Server)" : "Switched to Offline Mode (Local Database)", Toast.LENGTH_SHORT).show();
-                }
-            });
-        }
-
-        if (rowOnlineMode != null && swOnlineMode != null) {
-            rowOnlineMode.setOnClickListener(v -> swOnlineMode.toggle());
-        }
-
-        if (rowServerUrl != null) {
-            rowServerUrl.setOnClickListener(v -> showEditServerUrlDialog(textServerUrl));
-        }
-
-        if (rowTestConnection != null) {
-            rowTestConnection.setOnClickListener(v -> {
-                if (progressTestConnection != null)
-                    progressTestConnection.setVisibility(View.VISIBLE);
-                if (textConnectionStatus != null) {
-                    textConnectionStatus.setText("Connecting to server...");
-                    textConnectionStatus.setTextColor(ContextCompat.getColor(SettingsActivity.this, R.color.fg_muted));
-                }
-                modeManager.testServerConnection(modeManager.getServerUrl(), (isSuccess, message) -> {
-                    if (progressTestConnection != null)
-                        progressTestConnection.setVisibility(View.GONE);
-                    if (textConnectionStatus != null) {
-                        textConnectionStatus.setText(message);
-                        textConnectionStatus.setTextColor(ContextCompat.getColor(SettingsActivity.this, isSuccess ? R.color.status_green : R.color.status_red));
-                    }
-                });
-            });
-        }
-    }
-
-    private void showEditServerUrlDialog(TextView textServerUrl) {
-        AppModeManager modeManager = AppModeManager.getInstance(this);
-        EditText input = new EditText(this);
-        input.setSingleLine(true);
-        input.setText(modeManager.getServerUrl());
-        if (input.getText() != null) {
-            input.setSelection(input.getText().length());
-        }
-        int pad = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 20, getResources().getDisplayMetrics());
-        FrameLayout container = new FrameLayout(this);
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT);
-        params.leftMargin = pad;
-        params.rightMargin = pad;
-        input.setLayoutParams(params);
-        container.addView(input);
-
-        new MaterialAlertDialogBuilder(this).setTitle("Cloud Server Base URL").setMessage("Enter the base address for the API server (e.g. http://10.0.2.2:3000/ or https://api.inventoryhub.com/):").setView(container).setPositiveButton("Save", (dialog, which) -> {
-            String newUrl = input.getText().toString().trim();
-            if (!newUrl.isEmpty()) {
-                modeManager.setServerUrl(newUrl);
-                if (textServerUrl != null) {
-                    textServerUrl.setText(modeManager.getServerUrl());
-                }
-                Toast.makeText(this, "Server URL updated", Toast.LENGTH_SHORT).show();
-            }
-        }).setNegativeButton("Cancel", null).show();
-    }
 
     private void setupQuickLinks() {
         View rowBackupRestore = findViewById(R.id.row_backup_restore);

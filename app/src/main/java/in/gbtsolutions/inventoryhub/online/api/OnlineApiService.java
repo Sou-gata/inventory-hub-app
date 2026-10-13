@@ -7,6 +7,7 @@ import java.util.List;
 import in.gbtsolutions.inventoryhub.online.models.ApiResponse;
 import in.gbtsolutions.inventoryhub.online.models.OnlineBuyerDto;
 import in.gbtsolutions.inventoryhub.online.models.OnlineCategoryDto;
+import in.gbtsolutions.inventoryhub.online.models.OnlineDeviceDashboardDto;
 import in.gbtsolutions.inventoryhub.online.models.OnlinePendingReceiveDto;
 import in.gbtsolutions.inventoryhub.online.models.OnlineProductDto;
 import in.gbtsolutions.inventoryhub.online.models.OnlinePurchaseDto;
@@ -15,14 +16,27 @@ import in.gbtsolutions.inventoryhub.online.models.OnlineReceiveItemsRequest;
 import in.gbtsolutions.inventoryhub.online.models.OnlineSaleDto;
 import in.gbtsolutions.inventoryhub.online.models.OnlineSupplierDto;
 import in.gbtsolutions.inventoryhub.online.models.PagedData;
+import in.gbtsolutions.inventoryhub.reports.gstr1.GSTR1Models;
+import in.gbtsolutions.inventoryhub.reports.purchaseregister.PurchaseRegisterModels;
+import in.gbtsolutions.inventoryhub.reports.salesregister.SalesRegisterModels;
+import okhttp3.MultipartBody;
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.http.Body;
+import retrofit2.http.DELETE;
+import retrofit2.http.GET;
+import retrofit2.http.Multipart;
+import retrofit2.http.POST;
+import retrofit2.http.PUT;
+import retrofit2.http.Part;
+import retrofit2.http.Path;
 import retrofit2.http.DELETE;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
 import retrofit2.http.PUT;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
+import retrofit2.http.Streaming;
 
 public interface OnlineApiService {
 
@@ -150,10 +164,36 @@ public interface OnlineApiService {
             @Body OnlineSaleDto saleDto
     );
 
+    @GET("api/v1/sales")
+    Call<ApiResponse<PagedData<OnlineSaleDto>>> getSales(
+            @Query("page") int page,
+            @Query("limit") int limit,
+            @Query("search") String search,
+            @Query("startDate") String startDate,
+            @Query("endDate") String endDate
+    );
+
+    @GET("api/v1/sales/{id}")
+    Call<ApiResponse<OnlineSaleDto>> getSaleById(
+            @Path("id") int saleId
+    );
+
+    @PUT("api/v1/sales/{id}/cancel")
+    Call<ApiResponse<Object>> cancelSale(
+            @Path("id") int saleId
+    );
+
 
     @POST("api/v1/purchases")
     Call<ApiResponse<OnlinePurchaseDto>> createPurchase(
             @Body OnlinePurchaseDto purchaseDto
+    );
+
+    @GET("api/v1/purchases")
+    Call<ApiResponse<List<OnlinePurchaseDto>>> getPurchases(
+            @Query("search") String search,
+            @Query("startDate") String startDate,
+            @Query("endDate") String endDate
     );
 
     @GET("api/v1/purchases/pending-receive")
@@ -167,6 +207,14 @@ public interface OnlineApiService {
             @Body OnlineReceiveItemsRequest request
     );
 
+    @PUT("api/v1/purchases/{id}/cancel")
+    Call<ApiResponse<Object>> cancelPurchase(
+            @Path("id") int purchaseId
+    );
+
+
+    @GET("api/v1/dashboard/device")
+    Call<ApiResponse<OnlineDeviceDashboardDto>> getDeviceDashboardStats();
 
     @GET("api/v1/health")
     Call<ApiResponse<Object>> checkHealth();
@@ -176,4 +224,105 @@ public interface OnlineApiService {
 
     @POST("api/v1/devices/lookup")
     Call<JsonObject> lookupDevice(@Body JsonObject body);
+
+    @GET("api/v1/reports/gstr1")
+    Call<ApiResponse<GSTR1Models.ReportData>> getGstr1Report(
+            @Query("startDate") String startDate,
+            @Query("endDate") String endDate,
+            @Query("b2cLargeThreshold") Double b2cLargeThreshold
+    );
+
+    @Streaming
+    @GET("api/v1/reports/gstr1/csv")
+    Call<ResponseBody> downloadGstr1Csv(
+            @Query("startDate") String startDate,
+            @Query("endDate") String endDate,
+            @Query("b2cLargeThreshold") Double b2cLargeThreshold
+    );
+
+    @Streaming
+    @GET("api/v1/reports/gstr1/excel")
+    Call<ResponseBody> downloadGstr1Excel(
+            @Query("startDate") String startDate,
+            @Query("endDate") String endDate,
+            @Query("b2cLargeThreshold") Double b2cLargeThreshold
+    );
+
+    @Streaming
+    @GET("api/v1/reports/gstr1/pdf")
+    Call<ResponseBody> downloadGstr1Pdf(
+            @Query("startDate") String startDate,
+            @Query("endDate") String endDate,
+            @Query("b2cLargeThreshold") Double b2cLargeThreshold
+    );
+
+    // Sales Register
+    @GET("api/v1/reports/sales-register")
+    Call<ApiResponse<SalesRegisterModels.ReportData>> getSalesRegister(
+            @Query("startDate") String startDate,
+            @Query("endDate") String endDate,
+            @Query("includeItems") Boolean includeItems
+    );
+
+    @Streaming
+    @GET("api/v1/reports/sales-register/csv")
+    Call<ResponseBody> downloadSalesRegisterCsv(
+            @Query("startDate") String startDate,
+            @Query("endDate") String endDate
+    );
+
+    @Streaming
+    @GET("api/v1/reports/sales-register/excel")
+    Call<ResponseBody> downloadSalesRegisterExcel(
+            @Query("startDate") String startDate,
+            @Query("endDate") String endDate
+    );
+
+    @Streaming
+    @GET("api/v1/reports/sales-register/pdf")
+    Call<ResponseBody> downloadSalesRegisterPdf(
+            @Query("startDate") String startDate,
+            @Query("endDate") String endDate
+    );
+
+    // Purchase Register
+    @GET("api/v1/reports/purchase-register")
+    Call<ApiResponse<PurchaseRegisterModels.ReportData>> getPurchaseRegister(
+            @Query("startDate") String startDate,
+            @Query("endDate") String endDate,
+            @Query("includeItems") Boolean includeItems
+    );
+
+    @Streaming
+    @GET("api/v1/reports/purchase-register/csv")
+    Call<ResponseBody> downloadPurchaseRegisterCsv(
+            @Query("startDate") String startDate,
+            @Query("endDate") String endDate
+    );
+
+    @Streaming
+    @GET("api/v1/reports/purchase-register/excel")
+    Call<ResponseBody> downloadPurchaseRegisterExcel(
+            @Query("startDate") String startDate,
+            @Query("endDate") String endDate
+    );
+
+    @Streaming
+    @GET("api/v1/reports/purchase-register/pdf")
+    Call<ResponseBody> downloadPurchaseRegisterPdf(
+            @Query("startDate") String startDate,
+            @Query("endDate") String endDate
+    );
+
+    // Offline to Online Migration
+    @Multipart
+    @POST("api/v1/migration/upload")
+    Call<ApiResponse<JsonObject>> uploadMigrationDump(
+            @Part MultipartBody.Part database
+    );
+
+    @GET("api/v1/migration/status/{jobId}")
+    Call<ApiResponse<JsonObject>> getMigrationStatus(
+            @Path("jobId") String jobId
+    );
 }

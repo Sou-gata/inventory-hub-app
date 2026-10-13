@@ -2,10 +2,6 @@ package in.gbtsolutions.inventoryhub.online.models;
 
 import com.google.gson.annotations.SerializedName;
 
-/**
- * Standard server response wrapper matching server's ApiResponse / ApiErrorResponse.
- * @param <T> Type of payload inside data field
- */
 public class ApiResponse<T> {
 
     @SerializedName("success")
@@ -40,18 +36,6 @@ public class ApiResponse<T> {
         return success;
     }
 
-    public void setSuccess(boolean success) {
-        this.success = success;
-    }
-
-    public int getStatusCode() {
-        return statusCode;
-    }
-
-    public void setStatusCode(int statusCode) {
-        this.statusCode = statusCode;
-    }
-
     public String getMessage() {
         return message != null ? message : "";
     }
@@ -76,9 +60,5 @@ public class ApiResponse<T> {
             return seassonExpired;
         }
         return false;
-    }
-
-    public void setSessionExpired(Boolean sessionExpired) {
-        this.sessionExpired = sessionExpired;
     }
 }

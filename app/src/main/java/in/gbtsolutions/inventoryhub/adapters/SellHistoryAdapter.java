@@ -24,12 +24,20 @@ import in.gbtsolutions.inventoryhub.R;
 import in.gbtsolutions.inventoryhub.models.Sale;
 import in.gbtsolutions.inventoryhub.models.SaleWithBuyer;
 
-public class SellHistoryAdapter extends RecyclerView.Adapter<SellHistoryAdapter.SaleViewHolder> {
+public class SellHistoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+
+    public static final int VIEW_TYPE_ITEM = 0;
+    public static final int VIEW_TYPE_FOOTER = 1;
 
     private final List<SaleWithBuyer> salesList = new ArrayList<>();
     private final SimpleDateFormat isoDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
     private final SimpleDateFormat displayDateFormat = new SimpleDateFormat("dd MMM yyyy", Locale.getDefault());
     private OnSaleClickListener clickListener;
+
+    private boolean isFooterAdded = false;
+    private boolean isRetryActive = false;
+    private String retryMessage = null;
+    private Runnable retryAction = null;
 
     public SellHistoryAdapter() {
     }
@@ -38,7 +46,83 @@ public class SellHistoryAdapter extends RecyclerView.Adapter<SellHistoryAdapter.
         this.clickListener = listener;
     }
 
+    public List<SaleWithBuyer> getSales() {
+        return new ArrayList<>(salesList);
+    }
+
+    public void clearSales() {
+        int count = getItemCount();
+        salesList.clear();
+        isFooterAdded = false;
+        isRetryActive = false;
+        if (count > 0) {
+            notifyItemRangeRemoved(0, count);
+        }
+    }
+
+    public void addSales(@NonNull List<SaleWithBuyer> newBatch) {
+        if (newBatch.isEmpty()) return;
+        List<SaleWithBuyer> toAdd = new ArrayList<>();
+        java.util.HashSet<Integer> existingIds = new java.util.HashSet<>();
+        for (SaleWithBuyer item : salesList) {
+            if (item.sale != null) {
+                existingIds.add(item.sale.saleId);
+            }
+        }
+        for (SaleWithBuyer item : newBatch) {
+            if (item.sale == null || !existingIds.contains(item.sale.saleId)) {
+                toAdd.add(item);
+                if (item.sale != null) {
+                    existingIds.add(item.sale.saleId);
+                }
+            }
+        }
+        if (toAdd.isEmpty()) return;
+        int insertPos = salesList.size();
+        salesList.addAll(toAdd);
+        notifyItemRangeInserted(insertPos, toAdd.size());
+    }
+
+    public void showLoadingFooter() {
+        if (!isFooterAdded) {
+            isFooterAdded = true;
+            isRetryActive = false;
+            notifyItemInserted(salesList.size());
+        } else if (isRetryActive) {
+            isRetryActive = false;
+            notifyItemChanged(salesList.size());
+        }
+    }
+
+    public void showRetryFooter(String message, Runnable retry) {
+        this.retryMessage = message;
+        this.retryAction = retry;
+        this.isRetryActive = true;
+        if (!isFooterAdded) {
+            isFooterAdded = true;
+            notifyItemInserted(salesList.size());
+        } else {
+            notifyItemChanged(salesList.size());
+        }
+    }
+
+    public void removeFooter() {
+        if (isFooterAdded) {
+            isFooterAdded = false;
+            isRetryActive = false;
+            retryMessage = null;
+            retryAction = null;
+            notifyItemRemoved(salesList.size());
+        }
+    }
+
+    public boolean isFooterAdded() {
+        return isFooterAdded;
+    }
+
     public void setSales(@NonNull List<SaleWithBuyer> newSales) {
+        isFooterAdded = false;
+        isRetryActive = false;
         DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new DiffUtil.Callback() {
             @Override
             public int getOldListSize() {
@@ -80,26 +164,86 @@ public class SellHistoryAdapter extends RecyclerView.Adapter<SellHistoryAdapter.
         diffResult.dispatchUpdatesTo(this);
     }
 
+    @Override
+    public int getItemViewType(int position) {
+        if (isFooterAdded && position == salesList.size()) {
+            return VIEW_TYPE_FOOTER;
+        }
+        return VIEW_TYPE_ITEM;
+    }
+
     @NonNull
     @Override
-    public SaleViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        if (viewType == VIEW_TYPE_FOOTER) {
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_loading_footer, parent, false);
+            return new FooterViewHolder(view);
+        }
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_sell_history, parent, false);
         return new SaleViewHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull SaleViewHolder holder, int position) {
-        SaleWithBuyer item = salesList.get(position);
-        holder.bind(item);
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+        if (holder instanceof SaleViewHolder) {
+            SaleWithBuyer item = salesList.get(position);
+            ((SaleViewHolder) holder).bind(item);
+        } else if (holder instanceof FooterViewHolder) {
+            ((FooterViewHolder) holder).bind(isRetryActive, retryMessage, retryAction);
+        }
     }
 
     @Override
     public int getItemCount() {
-        return salesList.size();
+        return isFooterAdded ? salesList.size() + 1 : salesList.size();
     }
 
     public interface OnSaleClickListener {
         void onSaleClick(@NonNull SaleWithBuyer item);
+    }
+
+    public static class FooterViewHolder extends RecyclerView.ViewHolder {
+        private final View containerLoading;
+        private final View containerRetry;
+        private final TextView textLoadingMore;
+        private final TextView textRetryMessage;
+        private final TextView btnRetryLoad;
+
+        public FooterViewHolder(@NonNull View itemView) {
+            super(itemView);
+            containerLoading = itemView.findViewById(R.id.container_loading);
+            containerRetry = itemView.findViewById(R.id.container_retry);
+            textLoadingMore = itemView.findViewById(R.id.text_loading_more);
+            textRetryMessage = itemView.findViewById(R.id.text_retry_message);
+            btnRetryLoad = itemView.findViewById(R.id.btn_retry_load);
+        }
+
+        public void bind(boolean isRetry, String message, Runnable retryAction) {
+            if (isRetry) {
+                if (containerLoading != null) containerLoading.setVisibility(View.GONE);
+                if (containerRetry != null) {
+                    containerRetry.setVisibility(View.VISIBLE);
+                    if (textRetryMessage != null && message != null) {
+                        textRetryMessage.setText(message);
+                    }
+                    if (btnRetryLoad != null) {
+                        btnRetryLoad.setOnClickListener(v -> {
+                            if (retryAction != null) {
+                                retryAction.run();
+                            }
+                        });
+                    }
+                }
+            } else {
+                if (containerRetry != null) containerRetry.setVisibility(View.GONE);
+                if (containerLoading != null) {
+                    containerLoading.setVisibility(View.VISIBLE);
+                    if (textLoadingMore != null) {
+                        textLoadingMore.setText("Loading more sales...");
+                    }
+                }
+            }
+        }
     }
 
     public class SaleViewHolder extends RecyclerView.ViewHolder {
@@ -126,7 +270,7 @@ public class SellHistoryAdapter extends RecyclerView.Adapter<SellHistoryAdapter.
 
             itemView.setOnClickListener(v -> {
                 int pos = getBindingAdapterPosition();
-                if (pos != RecyclerView.NO_POSITION && clickListener != null) {
+                if (pos != RecyclerView.NO_POSITION && pos < salesList.size() && clickListener != null) {
                     clickListener.onSaleClick(salesList.get(pos));
                 }
             });

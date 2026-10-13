@@ -70,6 +70,8 @@ import in.gbtsolutions.inventoryhub.models.Buyer;
 import in.gbtsolutions.inventoryhub.models.Config;
 import in.gbtsolutions.inventoryhub.models.Sale;
 import in.gbtsolutions.inventoryhub.models.SaleItemWithProduct;
+import in.gbtsolutions.inventoryhub.online.config.AppModeManager;
+import in.gbtsolutions.inventoryhub.online.repository.OnlineReportRepository;
 import in.gbtsolutions.inventoryhub.reports.salesregister.SalesRegisterCalculator;
 import in.gbtsolutions.inventoryhub.reports.salesregister.SalesRegisterCsvExporter;
 import in.gbtsolutions.inventoryhub.reports.salesregister.SalesRegisterExcelExporter;
@@ -135,6 +137,11 @@ public class SalesRegisterActivity extends BaseActivity {
     private String currentSearchQuery = "";
     private SalesRegisterModels.ReportData currentReportData = null;
 
+    // Online integration
+    private AppModeManager appModeManager;
+    private OnlineReportRepository onlineReportRepository;
+    private AppModeManager.OnModeChangeListener modeChangeListener;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -155,6 +162,12 @@ public class SalesRegisterActivity extends BaseActivity {
 
         initViews();
         initListeners();
+
+        appModeManager = AppModeManager.getInstance(this);
+        onlineReportRepository = new OnlineReportRepository(this);
+        modeChangeListener = newMode -> loadReport();
+        appModeManager.addOnModeChangeListener(modeChangeListener);
+
         setDefaultDateRangeThisMonth();
         loadReport();
     }
@@ -377,22 +390,50 @@ public class SalesRegisterActivity extends BaseActivity {
 
     private void loadReport() {
         btnGenerate.setEnabled(false);
-        btnGenerate.setText("Generating...");
 
-        Executors.newSingleThreadExecutor().execute(() -> {
-            SalesRegisterModels.ReportData report = SalesRegisterCalculator.generateReport(
-                    SalesRegisterActivity.this,
-                    selectedStartDate,
-                    selectedEndDate
-            );
+        if (appModeManager != null && appModeManager.isOnlineMode()) {
+            btnGenerate.setText("Fetching...");
+            onlineReportRepository.fetchSalesRegister(selectedStartDate, selectedEndDate, true, new OnlineReportRepository.SalesRegisterCallback() {
+                @Override
+                public void onSuccess(SalesRegisterModels.ReportData report) {
+                    if (isFinishing() || isDestroyed()) return;
+                    btnGenerate.setEnabled(true);
+                    btnGenerate.setText("Generate");
+                    currentReportData = report;
+                    renderReport();
+                }
 
-            new Handler(Looper.getMainLooper()).post(() -> {
-                btnGenerate.setEnabled(true);
-                btnGenerate.setText("Generate");
-                currentReportData = report;
-                renderReport();
+                @Override
+                public void onError(String errorMessage, boolean sessionExpired) {
+                    if (isFinishing() || isDestroyed()) return;
+                    btnGenerate.setEnabled(true);
+                    btnGenerate.setText("Generate");
+                    if (sessionExpired) {
+                        Toast.makeText(SalesRegisterActivity.this, "Session expired. Please log in again.", Toast.LENGTH_LONG).show();
+                        appModeManager.clearAuthToken();
+                        navigateTo(LoginActivity.class, true);
+                    } else {
+                        Toast.makeText(SalesRegisterActivity.this, "Sales Register sync error: " + errorMessage, Toast.LENGTH_SHORT).show();
+                    }
+                }
             });
-        });
+        } else {
+            btnGenerate.setText("Generating...");
+            Executors.newSingleThreadExecutor().execute(() -> {
+                SalesRegisterModels.ReportData report = SalesRegisterCalculator.generateReport(
+                        SalesRegisterActivity.this,
+                        selectedStartDate,
+                        selectedEndDate
+                );
+
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    btnGenerate.setEnabled(true);
+                    btnGenerate.setText("Generate");
+                    currentReportData = report;
+                    renderReport();
+                });
+            });
+        }
     }
 
     @SuppressLint("SetTextI18n")
@@ -868,6 +909,31 @@ public class SalesRegisterActivity extends BaseActivity {
 
     private void exportExcel() {
         Toast.makeText(this, "Generating Excel...", Toast.LENGTH_SHORT).show();
+        if (appModeManager != null && appModeManager.isOnlineMode()) {
+            onlineReportRepository.downloadSalesRegister("excel", selectedStartDate, selectedEndDate, new OnlineReportRepository.DownloadCallback() {
+                @Override
+                public void onSuccess(File downloadedFile, String mimeType) {
+                    showExportSuccess(downloadedFile, mimeType);
+                }
+
+                @Override
+                public void onError(String errorMessage, boolean sessionExpired) {
+                    if (sessionExpired) {
+                        Toast.makeText(SalesRegisterActivity.this, "Session expired. Please log in again.", Toast.LENGTH_LONG).show();
+                        appModeManager.clearAuthToken();
+                        navigateTo(LoginActivity.class, true);
+                        return;
+                    }
+                    Toast.makeText(SalesRegisterActivity.this, "Online download failed: " + errorMessage + ". Generating locally...", Toast.LENGTH_SHORT).show();
+                    exportExcelLocally();
+                }
+            });
+        } else {
+            exportExcelLocally();
+        }
+    }
+
+    private void exportExcelLocally() {
         Executors.newSingleThreadExecutor().execute(() -> {
             try {
                 File file = SalesRegisterExcelExporter.exportToExcel(SalesRegisterActivity.this, currentReportData);
@@ -882,6 +948,31 @@ public class SalesRegisterActivity extends BaseActivity {
 
     private void exportPdf() {
         Toast.makeText(this, "Generating PDF...", Toast.LENGTH_SHORT).show();
+        if (appModeManager != null && appModeManager.isOnlineMode()) {
+            onlineReportRepository.downloadSalesRegister("pdf", selectedStartDate, selectedEndDate, new OnlineReportRepository.DownloadCallback() {
+                @Override
+                public void onSuccess(File downloadedFile, String mimeType) {
+                    showExportSuccess(downloadedFile, mimeType);
+                }
+
+                @Override
+                public void onError(String errorMessage, boolean sessionExpired) {
+                    if (sessionExpired) {
+                        Toast.makeText(SalesRegisterActivity.this, "Session expired. Please log in again.", Toast.LENGTH_LONG).show();
+                        appModeManager.clearAuthToken();
+                        navigateTo(LoginActivity.class, true);
+                        return;
+                    }
+                    Toast.makeText(SalesRegisterActivity.this, "Online download failed: " + errorMessage + ". Generating locally...", Toast.LENGTH_SHORT).show();
+                    exportPdfLocally();
+                }
+            });
+        } else {
+            exportPdfLocally();
+        }
+    }
+
+    private void exportPdfLocally() {
         Executors.newSingleThreadExecutor().execute(() -> {
             try {
                 File file = SalesRegisterPdfExporter.exportToPdf(SalesRegisterActivity.this, currentReportData);
@@ -896,6 +987,31 @@ public class SalesRegisterActivity extends BaseActivity {
 
     private void exportCsv() {
         Toast.makeText(this, "Generating CSV...", Toast.LENGTH_SHORT).show();
+        if (appModeManager != null && appModeManager.isOnlineMode()) {
+            onlineReportRepository.downloadSalesRegister("csv", selectedStartDate, selectedEndDate, new OnlineReportRepository.DownloadCallback() {
+                @Override
+                public void onSuccess(File downloadedFile, String mimeType) {
+                    showExportSuccess(downloadedFile, mimeType);
+                }
+
+                @Override
+                public void onError(String errorMessage, boolean sessionExpired) {
+                    if (sessionExpired) {
+                        Toast.makeText(SalesRegisterActivity.this, "Session expired. Please log in again.", Toast.LENGTH_LONG).show();
+                        appModeManager.clearAuthToken();
+                        navigateTo(LoginActivity.class, true);
+                        return;
+                    }
+                    Toast.makeText(SalesRegisterActivity.this, "Online download failed: " + errorMessage + ". Generating locally...", Toast.LENGTH_SHORT).show();
+                    exportCsvLocally();
+                }
+            });
+        } else {
+            exportCsvLocally();
+        }
+    }
+
+    private void exportCsvLocally() {
         Executors.newSingleThreadExecutor().execute(() -> {
             try {
                 File file = SalesRegisterCsvExporter.exportToCsv(SalesRegisterActivity.this, currentReportData);
@@ -1103,6 +1219,17 @@ public class SalesRegisterActivity extends BaseActivity {
         GlobalStore.getInstance().loadSettings(this);
         if (navView != null) {
             navView.setCheckedItem(R.id.nav_reports_sales_register);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (appModeManager != null && modeChangeListener != null) {
+            appModeManager.removeOnModeChangeListener(modeChangeListener);
+        }
+        if (onlineReportRepository != null) {
+            onlineReportRepository.cancel();
         }
     }
 }

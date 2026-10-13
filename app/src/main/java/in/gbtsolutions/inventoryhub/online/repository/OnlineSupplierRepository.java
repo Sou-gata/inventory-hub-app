@@ -22,16 +22,19 @@ public class OnlineSupplierRepository {
 
     public interface SupplierListCallback {
         void onSuccess(List<Suppliers> suppliers);
+
         void onError(String errorMessage);
     }
 
     public interface SupplierActionCallback {
         void onSuccess(Suppliers supplier);
+
         void onError(String errorMessage);
     }
 
     public interface SupplierDeleteCallback {
         void onSuccess();
+
         void onError(String errorMessage);
     }
 
@@ -47,15 +50,10 @@ public class OnlineSupplierRepository {
         return OnlineApiClient.getInstance().getApiService(context);
     }
 
-    public void fetchSuppliers(SupplierListCallback callback) {
-        fetchSuppliers(null, callback);
-    }
-
     public void fetchSuppliers(String search, SupplierListCallback callback) {
         getApi().getSuppliers(search).enqueue(new Callback<ApiResponse<List<OnlineSupplierDto>>>() {
             @Override
-            public void onResponse(Call<ApiResponse<List<OnlineSupplierDto>>> call,
-                                   Response<ApiResponse<List<OnlineSupplierDto>>> response) {
+            public void onResponse(Call<ApiResponse<List<OnlineSupplierDto>>> call, Response<ApiResponse<List<OnlineSupplierDto>>> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     ApiResponse<List<OnlineSupplierDto>> body = response.body();
                     if (body.isSuccess() && body.getData() != null) {
@@ -67,7 +65,8 @@ public class OnlineSupplierRepository {
                     } else {
                         String msg = body.getMessage();
                         mainHandler.post(() -> {
-                            if (callback != null) callback.onError(!msg.isEmpty() ? msg : "Failed to load suppliers");
+                            if (callback != null)
+                                callback.onError(!msg.isEmpty() ? msg : "Failed to load suppliers");
                         });
                         return;
                     }
@@ -88,10 +87,9 @@ public class OnlineSupplierRepository {
 
     public void createSupplier(Suppliers supplier, SupplierActionCallback callback) {
         OnlineSupplierDto dto = SupplierMapper.toDto(supplier);
-        getApi().createSupplier(dto).enqueue(new Callback<ApiResponse<OnlineSupplierDto>>() {
+        getApi().createSupplier(dto).enqueue(new Callback<>() {
             @Override
-            public void onResponse(Call<ApiResponse<OnlineSupplierDto>> call,
-                                   Response<ApiResponse<OnlineSupplierDto>> response) {
+            public void onResponse(Call<ApiResponse<OnlineSupplierDto>> call, Response<ApiResponse<OnlineSupplierDto>> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     ApiResponse<OnlineSupplierDto> body = response.body();
                     if (body.isSuccess() && body.getData() != null) {
@@ -103,7 +101,8 @@ public class OnlineSupplierRepository {
                     } else {
                         String msg = body.getMessage();
                         mainHandler.post(() -> {
-                            if (callback != null) callback.onError(!msg.isEmpty() ? msg : "Failed to create supplier");
+                            if (callback != null)
+                                callback.onError(!msg.isEmpty() ? msg : "Failed to create supplier");
                         });
                         return;
                     }
@@ -114,7 +113,8 @@ public class OnlineSupplierRepository {
             @Override
             public void onFailure(Call<ApiResponse<OnlineSupplierDto>> call, Throwable t) {
                 mainHandler.post(() -> {
-                    if (callback != null) callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
+                    if (callback != null)
+                        callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
                 });
             }
         });
@@ -122,10 +122,9 @@ public class OnlineSupplierRepository {
 
     public void updateSupplier(Suppliers supplier, SupplierActionCallback callback) {
         OnlineSupplierDto dto = SupplierMapper.toDto(supplier);
-        getApi().updateSupplier(supplier.supplierId, dto).enqueue(new Callback<ApiResponse<OnlineSupplierDto>>() {
+        getApi().updateSupplier(supplier.supplierId, dto).enqueue(new Callback<>() {
             @Override
-            public void onResponse(Call<ApiResponse<OnlineSupplierDto>> call,
-                                   Response<ApiResponse<OnlineSupplierDto>> response) {
+            public void onResponse(Call<ApiResponse<OnlineSupplierDto>> call, Response<ApiResponse<OnlineSupplierDto>> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     ApiResponse<OnlineSupplierDto> body = response.body();
                     if (body.isSuccess() && body.getData() != null) {
@@ -137,7 +136,8 @@ public class OnlineSupplierRepository {
                     } else {
                         String msg = body.getMessage();
                         mainHandler.post(() -> {
-                            if (callback != null) callback.onError(!msg.isEmpty() ? msg : "Failed to update supplier");
+                            if (callback != null)
+                                callback.onError(!msg.isEmpty() ? msg : "Failed to update supplier");
                         });
                         return;
                     }
@@ -148,14 +148,15 @@ public class OnlineSupplierRepository {
             @Override
             public void onFailure(Call<ApiResponse<OnlineSupplierDto>> call, Throwable t) {
                 mainHandler.post(() -> {
-                    if (callback != null) callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
+                    if (callback != null)
+                        callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
                 });
             }
         });
     }
 
     public void deleteSupplier(int supplierId, SupplierDeleteCallback callback) {
-        getApi().deleteSupplier(supplierId).enqueue(new Callback<ApiResponse<Object>>() {
+        getApi().deleteSupplier(supplierId).enqueue(new Callback<>() {
             @Override
             public void onResponse(Call<ApiResponse<Object>> call, Response<ApiResponse<Object>> response) {
                 if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
@@ -169,7 +170,8 @@ public class OnlineSupplierRepository {
                             ApiResponse<?> err = gson.fromJson(response.errorBody().string(), ApiResponse.class);
                             if (err != null && err.getMessage() != null) msg = err.getMessage();
                         }
-                    } catch (Exception ignored) {}
+                    } catch (Exception ignored) {
+                    }
                     final String finalMsg = msg;
                     mainHandler.post(() -> {
                         if (callback != null) callback.onError(finalMsg);
@@ -180,7 +182,8 @@ public class OnlineSupplierRepository {
             @Override
             public void onFailure(Call<ApiResponse<Object>> call, Throwable t) {
                 mainHandler.post(() -> {
-                    if (callback != null) callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
+                    if (callback != null)
+                        callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
                 });
             }
         });
@@ -195,7 +198,8 @@ public class OnlineSupplierRepository {
                     msg = err.getMessage();
                 }
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         final String finalMsg = msg;
         mainHandler.post(() -> {
             if (callback != null) callback.onError(finalMsg);
@@ -211,7 +215,8 @@ public class OnlineSupplierRepository {
                     msg = err.getMessage();
                 }
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         final String finalMsg = msg;
         mainHandler.post(() -> {
             if (callback != null) callback.onError(finalMsg);

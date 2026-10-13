@@ -95,7 +95,7 @@ public class SellDetailsFragment extends Fragment {
                                 if (batch != null) {
                                     if (batch.quantity <= 0) {
                                         if (getContext() != null) {
-                                            Toast.makeText(getContext(), "Insufficient stock", Toast.LENGTH_SHORT).show();
+                                            Toast.makeText(getContext(), "Product is out of stock", Toast.LENGTH_SHORT).show();
                                         }
                                         return;
                                     }
@@ -111,17 +111,23 @@ public class SellDetailsFragment extends Fragment {
                                     if (product.sellingPrice > 0) {
                                         batch.sellingPrice = product.sellingPrice;
                                     }
-                                    SellCartManager.getInstance().addBatchItem(product, batch, 1);
-                                    if (getContext() != null) {
+                                    boolean added = SellCartManager.getInstance().addBatchItem(product, batch, 1);
+                                    if (added && getContext() != null) {
                                         Toast.makeText(getContext(), product.productName + " added to cart", Toast.LENGTH_SHORT).show();
                                     }
                                 } else {
+                                    if (product.quantity <= 0) {
+                                        if (getContext() != null) {
+                                            Toast.makeText(getContext(), "Product is out of stock", Toast.LENGTH_SHORT).show();
+                                        }
+                                        return;
+                                    }
                                     // Batch is enabled from settings and no batch is present in QR -> Open batch selection dialog
                                     BatchSelectDialog dialog = BatchSelectDialog.newInstance(product);
                                     dialog.setOnBatchesSelectedListener((prod, selections) -> {
                                         if (selections != null) {
                                             for (BatchSelectDialog.BatchSelection sel : selections) {
-                                                if (sel != null && sel.batch != null) {
+                                                if (sel != null && sel.batch != null && sel.quantity > 0 && sel.batch.quantity > 0) {
                                                     SellCartManager.getInstance().addBatchItem(prod, sel.batch, sel.quantity);
                                                 }
                                             }
@@ -137,17 +143,23 @@ public class SellDetailsFragment extends Fragment {
                                 }
                             } else {
                                 // Batch is disabled from settings (even if batch info is present in QR) -> No dialog, add directly
+                                if (product.quantity <= 0) {
+                                    if (getContext() != null) {
+                                        Toast.makeText(getContext(), "Product is out of stock", Toast.LENGTH_SHORT).show();
+                                    }
+                                    return;
+                                }
                                 CartItem existing = SellCartManager.getInstance().getCartItem(product.productId, null);
                                 double currentInCart = (existing != null) ? existing.quantity : 0.0;
-                                if (!GlobalStore.getInstance().isAllowOutOfStockSell() && (product.quantity <= 0 || currentInCart + 1 > product.quantity)) {
+                                if (!GlobalStore.getInstance().isAllowOutOfStockSell() && currentInCart + 1 > product.quantity) {
                                     if (getContext() != null) {
                                         Toast.makeText(getContext(), "Insufficient stock", Toast.LENGTH_SHORT).show();
                                     }
                                     return;
                                 }
 
-                                SellCartManager.getInstance().addProduct(product);
-                                if (getContext() != null) {
+                                boolean added = SellCartManager.getInstance().addProduct(product);
+                                if (added && getContext() != null) {
                                     Toast.makeText(getContext(), product.productName + " added to cart", Toast.LENGTH_SHORT).show();
                                 }
                             }

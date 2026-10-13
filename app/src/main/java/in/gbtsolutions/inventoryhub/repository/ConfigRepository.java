@@ -17,6 +17,7 @@ import in.gbtsolutions.inventoryhub.models.Config;
 
 public class ConfigRepository {
 
+    private final Application application;
     private final ConfigDao configDao;
     private final LiveData<List<Config>> allConfigs;
     private final ExecutorService executorService;
@@ -32,6 +33,7 @@ public class ConfigRepository {
     }
 
     public ConfigRepository(Application application) {
+        this.application = application;
         Database db = Database.getInstance(application);
         this.configDao = db.configDao();
         this.allConfigs = configDao.getAllConfigs();
@@ -47,7 +49,13 @@ public class ConfigRepository {
     }
 
     public void set(String key, String value) {
-        executorService.execute(() -> configDao.insert(new Config(key, value)));
+        executorService.execute(() -> {
+            configDao.insert(new Config(key, value));
+            if (in.gbtsolutions.inventoryhub.Configurations.KEY_MODE.equalsIgnoreCase(key)) {
+                in.gbtsolutions.inventoryhub.online.config.AppModeManager.getInstance(application)
+                        .setAppMode(in.gbtsolutions.inventoryhub.online.config.AppMode.fromKey(value));
+            }
+        });
     }
 
     public void set(String key, String value, ConfigActionCallback callback) {
@@ -59,6 +67,10 @@ public class ConfigRepository {
                     configDao.update(existing);
                 } else {
                     configDao.insert(new Config(key, value));
+                }
+                if (in.gbtsolutions.inventoryhub.Configurations.KEY_MODE.equalsIgnoreCase(key)) {
+                    in.gbtsolutions.inventoryhub.online.config.AppModeManager.getInstance(application)
+                            .setAppMode(in.gbtsolutions.inventoryhub.online.config.AppMode.fromKey(value));
                 }
                 if (callback != null) {
                     mainHandler.post(callback::onSuccess);
@@ -83,6 +95,11 @@ public class ConfigRepository {
                         } else {
                             configDao.insert(new Config(entry.getKey(), entry.getValue()));
                         }
+                    }
+                    if (configs.containsKey(in.gbtsolutions.inventoryhub.Configurations.KEY_MODE)) {
+                        String modeVal = configs.get(in.gbtsolutions.inventoryhub.Configurations.KEY_MODE);
+                        in.gbtsolutions.inventoryhub.online.config.AppModeManager.getInstance(application)
+                                .setAppMode(in.gbtsolutions.inventoryhub.online.config.AppMode.fromKey(modeVal));
                     }
                 }
                 if (callback != null) {

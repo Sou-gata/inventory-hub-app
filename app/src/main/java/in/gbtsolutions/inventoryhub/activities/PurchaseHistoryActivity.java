@@ -271,6 +271,12 @@ public class PurchaseHistoryActivity extends BaseActivity {
     private void applyFilters() {
         String query = editSearchBuyer.getText() != null ? editSearchBuyer.getText().toString().trim() : "";
 
+        if (purchaseRepository.isOnlineMode()) {
+            loadOnlinePurchases(selectedStartDate, selectedEndDate, query);
+            updateResetButtonVisibility();
+            return;
+        }
+
         if (currentLiveData != null) {
             currentLiveData.removeObserver(purchasesObserver);
         }
@@ -278,6 +284,37 @@ public class PurchaseHistoryActivity extends BaseActivity {
         currentLiveData = purchaseRepository.getFilteredPurchases(selectedStartDate, selectedEndDate, query);
         currentLiveData.observe(this, purchasesObserver);
         updateResetButtonVisibility();
+    }
+
+    private void loadOnlinePurchases(String startDate, String endDate, String query) {
+        if (currentLiveData != null) {
+            currentLiveData.removeObserver(purchasesObserver);
+            currentLiveData = null;
+        }
+        purchaseRepository.fetchPurchasesOnline(startDate, endDate, query, new in.gbtsolutions.inventoryhub.online.repository.OnlinePurchaseRepository.PurchaseListCallback() {
+            @Override
+            public void onSuccess(List<PurchaseWithSupplier> purchases) {
+                runOnUiThread(() -> {
+                    updatePurchaseList(purchases);
+                });
+            }
+
+            @Override
+            public void onError(String errorMessage) {
+                runOnUiThread(() -> {
+                    Toast.makeText(PurchaseHistoryActivity.this, errorMessage, Toast.LENGTH_SHORT).show();
+                    updatePurchaseList(new ArrayList<>());
+                });
+            }
+        });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (purchaseRepository != null && purchaseRepository.isOnlineMode()) {
+            applyFilters();
+        }
     }
 
     private void resetAllFilters() {
@@ -395,12 +432,20 @@ public class PurchaseHistoryActivity extends BaseActivity {
 
         final long creatorId = purchase.createdBy;
         if (textCreatorName != null) {
-            textCreatorName.setText(creatorId > 0 ? ("User #" + creatorId) : "Admin");
+            if (!TextUtils.isEmpty(item.createdByName)) {
+                textCreatorName.setText(item.createdByName);
+            } else {
+                textCreatorName.setText(creatorId > 0 ? ("User #" + creatorId) : "Admin");
+            }
         }
         if (textCreatorRole != null) {
-            textCreatorRole.setText("STAFF");
+            if (!TextUtils.isEmpty(item.createdByRole)) {
+                textCreatorRole.setText(item.createdByRole.trim().toUpperCase(Locale.getDefault()));
+            } else {
+                textCreatorRole.setText("STAFF");
+            }
         }
-        if (creatorId > 0) {
+        if (creatorId > 0 && TextUtils.isEmpty(item.createdByName)) {
             in.gbtsolutions.inventoryhub.helpers.UserHelper.getUserByIdAsync(this, creatorId, user -> {
                 if (user != null) {
                     if (textCreatorName != null) {
@@ -593,157 +638,188 @@ public class PurchaseHistoryActivity extends BaseActivity {
 
         textGrandTotal.setText(String.format(Locale.getDefault(), "₹ %,.2f", purchase.totalAmount));
 
-        // Load items purchased
+        // Load items and stages
         final List<PurchaseItemWithProduct> loadedPurchaseItems = new ArrayList<>();
         final List<ReceiveRecordWithItems> loadedStageRecords = new ArrayList<>();
-        progressItems.setVisibility(View.VISIBLE);
-        containerItems.removeAllViews();
 
-        purchaseRepository.getPurchaseItemsWithProduct(purchase.purchaseId).observe(this, new Observer<List<PurchaseItemWithProduct>>() {
-            @Override
-            public void onChanged(List<PurchaseItemWithProduct> purchaseItems) {
-                progressItems.setVisibility(View.GONE);
-                containerItems.removeAllViews();
-                loadedPurchaseItems.clear();
-
-                if (purchaseItems != null && !purchaseItems.isEmpty()) {
-                    loadedPurchaseItems.addAll(purchaseItems);
-                    textItemsCount.setText(String.format(Locale.getDefault(), "%d items", purchaseItems.size()));
-
-                    double totalOrdered = 0.0;
-                    double totalReceived = 0.0;
-                    for (PurchaseItemWithProduct piwp : purchaseItems) {
-                        if (piwp.purchaseItem != null) {
-                            totalOrdered += piwp.purchaseItem.quantity;
-                            totalReceived += piwp.purchaseItem.receivedQuantity;
-                        }
-                    }
-
-                    if (textCreatorSummary != null) {
-                        textCreatorSummary.setText(String.format(Locale.getDefault(), "%s Units ordered", CommonFunctions.formatQuantity(totalOrdered)));
-                    }
-
-                    if (!loadedStageRecords.isEmpty()) {
-                        renderReceiveStages(loadedStageRecords, loadedPurchaseItems, containerStages, textStagesCount, sectionStages, purchase, supplier);
-                    }
-
-                    if ("Partially Cancelled".equalsIgnoreCase(status)) {
-                        double totalCancelled = Math.max(0.0, totalOrdered - totalReceived);
-                        String cancelDate = !TextUtils.isEmpty(purchase.updatedAt) ? purchase.updatedAt : purchase.billingDate;
-                        textCancellationDetails.setText(String.format(Locale.getDefault(), "Cancelled on %s. %s of %s units received across stages; remaining %s units were cancelled.", cancelDate != null ? cancelDate : "", CommonFunctions.formatQuantity(totalReceived), CommonFunctions.formatQuantity(totalOrdered), CommonFunctions.formatQuantity(totalCancelled)));
-                    }
-
-                    LayoutInflater inflater = LayoutInflater.from(PurchaseHistoryActivity.this);
-                    for (PurchaseItemWithProduct itemWithProd : purchaseItems) {
-                        PurchaseItem pItem = itemWithProd.purchaseItem;
-                        if (pItem == null) continue;
-
-                        View itemView = inflater.inflate(R.layout.item_purchase_detail_product, containerItems, false);
-
-                        TextView textProdName = itemView.findViewById(R.id.text_item_product_name);
-                        TextView textItemTotal = itemView.findViewById(R.id.text_item_total);
-                        TextView textSku = itemView.findViewById(R.id.text_item_sku);
-                        TextView textQtyPrice = itemView.findViewById(R.id.text_item_qty_price);
-                        TextView chipOrdered = itemView.findViewById(R.id.chip_ordered_qty);
-                        TextView chipReceived = itemView.findViewById(R.id.chip_received_qty);
-                        TextView chipBalance = itemView.findViewById(R.id.chip_balance_qty);
-                        TextView textTaxInfo = itemView.findViewById(R.id.text_item_tax_info);
-                        TextView textDiscountInfo = itemView.findViewById(R.id.text_item_discount_info);
-
-                        if (itemWithProd.product != null && !TextUtils.isEmpty(itemWithProd.product.productName)) {
-                            textProdName.setText(itemWithProd.product.productName);
-                        } else {
-                            textProdName.setText(String.format(Locale.getDefault(), "Product #%d", pItem.productId));
-                        }
-
-                        if (itemWithProd.product != null && !TextUtils.isEmpty(itemWithProd.product.sku)) {
-                            textSku.setVisibility(View.VISIBLE);
-                            textSku.setText(String.format("SKU: %s", itemWithProd.product.sku));
-                        } else {
-                            textSku.setVisibility(View.GONE);
-                        }
-
-                        textQtyPrice.setText(String.format(Locale.getDefault(), "Cost Price: ₹ %,.2f", pItem.unitPrice));
-                        textItemTotal.setText(String.format(Locale.getDefault(), "₹ %,.2f", pItem.subtotal));
-
-                        String uom = (itemWithProd.product != null && !TextUtils.isEmpty(itemWithProd.product.unitOfMeasure)) ? itemWithProd.product.unitOfMeasure.trim() : "";
-                        chipOrdered.setText(String.format(Locale.getDefault(), "Ordered: %s %s", CommonFunctions.formatQuantity(pItem.quantity), uom).trim());
-                        chipReceived.setText(String.format(Locale.getDefault(), "Received: %s %s", CommonFunctions.formatQuantity(pItem.receivedQuantity), uom).trim());
-
-                        double remainingOrCancelled = Math.max(0.0, CommonFunctions.roundTo3Decimals(pItem.quantity - pItem.receivedQuantity));
-                        if ("Partially Cancelled".equalsIgnoreCase(status) || "Cancelled".equalsIgnoreCase(status)) {
-                            if (remainingOrCancelled > 0.0001) {
-                                chipBalance.setVisibility(View.VISIBLE);
-                                chipBalance.setText(String.format(Locale.getDefault(), "Cancelled: %s %s", CommonFunctions.formatQuantity(remainingOrCancelled), uom).trim());
-                                chipBalance.setTextColor(ContextCompat.getColor(PurchaseHistoryActivity.this, R.color.status_red));
-                                chipBalance.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(PurchaseHistoryActivity.this, R.color.status_red_bg)));
-                            } else {
-                                chipBalance.setVisibility(View.VISIBLE);
-                                chipBalance.setText("✓ Fulfilled");
-                                chipBalance.setTextColor(ContextCompat.getColor(PurchaseHistoryActivity.this, R.color.status_green));
-                                chipBalance.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(PurchaseHistoryActivity.this, R.color.status_green_bg)));
-                            }
-                        } else if ("Partially Received".equalsIgnoreCase(status) || "Pending".equalsIgnoreCase(status)) {
-                            if (remainingOrCancelled > 0.0001) {
-                                chipBalance.setVisibility(View.VISIBLE);
-                                chipBalance.setText(String.format(Locale.getDefault(), "Pending: %s %s", CommonFunctions.formatQuantity(remainingOrCancelled), uom).trim());
-                                chipBalance.setTextColor(ContextCompat.getColor(PurchaseHistoryActivity.this, R.color.status_orange));
-                                chipBalance.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(PurchaseHistoryActivity.this, R.color.status_orange_bg)));
-                            } else {
-                                chipBalance.setVisibility(View.VISIBLE);
-                                chipBalance.setText("✓ Fulfilled");
-                                chipBalance.setTextColor(ContextCompat.getColor(PurchaseHistoryActivity.this, R.color.status_green));
-                                chipBalance.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(PurchaseHistoryActivity.this, R.color.status_green_bg)));
-                            }
-                        } else {
-                            chipBalance.setVisibility(View.VISIBLE);
-                            chipBalance.setText("✓ Fully Received");
-                            chipBalance.setTextColor(ContextCompat.getColor(PurchaseHistoryActivity.this, R.color.status_green));
-                            chipBalance.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(PurchaseHistoryActivity.this, R.color.status_green_bg)));
-                        }
-
-                        if (pItem.cgstRate > 0 || pItem.sgstRate > 0) {
-                            textTaxInfo.setText(String.format(Locale.getDefault(), "GST: %.1f%% (₹ %,.2f)", pItem.cgstRate + pItem.sgstRate, pItem.cgstAmount + pItem.sgstAmount));
-                        } else if (pItem.igstRate > 0) {
-                            textTaxInfo.setText(String.format(Locale.getDefault(), "IGST: %.1f%% (₹ %,.2f)", pItem.igstRate, pItem.igstAmount));
-                        } else {
-                            textTaxInfo.setText("GST: 0%");
-                        }
-
-                        if (pItem.discountAmount > 0) {
-                            textDiscountInfo.setVisibility(View.VISIBLE);
-                            textDiscountInfo.setText(String.format(Locale.getDefault(), "Disc: ₹ %,.2f", pItem.discountAmount));
-                        } else {
-                            textDiscountInfo.setVisibility(View.GONE);
-                        }
-
-                        containerItems.addView(itemView);
-                    }
-                } else {
-                    textItemsCount.setText("0 items");
-                }
+        if (purchaseRepository.isOnlineMode()) {
+            progressItems.setVisibility(View.GONE);
+            progressStages.setVisibility(View.GONE);
+            if (item.stages != null && !item.stages.isEmpty()) {
+                loadedStageRecords.addAll(item.stages);
             }
-        });
-
-        // Load Receive Stages
-        progressStages.setVisibility(View.VISIBLE);
-        containerStages.removeAllViews();
-
-        purchaseRepository.getReceiveRecordsWithItems(purchase.purchaseId).observe(this, new Observer<List<ReceiveRecordWithItems>>() {
-            @Override
-            public void onChanged(List<ReceiveRecordWithItems> stageRecords) {
-                progressStages.setVisibility(View.GONE);
-                loadedStageRecords.clear();
-                if (stageRecords != null) {
-                    loadedStageRecords.addAll(stageRecords);
-                }
-                renderReceiveStages(loadedStageRecords, loadedPurchaseItems, containerStages, textStagesCount, sectionStages, purchase, supplier);
+            if (item.items != null && !item.items.isEmpty()) {
+                renderPurchaseItems(item.items, loadedPurchaseItems, loadedStageRecords, containerItems, textItemsCount, textCreatorSummary, containerStages, textStagesCount, sectionStages, purchase, supplier, status, textCancellationDetails);
+            } else {
+                textItemsCount.setText("0 items");
             }
-        });
+            renderReceiveStages(loadedStageRecords, loadedPurchaseItems, containerStages, textStagesCount, sectionStages, purchase, supplier);
+        } else {
+            progressItems.setVisibility(View.VISIBLE);
+            containerItems.removeAllViews();
+            purchaseRepository.getPurchaseItemsWithProduct(purchase.purchaseId).observe(this, new Observer<List<PurchaseItemWithProduct>>() {
+                @Override
+                public void onChanged(List<PurchaseItemWithProduct> purchaseItems) {
+                    progressItems.setVisibility(View.GONE);
+                    renderPurchaseItems(purchaseItems, loadedPurchaseItems, loadedStageRecords, containerItems, textItemsCount, textCreatorSummary, containerStages, textStagesCount, sectionStages, purchase, supplier, status, textCancellationDetails);
+                }
+            });
+
+            // Load Receive Stages
+            progressStages.setVisibility(View.VISIBLE);
+            containerStages.removeAllViews();
+            purchaseRepository.getReceiveRecordsWithItems(purchase.purchaseId).observe(this, new Observer<List<ReceiveRecordWithItems>>() {
+                @Override
+                public void onChanged(List<ReceiveRecordWithItems> stageRecords) {
+                    progressStages.setVisibility(View.GONE);
+                    loadedStageRecords.clear();
+                    if (stageRecords != null) {
+                        loadedStageRecords.addAll(stageRecords);
+                    }
+                    renderReceiveStages(loadedStageRecords, loadedPurchaseItems, containerStages, textStagesCount, sectionStages, purchase, supplier);
+                }
+            });
+        }
 
         btnClose.setOnClickListener(v -> dialog.dismiss());
         btnDone.setOnClickListener(v -> dialog.dismiss());
         dialog.show();
+    }
+
+    private void renderPurchaseItems(
+            @Nullable List<PurchaseItemWithProduct> purchaseItems,
+            @NonNull List<PurchaseItemWithProduct> loadedPurchaseItems,
+            @NonNull List<ReceiveRecordWithItems> loadedStageRecords,
+            @NonNull LinearLayout containerItems,
+            @NonNull TextView textItemsCount,
+            @Nullable TextView textCreatorSummary,
+            @NonNull LinearLayout containerStages,
+            @NonNull TextView textStagesCount,
+            @NonNull LinearLayout sectionStages,
+            @NonNull Purchase purchase,
+            @Nullable Suppliers supplier,
+            @NonNull String status,
+            @Nullable TextView textCancellationDetails
+    ) {
+        containerItems.removeAllViews();
+        loadedPurchaseItems.clear();
+
+        if (purchaseItems != null && !purchaseItems.isEmpty()) {
+            loadedPurchaseItems.addAll(purchaseItems);
+            textItemsCount.setText(String.format(Locale.getDefault(), "%d items", purchaseItems.size()));
+
+            double totalOrdered = 0.0;
+            double totalReceived = 0.0;
+            for (PurchaseItemWithProduct piwp : purchaseItems) {
+                if (piwp.purchaseItem != null) {
+                    totalOrdered += piwp.purchaseItem.quantity;
+                    totalReceived += piwp.purchaseItem.receivedQuantity;
+                }
+            }
+
+            if (textCreatorSummary != null) {
+                textCreatorSummary.setText(String.format(Locale.getDefault(), "%s Units ordered", CommonFunctions.formatQuantity(totalOrdered)));
+            }
+
+            if (!loadedStageRecords.isEmpty()) {
+                renderReceiveStages(loadedStageRecords, loadedPurchaseItems, containerStages, textStagesCount, sectionStages, purchase, supplier);
+            }
+
+            if ("Partially Cancelled".equalsIgnoreCase(status) && textCancellationDetails != null) {
+                double totalCancelled = Math.max(0.0, totalOrdered - totalReceived);
+                String cancelDate = !TextUtils.isEmpty(purchase.updatedAt) ? purchase.updatedAt : purchase.billingDate;
+                textCancellationDetails.setText(String.format(Locale.getDefault(), "Cancelled on %s. %s of %s units received across stages; remaining %s units were cancelled.", cancelDate != null ? cancelDate : "", CommonFunctions.formatQuantity(totalReceived), CommonFunctions.formatQuantity(totalOrdered), CommonFunctions.formatQuantity(totalCancelled)));
+            }
+
+            LayoutInflater inflater = LayoutInflater.from(PurchaseHistoryActivity.this);
+            for (PurchaseItemWithProduct itemWithProd : purchaseItems) {
+                PurchaseItem pItem = itemWithProd.purchaseItem;
+                if (pItem == null) continue;
+
+                View itemView = inflater.inflate(R.layout.item_purchase_detail_product, containerItems, false);
+
+                TextView textProdName = itemView.findViewById(R.id.text_item_product_name);
+                TextView textItemTotal = itemView.findViewById(R.id.text_item_total);
+                TextView textSku = itemView.findViewById(R.id.text_item_sku);
+                TextView textQtyPrice = itemView.findViewById(R.id.text_item_qty_price);
+                TextView chipOrdered = itemView.findViewById(R.id.chip_ordered_qty);
+                TextView chipReceived = itemView.findViewById(R.id.chip_received_qty);
+                TextView chipBalance = itemView.findViewById(R.id.chip_balance_qty);
+                TextView textTaxInfo = itemView.findViewById(R.id.text_item_tax_info);
+                TextView textDiscountInfo = itemView.findViewById(R.id.text_item_discount_info);
+
+                if (itemWithProd.product != null && !TextUtils.isEmpty(itemWithProd.product.productName)) {
+                    textProdName.setText(itemWithProd.product.productName);
+                } else {
+                    textProdName.setText(String.format(Locale.getDefault(), "Product #%d", pItem.productId));
+                }
+
+                if (itemWithProd.product != null && !TextUtils.isEmpty(itemWithProd.product.sku)) {
+                    textSku.setVisibility(View.VISIBLE);
+                    textSku.setText(String.format("SKU: %s", itemWithProd.product.sku));
+                } else {
+                    textSku.setVisibility(View.GONE);
+                }
+
+                textQtyPrice.setText(String.format(Locale.getDefault(), "Cost Price: ₹ %,.2f", pItem.unitPrice));
+                textItemTotal.setText(String.format(Locale.getDefault(), "₹ %,.2f", pItem.subtotal));
+
+                String uom = (itemWithProd.product != null && !TextUtils.isEmpty(itemWithProd.product.unitOfMeasure)) ? itemWithProd.product.unitOfMeasure.trim() : "";
+                chipOrdered.setText(String.format(Locale.getDefault(), "Ordered: %s %s", CommonFunctions.formatQuantity(pItem.quantity), uom).trim());
+                chipReceived.setText(String.format(Locale.getDefault(), "Received: %s %s", CommonFunctions.formatQuantity(pItem.receivedQuantity), uom).trim());
+
+                double remainingOrCancelled = Math.max(0.0, CommonFunctions.roundTo3Decimals(pItem.quantity - pItem.receivedQuantity));
+                if ("Partially Cancelled".equalsIgnoreCase(status) || "Cancelled".equalsIgnoreCase(status)) {
+                    if (remainingOrCancelled > 0.0001) {
+                        chipBalance.setVisibility(View.VISIBLE);
+                        chipBalance.setText(String.format(Locale.getDefault(), "Cancelled: %s %s", CommonFunctions.formatQuantity(remainingOrCancelled), uom).trim());
+                        chipBalance.setTextColor(ContextCompat.getColor(PurchaseHistoryActivity.this, R.color.status_red));
+                        chipBalance.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(PurchaseHistoryActivity.this, R.color.status_red_bg)));
+                    } else {
+                        chipBalance.setVisibility(View.VISIBLE);
+                        chipBalance.setText("✓ Fulfilled");
+                        chipBalance.setTextColor(ContextCompat.getColor(PurchaseHistoryActivity.this, R.color.status_green));
+                        chipBalance.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(PurchaseHistoryActivity.this, R.color.status_green_bg)));
+                    }
+                } else if ("Partially Received".equalsIgnoreCase(status) || "Pending".equalsIgnoreCase(status)) {
+                    if (remainingOrCancelled > 0.0001) {
+                        chipBalance.setVisibility(View.VISIBLE);
+                        chipBalance.setText(String.format(Locale.getDefault(), "Pending: %s %s", CommonFunctions.formatQuantity(remainingOrCancelled), uom).trim());
+                        chipBalance.setTextColor(ContextCompat.getColor(PurchaseHistoryActivity.this, R.color.status_orange));
+                        chipBalance.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(PurchaseHistoryActivity.this, R.color.status_orange_bg)));
+                    } else {
+                        chipBalance.setVisibility(View.VISIBLE);
+                        chipBalance.setText("✓ Fulfilled");
+                        chipBalance.setTextColor(ContextCompat.getColor(PurchaseHistoryActivity.this, R.color.status_green));
+                        chipBalance.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(PurchaseHistoryActivity.this, R.color.status_green_bg)));
+                    }
+                } else {
+                    chipBalance.setVisibility(View.VISIBLE);
+                    chipBalance.setText("✓ Fully Received");
+                    chipBalance.setTextColor(ContextCompat.getColor(PurchaseHistoryActivity.this, R.color.status_green));
+                    chipBalance.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(PurchaseHistoryActivity.this, R.color.status_green_bg)));
+                }
+
+                if (pItem.cgstRate > 0 || pItem.sgstRate > 0) {
+                    textTaxInfo.setText(String.format(Locale.getDefault(), "GST: %.1f%% (₹ %,.2f)", pItem.cgstRate + pItem.sgstRate, pItem.cgstAmount + pItem.sgstAmount));
+                } else if (pItem.igstRate > 0) {
+                    textTaxInfo.setText(String.format(Locale.getDefault(), "IGST: %.1f%% (₹ %,.2f)", pItem.igstRate, pItem.igstAmount));
+                } else {
+                    textTaxInfo.setText("GST: 0%");
+                }
+
+                if (pItem.discountAmount > 0) {
+                    textDiscountInfo.setVisibility(View.VISIBLE);
+                    textDiscountInfo.setText(String.format(Locale.getDefault(), "Disc: ₹ %,.2f", pItem.discountAmount));
+                } else {
+                    textDiscountInfo.setVisibility(View.GONE);
+                }
+
+                containerItems.addView(itemView);
+            }
+        } else {
+            textItemsCount.setText("0 items");
+        }
     }
 
     private void renderReceiveStages(
@@ -864,6 +940,24 @@ public class PurchaseHistoryActivity extends BaseActivity {
             final int recordId = record.receiveRecordId;
             btnDownloadBill.setOnClickListener(v -> {
                 btnDownloadBill.setEnabled(false);
+                if (purchaseRepository.isOnlineMode() && recWithItems.record != null && recWithItems.items != null) {
+                    btnDownloadBill.setEnabled(true);
+                    Bitmap billBitmap = CommonFunctions.createReceiveBillBitmap(PurchaseHistoryActivity.this, recWithItems.record, recWithItems.items, purchase, supplier, loadedPurchaseItems, cachedCompanyConfigs);
+                    if (billBitmap != null) {
+                        String fileName = "GRN_Stage" + currentStageNumber + "_" + recWithItems.record.receiveRecordId + "_" + System.currentTimeMillis() + ".png";
+                        BitmapHelper.saveBitmapToDownloads(billBitmap, PurchaseHistoryActivity.this, fileName);
+                        Toast.makeText(PurchaseHistoryActivity.this, String.format(Locale.getDefault(), "Stage %d GRN Bill saved to Downloads!", currentStageNumber), Toast.LENGTH_LONG).show();
+                        File pngFile = BitmapHelper.saveBitmapAsPng(PurchaseHistoryActivity.this, billBitmap, fileName);
+                        if (pngFile != null) {
+                            String title = "GRN Stage " + currentStageNumber;
+                            BillViewerActivity.start(PurchaseHistoryActivity.this, pngFile.getAbsolutePath(), title, fileName);
+                        }
+                    } else {
+                        Toast.makeText(PurchaseHistoryActivity.this, "Failed to create bill bitmap.", Toast.LENGTH_SHORT).show();
+                    }
+                    return;
+                }
+
                 purchaseRepository.getReceiveDetailsForBill(recordId, new PurchaseRepository.ReceiveDetailsCallback() {
                     @Override
                     public void onLoaded(ReceiveRecord r, List<ReceiveItem> items, Purchase p, List<PurchaseItemWithProduct> allItems) {

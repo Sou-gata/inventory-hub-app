@@ -66,6 +66,12 @@ import in.gbtsolutions.inventoryhub.models.SaleWithBuyer;
 import in.gbtsolutions.inventoryhub.models.Suppliers;
 import in.gbtsolutions.inventoryhub.models.User;
 import in.gbtsolutions.inventoryhub.online.config.AppModeManager;
+import in.gbtsolutions.inventoryhub.online.models.OnlineCategoryDto;
+import in.gbtsolutions.inventoryhub.online.models.OnlineDeviceDashboardDto;
+import in.gbtsolutions.inventoryhub.online.models.ProductMapper;
+import in.gbtsolutions.inventoryhub.online.models.PurchaseMapper;
+import in.gbtsolutions.inventoryhub.online.models.SaleMapper;
+import in.gbtsolutions.inventoryhub.online.repository.OnlineDashboardRepository;
 
 public class HomeActivity extends BaseActivity {
 
@@ -145,6 +151,10 @@ public class HomeActivity extends BaseActivity {
     // Cached Categories
     private final Map<Integer, String> categoryNames = new HashMap<>();
 
+    // Online Dashboard Repository
+    private OnlineDashboardRepository onlineDashboardRepository;
+    private boolean isObservingLocalDb = false;
+
     // Date Formatters
     private final SimpleDateFormat isoDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
     private final SimpleDateFormat displayDateFormat = new SimpleDateFormat("dd MMM yyyy", Locale.getDefault());
@@ -173,7 +183,7 @@ public class HomeActivity extends BaseActivity {
         initViews();
         setupClickListeners();
         updateDashboardDate();
-        observeDatabaseData();
+        loadDashboardData();
     }
 
     private void initViews() {
@@ -369,7 +379,138 @@ public class HomeActivity extends BaseActivity {
         }
     }
 
+    private void loadDashboardData() {
+        if (AppModeManager.getInstance(this).isOnlineMode()) {
+            loadOnlineDashboardData();
+        } else {
+            observeDatabaseData();
+        }
+    }
+
+    public void loadOnlineDashboardData() {
+        if (onlineDashboardRepository == null) {
+            onlineDashboardRepository = new OnlineDashboardRepository(this);
+        }
+
+        onlineDashboardRepository.fetchDashboardStats(new OnlineDashboardRepository.DashboardCallback() {
+            @Override
+            public void onSuccess(OnlineDeviceDashboardDto data) {
+                if (isFinishing() || isDestroyed() || data == null) return;
+                populateOnlineDashboard(data);
+            }
+
+            @Override
+            public void onError(String errorMessage, boolean sessionExpired) {
+                if (isFinishing() || isDestroyed()) return;
+                if (sessionExpired) {
+                    Toast.makeText(HomeActivity.this, "Session expired. Please log in again.", Toast.LENGTH_LONG).show();
+                    AppModeManager.getInstance(HomeActivity.this).clearAuthToken();
+                    navigateTo(LoginActivity.class, true);
+                } else {
+                    Toast.makeText(HomeActivity.this, "Dashboard sync: " + errorMessage, Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+
+    private void populateOnlineDashboard(@NonNull OnlineDeviceDashboardDto data) {
+        // 1. Categories
+        if (data.categories != null) {
+            for (OnlineCategoryDto cat : data.categories) {
+                if (cat != null && cat.name != null) {
+                    categoryNames.put(cat.id, cat.name);
+                }
+            }
+        }
+        if (tvHubCategoriesCount != null) {
+            int count = data.totalCategories;
+            tvHubCategoriesCount.setText(count + (count == 1 ? " Category" : " Categories"));
+        }
+
+        // 2. Products (Valuation & Total Units & Total Products Count)
+        if (tvKpiValuation != null) {
+            tvKpiValuation.setText(formatCurrency(data.totalValuation));
+        }
+        if (tvKpiUnits != null) {
+            tvKpiUnits.setText(String.format(Locale.getDefault(), "%s units in stock", CommonFunctions.formatQuantity(data.totalUnits)));
+        }
+        if (tvHubProductsCount != null) {
+            tvHubProductsCount.setText(data.totalProducts + (data.totalProducts == 1 ? " Product" : " Products"));
+        }
+
+        // 3. Products Needing Reorder (Low Stock Watchlist)
+        int lowCount = data.lowStockCount;
+        if (badgeLowStockCount != null) {
+            badgeLowStockCount.setText(String.valueOf(lowCount));
+        }
+        if (tvKpiLowStock != null) {
+            tvKpiLowStock.setText(lowCount + (lowCount == 1 ? " Item" : " Items"));
+        }
+
+        if (lowCount > 0) {
+            if (tvInventoryHealthStatus != null) {
+                tvInventoryHealthStatus.setText("⚠️ " + lowCount + " Low Stock");
+            }
+            if (tvKpiLowStockMeta != null) {
+                tvKpiLowStockMeta.setText("Reorder required");
+            }
+            if (layoutStockOptimal != null) {
+                layoutStockOptimal.setVisibility(View.GONE);
+            }
+            if (containerLowStockItems != null) {
+                containerLowStockItems.setVisibility(View.VISIBLE);
+                List<Product> domainLowStock = ProductMapper.toDomainList(data.lowStockProducts);
+                populateLowStockAlerts(domainLowStock);
+            }
+        } else {
+            if (tvInventoryHealthStatus != null) {
+                tvInventoryHealthStatus.setText("● Stock Optimal");
+            }
+            if (tvKpiLowStockMeta != null) {
+                tvKpiLowStockMeta.setText("All stocks optimal");
+            }
+            if (containerLowStockItems != null) {
+                containerLowStockItems.removeAllViews();
+                containerLowStockItems.setVisibility(View.GONE);
+            }
+            if (layoutStockOptimal != null) {
+                layoutStockOptimal.setVisibility(View.VISIBLE);
+            }
+        }
+
+        // 4. Sales Orders & Revenue
+        if (tvKpiRevenue != null) {
+            tvKpiRevenue.setText(formatCurrency(data.totalRevenue));
+        }
+        if (tvKpiSalesCount != null) {
+            tvKpiSalesCount.setText(data.totalSalesCount + (data.totalSalesCount == 1 ? " sale order" : " sales orders"));
+        }
+        List<SaleWithBuyer> domainSales = SaleMapper.toDomainList(data.recentSales);
+        populateRecentSales(domainSales);
+
+        // 5. Purchases History
+        List<PurchaseWithSupplier> domainPurchases = PurchaseMapper.toDomainList(data.recentPurchases);
+        populateRecentPurchases(domainPurchases);
+
+        // 6. Pending Purchase Orders (Awaiting Receipt)
+        if (tvKpiPendingReceive != null) {
+            tvKpiPendingReceive.setText(data.pendingPurchasesCount + (data.pendingPurchasesCount == 1 ? " Order" : " Orders"));
+        }
+
+        // 7. Buyers
+        if (tvHubBuyersCount != null) {
+            tvHubBuyersCount.setText(data.totalBuyers + (data.totalBuyers == 1 ? " Buyer" : " Buyers"));
+        }
+
+        // 8. Suppliers
+        if (tvHubSuppliersCount != null) {
+            tvHubSuppliersCount.setText(data.totalSuppliers + (data.totalSuppliers == 1 ? " Supplier" : " Suppliers"));
+        }
+    }
+
     private void observeDatabaseData() {
+        if (isObservingLocalDb) return;
+        isObservingLocalDb = true;
         Database db = Database.getInstance(this);
 
         // 1. Categories
@@ -736,6 +877,19 @@ public class HomeActivity extends BaseActivity {
         updateDashboardDate();
         if (navView != null) {
             navView.setCheckedItem(R.id.nav_home);
+        }
+        if (AppModeManager.getInstance(this).isOnlineMode()) {
+            loadOnlineDashboardData();
+        } else if (!isObservingLocalDb) {
+            observeDatabaseData();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (onlineDashboardRepository != null) {
+            onlineDashboardRepository.cancel();
         }
     }
 

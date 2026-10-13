@@ -83,5 +83,40 @@ public class PurchaseRegisterModels {
         public String endDate = "";
         public PurchaseRegisterSummary summary = new PurchaseRegisterSummary();
         public List<PurchaseRegisterRow> rows = new ArrayList<>();
+
+        public void ensureNonNull() {
+            if (summary == null) summary = new PurchaseRegisterSummary();
+            if (summary.grossPurchases == null) summary.grossPurchases = BigDecimal.ZERO;
+            if (summary.taxableValue == null) summary.taxableValue = BigDecimal.ZERO;
+            if (summary.cgst == null) summary.cgst = BigDecimal.ZERO;
+            if (summary.sgst == null) summary.sgst = BigDecimal.ZERO;
+            if (summary.igst == null) summary.igst = BigDecimal.ZERO;
+            if (summary.cess == null) summary.cess = BigDecimal.ZERO;
+            if (summary.totalTax == null) summary.totalTax = BigDecimal.ZERO;
+
+            if (rows == null) rows = new ArrayList<>();
+            for (PurchaseRegisterRow row : rows) {
+                if (row == null) continue;
+                if (row.taxableValue == null) row.taxableValue = BigDecimal.ZERO;
+                if (row.cgstAmount == null) row.cgstAmount = BigDecimal.ZERO;
+                if (row.sgstAmount == null) row.sgstAmount = BigDecimal.ZERO;
+                if (row.igstAmount == null) row.igstAmount = BigDecimal.ZERO;
+                if (row.cessAmount == null) row.cessAmount = BigDecimal.ZERO;
+                if (row.totalTax == null) row.totalTax = BigDecimal.ZERO;
+                if (row.discountAmount == null) row.discountAmount = BigDecimal.ZERO;
+                if (row.otherCharges == null) row.otherCharges = BigDecimal.ZERO;
+                if (row.totalAmount == null) row.totalAmount = BigDecimal.ZERO;
+                if (row.items == null) row.items = new ArrayList<>();
+                for (ItemDetail item : row.items) {
+                    if (item == null) continue;
+                    if (item.taxableValue == null) item.taxableValue = BigDecimal.ZERO;
+                    if (item.cgstAmount == null) item.cgstAmount = BigDecimal.ZERO;
+                    if (item.sgstAmount == null) item.sgstAmount = BigDecimal.ZERO;
+                    if (item.igstAmount == null) item.igstAmount = BigDecimal.ZERO;
+                    if (item.totalTax == null) item.totalTax = BigDecimal.ZERO;
+                    if (item.lineTotal == null) item.lineTotal = BigDecimal.ZERO;
+                }
+            }
+        }
     }
 }

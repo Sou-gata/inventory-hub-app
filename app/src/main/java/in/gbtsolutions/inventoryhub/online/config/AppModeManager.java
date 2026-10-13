@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.Settings;
 
 import androidx.annotation.NonNull;
 
@@ -18,6 +19,8 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 public class AppModeManager {
+    public static final String KEY_DEVICE_ID = "device_id";
+    public static final String KEY_APP_MODE = "app_mode";
 
     public interface OnModeChangeListener {
         void onModeChanged(AppMode newMode);
@@ -41,10 +44,12 @@ public class AppModeManager {
         this.appContext = context.getApplicationContext();
         this.preferences = appContext.getSharedPreferences(Configurations.PREF_NAME, Context.MODE_PRIVATE);
 
-        String savedModeKey = preferences.getString(Configurations.KEY_APP_MODE, Configurations.MODE_OFFLINE);
+        String savedModeKey = preferences.getString(KEY_APP_MODE, "offline");
         this.currentMode = AppMode.fromKey(savedModeKey);
 
-        this.serverUrl = preferences.getString(Configurations.KEY_ONLINE_SERVER_URL, Configurations.DEFAULT_ONLINE_SERVER_URL);
+        this.serverUrl = preferences.getString("online_server_url", Configurations.DEFAULT_ONLINE_SERVER_URL);
+
+        loadModeFromConfigTable();
     }
 
     public static AppModeManager getInstance(@NonNull Context context) {
@@ -56,6 +61,25 @@ public class AppModeManager {
             }
         }
         return instance;
+    }
+
+    public void loadModeFromConfigTable() {
+        executor.execute(() -> {
+            try {
+                String modeVal = in.gbtsolutions.inventoryhub.Database.getInstance(appContext).configDao().getValueByKey(Configurations.KEY_MODE);
+                if (modeVal != null && !modeVal.trim().isEmpty()) {
+                    AppMode mode = AppMode.fromKey(modeVal.trim());
+                    if (this.currentMode != mode) {
+                        mainHandler.post(() -> setAppMode(mode));
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+        });
+    }
+
+    public void refreshModeFromConfigTable() {
+        loadModeFromConfigTable();
     }
 
     public synchronized AppMode getCurrentMode() {
@@ -75,7 +99,11 @@ public class AppModeManager {
             return;
         }
         this.currentMode = newMode;
-        preferences.edit().putString(Configurations.KEY_APP_MODE, newMode.getKey()).apply();
+        preferences.edit().putString(KEY_APP_MODE, newMode.getKey()).apply();
+        try {
+            in.gbtsolutions.inventoryhub.GlobalStore.getInstance().setMode(newMode.name());
+        } catch (Exception ignored) {
+        }
 
         // Notify listeners on the main thread
         mainHandler.post(() -> {
@@ -117,6 +145,25 @@ public class AppModeManager {
         return token != null && !token.trim().isEmpty();
     }
 
+    public synchronized String getDeviceId() {
+        String deviceId = preferences.getString(KEY_DEVICE_ID, null);
+        if (deviceId == null || deviceId.trim().isEmpty()) {
+            try {
+                deviceId = Settings.Secure.getString(appContext.getContentResolver(), Settings.Secure.ANDROID_ID);
+            } catch (Exception ignored) {
+            }
+        }
+        return deviceId != null ? deviceId.trim() : "";
+    }
+
+    public synchronized void setDeviceId(String deviceId) {
+        if (deviceId == null || deviceId.trim().isEmpty()) {
+            preferences.edit().remove(KEY_DEVICE_ID).apply();
+        } else {
+            preferences.edit().putString(KEY_DEVICE_ID, deviceId.trim()).apply();
+        }
+    }
+
     public void addOnModeChangeListener(OnModeChangeListener listener) {
         if (listener != null && !listeners.contains(listener)) {
             listeners.add(listener);
@@ -149,6 +196,9 @@ public class AppModeManager {
 
             Request request = new Request.Builder()
                     .url(fullUrl)
+                    .header("Accept", "application/json")
+                    .header("X-Client-Type", "android")
+                    .header("X-Device-Id", getDeviceId())
                     .get()
                     .build();
 
@@ -163,7 +213,13 @@ public class AppModeManager {
             } catch (IOException e) {
                 // If /api/v1/health isn't ready yet, try root URL
                 try {
-                    Request fallbackReq = new Request.Builder().url(testUrl).get().build();
+                    Request fallbackReq = new Request.Builder()
+                            .url(testUrl)
+                            .header("Accept", "application/json")
+                            .header("X-Client-Type", "android")
+                            .header("X-Device-Id", getDeviceId())
+                            .get()
+                            .build();
                     try (Response fbResponse = client.newCall(fallbackReq).execute()) {
                         mainHandler.post(() -> {
                             if (callback != null) {

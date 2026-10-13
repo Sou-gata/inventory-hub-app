@@ -24,11 +24,19 @@ public class OnlineProductRepository {
 
     public interface PagedProductCallback {
         void onSuccess(List<Product> products, int currentPage, int totalPages, int totalRecords, boolean hasMore);
+
         void onError(String errorMessage, boolean sessionExpired);
     }
 
     public interface ProductActionCallback {
         void onSuccess(Product product);
+
+        void onError(String errorMessage);
+    }
+
+    public interface BatchesCallback {
+        void onSuccess(List<in.gbtsolutions.inventoryhub.models.ProductBatch> batches);
+
         void onError(String errorMessage);
     }
 
@@ -49,8 +57,7 @@ public class OnlineProductRepository {
      * Loads a page of products from the server.
      * Cancels any pending search call if a new query is initiated.
      */
-    public synchronized void fetchProducts(int page, int limit, String search, String stockStatus,
-                                           Integer categoryId, PagedProductCallback callback) {
+    public synchronized void fetchProducts(int page, int limit, String search, String stockStatus, Integer categoryId, PagedProductCallback callback) {
         if (currentSearchCall != null && !currentSearchCall.isCanceled()) {
             currentSearchCall.cancel();
         }
@@ -61,8 +68,7 @@ public class OnlineProductRepository {
         currentSearchCall = getApi().getProducts(page, limit, query, status, categoryId);
         currentSearchCall.enqueue(new Callback<ApiResponse<PagedData<OnlineProductDto>>>() {
             @Override
-            public void onResponse(Call<ApiResponse<PagedData<OnlineProductDto>>> call,
-                                   Response<ApiResponse<PagedData<OnlineProductDto>>> response) {
+            public void onResponse(Call<ApiResponse<PagedData<OnlineProductDto>>> call, Response<ApiResponse<PagedData<OnlineProductDto>>> response) {
                 if (call.isCanceled()) return;
 
                 if (response.isSuccessful() && response.body() != null) {
@@ -72,13 +78,7 @@ public class OnlineProductRepository {
                         List<Product> domainProducts = ProductMapper.toDomainList(pagedData.getItems());
                         mainHandler.post(() -> {
                             if (callback != null) {
-                                callback.onSuccess(
-                                        domainProducts,
-                                        pagedData.getPage(),
-                                        pagedData.getTotalPages(),
-                                        pagedData.getTotalRecords(),
-                                        pagedData.hasMore()
-                                );
+                                callback.onSuccess(domainProducts, pagedData.getPage(), pagedData.getTotalPages(), pagedData.getTotalRecords(), pagedData.hasMore());
                             }
                         });
                         return;
@@ -118,8 +118,7 @@ public class OnlineProductRepository {
         OnlineProductDto dto = ProductMapper.toDto(product);
         getApi().createProduct(dto).enqueue(new Callback<ApiResponse<OnlineProductDto>>() {
             @Override
-            public void onResponse(Call<ApiResponse<OnlineProductDto>> call,
-                                   Response<ApiResponse<OnlineProductDto>> response) {
+            public void onResponse(Call<ApiResponse<OnlineProductDto>> call, Response<ApiResponse<OnlineProductDto>> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     ApiResponse<OnlineProductDto> body = response.body();
                     if (body.isSuccess() && body.getData() != null) {
@@ -131,7 +130,8 @@ public class OnlineProductRepository {
                     } else {
                         String msg = body.getMessage();
                         mainHandler.post(() -> {
-                            if (callback != null) callback.onError(!msg.isEmpty() ? msg : "Failed to create product");
+                            if (callback != null)
+                                callback.onError(!msg.isEmpty() ? msg : "Failed to create product");
                         });
                         return;
                     }
@@ -157,8 +157,7 @@ public class OnlineProductRepository {
         OnlineProductDto dto = ProductMapper.toDto(product);
         getApi().updateProduct(product.productId, dto).enqueue(new Callback<ApiResponse<OnlineProductDto>>() {
             @Override
-            public void onResponse(Call<ApiResponse<OnlineProductDto>> call,
-                                   Response<ApiResponse<OnlineProductDto>> response) {
+            public void onResponse(Call<ApiResponse<OnlineProductDto>> call, Response<ApiResponse<OnlineProductDto>> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     ApiResponse<OnlineProductDto> body = response.body();
                     if (body.isSuccess() && body.getData() != null) {
@@ -170,7 +169,8 @@ public class OnlineProductRepository {
                     } else {
                         String msg = body.getMessage();
                         mainHandler.post(() -> {
-                            if (callback != null) callback.onError(!msg.isEmpty() ? msg : "Failed to update product");
+                            if (callback != null)
+                                callback.onError(!msg.isEmpty() ? msg : "Failed to update product");
                         });
                         return;
                     }
@@ -219,8 +219,7 @@ public class OnlineProductRepository {
     public void getProductById(int productId, ProductActionCallback callback) {
         getApi().getProductById(productId).enqueue(new Callback<ApiResponse<OnlineProductDto>>() {
             @Override
-            public void onResponse(Call<ApiResponse<OnlineProductDto>> call,
-                                   Response<ApiResponse<OnlineProductDto>> response) {
+            public void onResponse(Call<ApiResponse<OnlineProductDto>> call, Response<ApiResponse<OnlineProductDto>> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     ApiResponse<OnlineProductDto> body = response.body();
                     if (body.isSuccess() && body.getData() != null) {
@@ -232,7 +231,8 @@ public class OnlineProductRepository {
                     } else {
                         String msg = body.getMessage();
                         mainHandler.post(() -> {
-                            if (callback != null) callback.onError(!msg.isEmpty() ? msg : "Product not found on server");
+                            if (callback != null)
+                                callback.onError(!msg.isEmpty() ? msg : "Product not found on server");
                         });
                         return;
                     }
@@ -254,12 +254,10 @@ public class OnlineProductRepository {
     /**
      * Looks up a product on the remote server using decrypted QR code data.
      */
-    public void lookupProductByQr(in.gbtsolutions.inventoryhub.online.models.OnlineQrLookupRequest request,
-                                  ProductActionCallback callback) {
+    public void lookupProductByQr(in.gbtsolutions.inventoryhub.online.models.OnlineQrLookupRequest request, ProductActionCallback callback) {
         getApi().lookupProductByQr(request).enqueue(new Callback<ApiResponse<OnlineProductDto>>() {
             @Override
-            public void onResponse(Call<ApiResponse<OnlineProductDto>> call,
-                                   Response<ApiResponse<OnlineProductDto>> response) {
+            public void onResponse(Call<ApiResponse<OnlineProductDto>> call, Response<ApiResponse<OnlineProductDto>> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     ApiResponse<OnlineProductDto> body = response.body();
                     if (body.isSuccess() && body.getData() != null) {
@@ -271,7 +269,8 @@ public class OnlineProductRepository {
                     } else {
                         String msg = body.getMessage();
                         mainHandler.post(() -> {
-                            if (callback != null) callback.onError(!msg.isEmpty() ? msg : "Product not found on server for scanned QR");
+                            if (callback != null)
+                                callback.onError(!msg.isEmpty() ? msg : "Product not found on server for scanned QR");
                         });
                         return;
                     }
@@ -291,19 +290,10 @@ public class OnlineProductRepository {
     }
 
     public void createBatchForProduct(int productId, in.gbtsolutions.inventoryhub.models.ProductBatch batch, ProductActionCallback callback) {
-        OnlineProductDto.OnlineBatchDto batchDto = new OnlineProductDto.OnlineBatchDto(
-                null,
-                productId,
-                batch.batchNo,
-                batch.quantity,
-                batch.purchasePrice,
-                batch.sellingPrice,
-                batch.expiryDate > 0 ? batch.expiryDate : null
-        );
+        OnlineProductDto.OnlineBatchDto batchDto = new OnlineProductDto.OnlineBatchDto(null, productId, batch.batchNo, batch.quantity, batch.purchasePrice, batch.sellingPrice, batch.expiryDate > 0 ? batch.expiryDate : null);
         getApi().createBatchForProduct(productId, batchDto).enqueue(new Callback<ApiResponse<OnlineProductDto.OnlineBatchDto>>() {
             @Override
-            public void onResponse(Call<ApiResponse<OnlineProductDto.OnlineBatchDto>> call,
-                                   Response<ApiResponse<OnlineProductDto.OnlineBatchDto>> response) {
+            public void onResponse(Call<ApiResponse<OnlineProductDto.OnlineBatchDto>> call, Response<ApiResponse<OnlineProductDto.OnlineBatchDto>> response) {
                 if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
                     mainHandler.post(() -> {
                         if (callback != null) callback.onSuccess(null);
@@ -315,6 +305,67 @@ public class OnlineProductRepository {
 
             @Override
             public void onFailure(Call<ApiResponse<OnlineProductDto.OnlineBatchDto>> call, Throwable t) {
+                mainHandler.post(() -> {
+                    if (callback != null) {
+                        callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
+                    }
+                });
+            }
+        });
+    }
+
+    public void getBatchesForProduct(int productId, String status, BatchesCallback callback) {
+        getApi().getBatchesForProduct(productId, status).enqueue(new Callback<ApiResponse<List<OnlineProductDto.OnlineBatchDto>>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<List<OnlineProductDto.OnlineBatchDto>>> call, Response<ApiResponse<List<OnlineProductDto.OnlineBatchDto>>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    ApiResponse<List<OnlineProductDto.OnlineBatchDto>> body = response.body();
+                    if (body.isSuccess() && body.getData() != null) {
+                        List<in.gbtsolutions.inventoryhub.models.ProductBatch> domainBatches = new ArrayList<>();
+                        for (OnlineProductDto.OnlineBatchDto bDto : body.getData()) {
+                            if (bDto == null) continue;
+                            in.gbtsolutions.inventoryhub.models.ProductBatch b = new in.gbtsolutions.inventoryhub.models.ProductBatch();
+                            b.batchId = bDto.batchId != null ? bDto.batchId : 0;
+                            b.productId = bDto.productId != null ? bDto.productId : productId;
+                            b.batchNo = bDto.batchNo != null ? bDto.batchNo : ("BATCH-" + b.batchId);
+                            b.quantity = bDto.quantity;
+                            b.purchasePrice = bDto.purchasePrice;
+                            b.sellingPrice = bDto.sellingPrice;
+                            b.expiryDate = bDto.expiryDate != null ? bDto.expiryDate : 0;
+                            domainBatches.add(b);
+                        }
+                        mainHandler.post(() -> {
+                            if (callback != null) callback.onSuccess(domainBatches);
+                        });
+                        return;
+                    } else {
+                        String msg = body.getMessage();
+                        mainHandler.post(() -> {
+                            if (callback != null)
+                                callback.onError(!msg.isEmpty() ? msg : "Failed to load batches");
+                        });
+                        return;
+                    }
+                }
+                String errorMsg = "Failed to fetch batches from server (" + response.code() + ")";
+                try {
+                    if (response.errorBody() != null) {
+                        String errorJson = response.errorBody().string();
+                        ApiResponse<?> errResp = gson.fromJson(errorJson, ApiResponse.class);
+                        if (errResp != null && errResp.getMessage() != null && !errResp.getMessage().isEmpty()) {
+                            errorMsg = errResp.getMessage();
+                        }
+                    }
+                } catch (Exception ignored) {
+                }
+                final String finalMsg = errorMsg;
+                mainHandler.post(() -> {
+                    if (callback != null) callback.onError(finalMsg);
+                });
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<List<OnlineProductDto.OnlineBatchDto>>> call, Throwable t) {
                 mainHandler.post(() -> {
                     if (callback != null) {
                         callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));

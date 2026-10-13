@@ -19,26 +19,55 @@ import java.net.URL;
 import java.util.Map;
 import java.util.UUID;
 
+import in.gbtsolutions.inventoryhub.online.config.AppModeManager;
+
 public class APIHelper {
 
     private static final String CHARSET = "UTF-8";
 
+    private static void applyDefaultHeaders(HttpURLConnection conn, Context context) {
+        conn.setRequestProperty("Accept", "application/json");
+        conn.setRequestProperty("X-Client-Type", "android");
+        if (context != null) {
+            String deviceId = AppModeManager.getInstance(context).getDeviceId();
+            if (deviceId != null && !deviceId.trim().isEmpty()) {
+                conn.setRequestProperty("X-Device-Id", deviceId.trim());
+            } else {
+                conn.setRequestProperty("X-Device-Id", "");
+            }
+            String token = AppModeManager.getInstance(context).getAuthToken();
+            if (token != null && !token.trim().isEmpty()) {
+                conn.setRequestProperty("Authorization", "Bearer " + token.trim());
+            }
+        }
+    }
+
     // ---------- GET ----------
     public static JSONObject get(String urlStr) throws IOException, JSONException {
+        return get(null, urlStr);
+    }
+
+    public static JSONObject get(Context context, String urlStr) throws IOException, JSONException {
         HttpURLConnection conn = (HttpURLConnection) new URL(urlStr).openConnection();
         conn.setRequestMethod("GET");
         conn.setConnectTimeout(15000);
         conn.setReadTimeout(15000);
+        applyDefaultHeaders(conn, context);
         return new JSONObject(readResponse(conn));
     }
 
     // ---------- POST (raw JSON body) ----------
     public static JSONObject post(String urlStr, JSONObject body) throws IOException, JSONException {
+        return post(null, urlStr, body);
+    }
+
+    public static JSONObject post(Context context, String urlStr, JSONObject body) throws IOException, JSONException {
         HttpURLConnection conn = (HttpURLConnection) new URL(urlStr).openConnection();
         conn.setRequestMethod("POST");
         conn.setDoOutput(true);
         conn.setConnectTimeout(15000);
         conn.setReadTimeout(15000);
+        applyDefaultHeaders(conn, context);
         conn.setRequestProperty("Content-Type", "application/json; charset=" + CHARSET);
 
         try (OutputStream os = conn.getOutputStream()) {
@@ -56,6 +85,7 @@ public class APIHelper {
         conn.setDoOutput(true);
         conn.setConnectTimeout(15000);
         conn.setReadTimeout(15000);
+        applyDefaultHeaders(conn, context);
         conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
 
         try (DataOutputStream out = new DataOutputStream(conn.getOutputStream())) {
@@ -81,6 +111,7 @@ public class APIHelper {
         conn.setRequestMethod("GET");
         conn.setConnectTimeout(15000);
         conn.setReadTimeout(15000);
+        applyDefaultHeaders(conn, context);
 
         int code = conn.getResponseCode();
         if (code < 200 || code >= 300) {

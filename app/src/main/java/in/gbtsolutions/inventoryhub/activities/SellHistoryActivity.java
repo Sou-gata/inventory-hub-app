@@ -58,6 +58,7 @@ import in.gbtsolutions.inventoryhub.models.Sale;
 import in.gbtsolutions.inventoryhub.models.SaleItem;
 import in.gbtsolutions.inventoryhub.models.SaleItemWithProduct;
 import in.gbtsolutions.inventoryhub.models.SaleWithBuyer;
+import in.gbtsolutions.inventoryhub.online.paging.EndlessRecyclerScrollListener;
 import in.gbtsolutions.inventoryhub.repository.ConfigRepository;
 import in.gbtsolutions.inventoryhub.repository.SaleRepository;
 
@@ -97,6 +98,12 @@ public class SellHistoryActivity extends BaseActivity {
     private LiveData<List<SaleWithBuyer>> currentSalesLiveData;
     private ConfigRepository configRepository;
     private Bitmap lastGeneratedBillBitmap;
+    // Pagination State
+    private EndlessRecyclerScrollListener endlessScrollListener;
+    private boolean onlineIsLoading = false;
+    private boolean onlineHasMore = true;
+    private int onlineCurrentPage = 1;
+    private int onlineTotalRecords = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -265,14 +272,31 @@ public class SellHistoryActivity extends BaseActivity {
 
     private void setupRecyclerView() {
         adapter = new SellHistoryAdapter();
-        recyclerSalesHistory.setLayoutManager(new LinearLayoutManager(this));
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        recyclerSalesHistory.setLayoutManager(layoutManager);
         recyclerSalesHistory.setAdapter(adapter);
+
+        endlessScrollListener = new EndlessRecyclerScrollListener(layoutManager) {
+            @Override
+            public void onLoadMore(int page, int totalItemsCount, RecyclerView view) {
+                if (saleRepository != null && saleRepository.isOnlineMode() && onlineHasMore && !onlineIsLoading) {
+                    loadOnlineSales(page, false);
+                }
+            }
+        };
+        recyclerSalesHistory.addOnScrollListener(endlessScrollListener);
 
         adapter.setOnSaleClickListener(this::showSaleDetailsSheet);
     }
 
     private void applyFilters() {
         String query = editSearchBuyer.getText() != null ? editSearchBuyer.getText().toString().trim() : "";
+
+        if (saleRepository.isOnlineMode()) {
+            loadOnlineSales(1, true);
+            updateResetButtonVisibility();
+            return;
+        }
 
         if (currentSalesLiveData != null) {
             currentSalesLiveData.removeObserver(salesObserver);
@@ -282,6 +306,83 @@ public class SellHistoryActivity extends BaseActivity {
         currentSalesLiveData.observe(this, salesObserver);
 
         updateResetButtonVisibility();
+    }
+
+    private void loadOnlineSales(int page, boolean isNewSearch) {
+        String query = editSearchBuyer.getText() != null ? editSearchBuyer.getText().toString().trim() : "";
+        onlineIsLoading = true;
+
+        if (isNewSearch) {
+            onlineCurrentPage = 1;
+            onlineHasMore = true;
+            onlineTotalRecords = 0;
+            if (endlessScrollListener != null) {
+                endlessScrollListener.resetState();
+            }
+        } else {
+            adapter.showLoadingFooter();
+        }
+
+        saleRepository.fetchSalesOnline(page, EndlessRecyclerScrollListener.PAGE_SIZE, selectedStartDate, selectedEndDate, query,
+                new in.gbtsolutions.inventoryhub.online.repository.OnlineSaleRepository.SaleListCallback() {
+                    @Override
+                    public void onSuccess(List<SaleWithBuyer> sales, int currentPage, int totalPages, int totalRecords, boolean hasMore) {
+                        runOnUiThread(() -> {
+                            onlineIsLoading = false;
+                            onlineCurrentPage = currentPage;
+                            onlineHasMore = hasMore;
+                            onlineTotalRecords = totalRecords;
+
+                            if (endlessScrollListener != null) {
+                                endlessScrollListener.setHasMore(hasMore);
+                                endlessScrollListener.setLoading(false);
+                            }
+
+                            adapter.removeFooter();
+
+                            if (isNewSearch) {
+                                if (sales == null || sales.isEmpty()) {
+                                    adapter.clearSales();
+                                    recyclerSalesHistory.setVisibility(View.GONE);
+                                    layoutEmptyState.setVisibility(View.VISIBLE);
+                                    textSalesCount.setText("No sales found");
+                                    textSalesTotalSum.setText("Total: ₹ 0.00");
+                                } else {
+                                    layoutEmptyState.setVisibility(View.GONE);
+                                    recyclerSalesHistory.setVisibility(View.VISIBLE);
+                                    adapter.setSales(sales);
+                                    updateSalesSummary(adapter.getSales(), totalRecords);
+                                }
+                            } else {
+                                if (sales != null && !sales.isEmpty()) {
+                                    adapter.addSales(sales);
+                                }
+                                updateSalesSummary(adapter.getSales(), totalRecords);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onError(String errorMessage) {
+                        runOnUiThread(() -> {
+                            onlineIsLoading = false;
+                            if (endlessScrollListener != null) {
+                                endlessScrollListener.setLoading(false);
+                            }
+
+                            if (!isNewSearch) {
+                                adapter.showRetryFooter("Failed to load: " + errorMessage, () -> loadOnlineSales(page, false));
+                            } else {
+                                Toast.makeText(SellHistoryActivity.this, "Failed to load sales: " + errorMessage, Toast.LENGTH_SHORT).show();
+                                if (currentSalesLiveData != null) {
+                                    currentSalesLiveData.removeObserver(salesObserver);
+                                }
+                                currentSalesLiveData = saleRepository.getFilteredSales(selectedStartDate, selectedEndDate, query);
+                                currentSalesLiveData.observe(SellHistoryActivity.this, salesObserver);
+                            }
+                        });
+                    }
+                });
     }
 
     private void resetAllFilters() {
@@ -312,7 +413,7 @@ public class SellHistoryActivity extends BaseActivity {
 
     private void updateSalesList(@Nullable List<SaleWithBuyer> sales) {
         if (sales == null || sales.isEmpty()) {
-            adapter.setSales(new ArrayList<>());
+            adapter.clearSales();
             recyclerSalesHistory.setVisibility(View.GONE);
             layoutEmptyState.setVisibility(View.VISIBLE);
             textSalesCount.setText("No sales found");
@@ -321,26 +422,38 @@ public class SellHistoryActivity extends BaseActivity {
             adapter.setSales(sales);
             recyclerSalesHistory.setVisibility(View.VISIBLE);
             layoutEmptyState.setVisibility(View.GONE);
+            updateSalesSummary(sales, sales.size());
+        }
+    }
 
-            double totalSum = 0.0;
-            int cancelledCount = 0;
-            for (SaleWithBuyer item : sales) {
-                if (item.sale != null) {
-                    if ("Cancelled".equalsIgnoreCase(item.sale.status)) {
-                        cancelledCount++;
-                    } else {
-                        totalSum += item.sale.totalAmount;
-                    }
+    private void updateSalesSummary(@NonNull List<SaleWithBuyer> sales, int totalRecords) {
+        double totalSum = 0.0;
+        int cancelledCount = 0;
+        for (SaleWithBuyer item : sales) {
+            if (item.sale != null) {
+                if ("Cancelled".equalsIgnoreCase(item.sale.status)) {
+                    cancelledCount++;
+                } else {
+                    totalSum += item.sale.totalAmount;
                 }
             }
-
-            if (cancelledCount > 0) {
-                textSalesCount.setText(String.format(Locale.getDefault(), "Showing %d sales (%d cancelled)", sales.size(), cancelledCount));
-            } else {
-                textSalesCount.setText(String.format(Locale.getDefault(), "Showing %d sales", sales.size()));
-            }
-            textSalesTotalSum.setText(String.format(Locale.getDefault(), "Total: ₹ %,.2f", totalSum));
         }
+
+        int loadedCount = sales.size();
+        if (totalRecords > loadedCount) {
+            if (cancelledCount > 0) {
+                textSalesCount.setText(String.format(Locale.getDefault(), "Showing %d / %d sales (%d cancelled)", loadedCount, totalRecords, cancelledCount));
+            } else {
+                textSalesCount.setText(String.format(Locale.getDefault(), "Showing %d / %d sales", loadedCount, totalRecords));
+            }
+        } else {
+            if (cancelledCount > 0) {
+                textSalesCount.setText(String.format(Locale.getDefault(), "Showing %d sales (%d cancelled)", loadedCount, cancelledCount));
+            } else {
+                textSalesCount.setText(String.format(Locale.getDefault(), "Showing %d sales", loadedCount));
+            }
+        }
+        textSalesTotalSum.setText(String.format(Locale.getDefault(), "Total: ₹ %,.2f", totalSum));
     }
 
     private void showSaleDetailsSheet(@NonNull SaleWithBuyer item) {
@@ -481,6 +594,7 @@ public class SellHistoryActivity extends BaseActivity {
                         public void onSuccess() {
                             Toast.makeText(SellHistoryActivity.this, "Bill " + invoiceDisplayId + " cancelled and inventory restored.", Toast.LENGTH_SHORT).show();
                             dialog.dismiss();
+                            applyFilters();
 
                             new MaterialAlertDialogBuilder(SellHistoryActivity.this).setTitle("Bill Cancelled").setMessage("Bill " + invoiceDisplayId + " has been cancelled and products returned to inventory.\n\nWould you like to re-issue a new bill now?").setPositiveButton("Re-issue New Bill", (d, w) -> {
                                 d.dismiss();
@@ -647,87 +761,31 @@ public class SellHistoryActivity extends BaseActivity {
         containerItems.removeAllViews();
         final List<SaleItemWithProduct> currentSaleItems = new ArrayList<>();
 
-        saleRepository.getSaleItemsWithProduct(sale.saleId).observe(this, new Observer<List<SaleItemWithProduct>>() {
-            @Override
-            public void onChanged(List<SaleItemWithProduct> saleItems) {
-                progressItems.setVisibility(View.GONE);
-                containerItems.removeAllViews();
-                currentSaleItems.clear();
-                if (saleItems != null) {
-                    currentSaleItems.addAll(saleItems);
+        if (saleRepository.isOnlineMode()) {
+            saleRepository.fetchSaleDetailsOnline(sale.saleId, new in.gbtsolutions.inventoryhub.online.repository.OnlineSaleRepository.SaleDetailCallback() {
+                @Override
+                public void onSuccess(SaleWithBuyer saleWithBuyer, List<SaleItemWithProduct> saleItems) {
+                    runOnUiThread(() -> {
+                        progressItems.setVisibility(View.GONE);
+                        containerItems.removeAllViews();
+                        currentSaleItems.clear();
+                        if (saleItems != null) {
+                            currentSaleItems.addAll(saleItems);
+                        }
+                        renderSaleItems(containerItems, currentSaleItems, textItemsCount);
+                    });
                 }
 
-                if (saleItems != null && !saleItems.isEmpty()) {
-                    textItemsCount.setText(String.format(Locale.getDefault(), "%d items", saleItems.size()));
-
-                    LayoutInflater inflater = LayoutInflater.from(SellHistoryActivity.this);
-                    for (SaleItemWithProduct itemWithProd : saleItems) {
-                        SaleItem sItem = itemWithProd.saleItem;
-                        if (sItem == null) continue;
-
-                        View itemView = inflater.inflate(R.layout.item_sell_detail_product, containerItems, false);
-
-                        TextView textProdName = itemView.findViewById(R.id.text_item_product_name);
-                        TextView textItemTotal = itemView.findViewById(R.id.text_item_total);
-                        TextView textSku = itemView.findViewById(R.id.text_item_sku);
-                        TextView textBatchNo = itemView.findViewById(R.id.text_item_batch_no);
-                        TextView textQtyPrice = itemView.findViewById(R.id.text_item_qty_price);
-                        TextView textTaxInfo = itemView.findViewById(R.id.text_item_tax_info);
-                        TextView textDiscountInfo = itemView.findViewById(R.id.text_item_discount_info);
-
-                        if (itemWithProd.product != null && !TextUtils.isEmpty(itemWithProd.product.productName)) {
-                            textProdName.setText(itemWithProd.product.productName);
-                        } else {
-                            textProdName.setText(String.format(Locale.getDefault(), "Product #%d", sItem.productId));
-                        }
-
-                        if (itemWithProd.product != null && !TextUtils.isEmpty(itemWithProd.product.sku)) {
-                            textSku.setVisibility(View.VISIBLE);
-                            textSku.setText(String.format("SKU: %s", itemWithProd.product.sku));
-                        } else {
-                            textSku.setVisibility(View.GONE);
-                        }
-
-                        if (textBatchNo != null) {
-                            if (itemWithProd.batch != null && !TextUtils.isEmpty(itemWithProd.batch.batchNo)) {
-                                textBatchNo.setVisibility(View.VISIBLE);
-                                textBatchNo.setText(String.format("Batch: %s", itemWithProd.batch.batchNo));
-                            } else if (sItem.batchId != null && sItem.batchId > 0) {
-                                textBatchNo.setVisibility(View.VISIBLE);
-                                textBatchNo.setText(String.format("Batch #%d", sItem.batchId));
-                            } else {
-                                textBatchNo.setVisibility(View.GONE);
-                            }
-                        }
-
-                        String uom = (itemWithProd != null && itemWithProd.product != null && !TextUtils.isEmpty(itemWithProd.product.unitOfMeasure)) ? " " + itemWithProd.product.unitOfMeasure.trim() : "";
-                        textQtyPrice.setText(String.format(Locale.getDefault(), "Qty: %s%s × ₹ %,.2f", CommonFunctions.formatQuantity(sItem.quantity), uom, sItem.unitPrice));
-                        textItemTotal.setText(String.format(Locale.getDefault(), "₹ %,.2f", sItem.subtotal));
-
-                        // Tax display
-                        if (sItem.cgstRate > 0 || sItem.sgstRate > 0) {
-                            textTaxInfo.setText(String.format(Locale.getDefault(), "GST: %.1f%% (₹ %,.2f)", sItem.cgstRate + sItem.sgstRate, sItem.cgstAmount + sItem.sgstAmount));
-                        } else if (sItem.igstRate > 0) {
-                            textTaxInfo.setText(String.format(Locale.getDefault(), "IGST: %.1f%% (₹ %,.2f)", sItem.igstRate, sItem.igstAmount));
-                        } else {
-                            textTaxInfo.setText("GST: 0%");
-                        }
-
-                        // Discount display
-                        if (sItem.discountAmount > 0) {
-                            textDiscountInfo.setVisibility(View.VISIBLE);
-                            textDiscountInfo.setText(String.format(Locale.getDefault(), "Disc: ₹ %,.2f", sItem.discountAmount));
-                        } else {
-                            textDiscountInfo.setVisibility(View.GONE);
-                        }
-
-                        containerItems.addView(itemView);
-                    }
-                } else {
-                    textItemsCount.setText("0 items");
+                @Override
+                public void onError(String errorMessage) {
+                    runOnUiThread(() -> {
+                        loadLocalSaleItems(sale.saleId, progressItems, containerItems, currentSaleItems, textItemsCount);
+                    });
                 }
-            }
-        });
+            });
+        } else {
+            loadLocalSaleItems(sale.saleId, progressItems, containerItems, currentSaleItems, textItemsCount);
+        }
 
         // Close actions
         btnClose.setOnClickListener(v -> dialog.dismiss());
@@ -761,6 +819,91 @@ public class SellHistoryActivity extends BaseActivity {
             }
         });
         dialog.show();
+    }
+
+    private void loadLocalSaleItems(int saleId, ProgressBar progressItems, LinearLayout containerItems, List<SaleItemWithProduct> currentSaleItems, TextView textItemsCount) {
+        saleRepository.getSaleItemsWithProduct(saleId).observe(this, new Observer<List<SaleItemWithProduct>>() {
+            @Override
+            public void onChanged(List<SaleItemWithProduct> saleItems) {
+                progressItems.setVisibility(View.GONE);
+                containerItems.removeAllViews();
+                currentSaleItems.clear();
+                if (saleItems != null) {
+                    currentSaleItems.addAll(saleItems);
+                }
+                renderSaleItems(containerItems, currentSaleItems, textItemsCount);
+            }
+        });
+    }
+
+    private void renderSaleItems(LinearLayout containerItems, List<SaleItemWithProduct> saleItems, TextView textItemsCount) {
+        if (saleItems != null && !saleItems.isEmpty()) {
+            textItemsCount.setText(String.format(Locale.getDefault(), "%d items", saleItems.size()));
+
+            LayoutInflater inflater = LayoutInflater.from(SellHistoryActivity.this);
+            for (SaleItemWithProduct itemWithProd : saleItems) {
+                SaleItem sItem = itemWithProd.saleItem;
+                if (sItem == null) continue;
+
+                View itemView = inflater.inflate(R.layout.item_sell_detail_product, containerItems, false);
+
+                TextView textProdName = itemView.findViewById(R.id.text_item_product_name);
+                TextView textItemTotal = itemView.findViewById(R.id.text_item_total);
+                TextView textSku = itemView.findViewById(R.id.text_item_sku);
+                TextView textBatchNo = itemView.findViewById(R.id.text_item_batch_no);
+                TextView textQtyPrice = itemView.findViewById(R.id.text_item_qty_price);
+                TextView textTaxInfo = itemView.findViewById(R.id.text_item_tax_info);
+                TextView textDiscountInfo = itemView.findViewById(R.id.text_item_discount_info);
+
+                if (itemWithProd.product != null && !TextUtils.isEmpty(itemWithProd.product.productName)) {
+                    textProdName.setText(itemWithProd.product.productName);
+                } else {
+                    textProdName.setText(String.format(Locale.getDefault(), "Product #%d", sItem.productId));
+                }
+
+                if (itemWithProd.product != null && !TextUtils.isEmpty(itemWithProd.product.sku)) {
+                    textSku.setVisibility(View.VISIBLE);
+                    textSku.setText(String.format("SKU: %s", itemWithProd.product.sku));
+                } else {
+                    textSku.setVisibility(View.GONE);
+                }
+
+                if (textBatchNo != null) {
+                    if (itemWithProd.batch != null && !TextUtils.isEmpty(itemWithProd.batch.batchNo)) {
+                        textBatchNo.setVisibility(View.VISIBLE);
+                        textBatchNo.setText(String.format("Batch: %s", itemWithProd.batch.batchNo));
+                    } else if (sItem.batchId != null && sItem.batchId > 0) {
+                        textBatchNo.setVisibility(View.VISIBLE);
+                        textBatchNo.setText(String.format("Batch #%d", sItem.batchId));
+                    } else {
+                        textBatchNo.setVisibility(View.GONE);
+                    }
+                }
+
+                String uom = (itemWithProd.product != null && !TextUtils.isEmpty(itemWithProd.product.unitOfMeasure)) ? " " + itemWithProd.product.unitOfMeasure.trim() : "";
+                textQtyPrice.setText(String.format(Locale.getDefault(), "Qty: %s%s × ₹ %,.2f", CommonFunctions.formatQuantity(sItem.quantity), uom, sItem.unitPrice));
+                textItemTotal.setText(String.format(Locale.getDefault(), "₹ %,.2f", sItem.subtotal));
+
+                if (sItem.cgstRate > 0 || sItem.sgstRate > 0) {
+                    textTaxInfo.setText(String.format(Locale.getDefault(), "GST: %.1f%% (₹ %,.2f)", sItem.cgstRate + sItem.sgstRate, sItem.cgstAmount + sItem.sgstAmount));
+                } else if (sItem.igstRate > 0) {
+                    textTaxInfo.setText(String.format(Locale.getDefault(), "IGST: %.1f%% (₹ %,.2f)", sItem.igstRate, sItem.igstAmount));
+                } else {
+                    textTaxInfo.setText("GST: 0%");
+                }
+
+                if (sItem.discountAmount > 0) {
+                    textDiscountInfo.setVisibility(View.VISIBLE);
+                    textDiscountInfo.setText(String.format(Locale.getDefault(), "Disc: ₹ %,.2f", sItem.discountAmount));
+                } else {
+                    textDiscountInfo.setVisibility(View.GONE);
+                }
+
+                containerItems.addView(itemView);
+            }
+        } else {
+            textItemsCount.setText("0 items");
+        }
     }
 
     private void hideKeyboard() {

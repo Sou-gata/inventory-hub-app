@@ -116,10 +116,10 @@ public class OnlineProductDto {
         @SerializedName(value = "status")
         public String status = "ACTIVE";
 
-        public OnlineBatchDto() {}
+        public OnlineBatchDto() {
+        }
 
-        public OnlineBatchDto(Integer batchId, Integer productId, String batchNo, double quantity,
-                              double purchasePrice, double sellingPrice, Long expiryDate) {
+        public OnlineBatchDto(Integer batchId, Integer productId, String batchNo, double quantity, double purchasePrice, double sellingPrice, Long expiryDate) {
             this.batchId = batchId;
             this.productId = productId;
             this.batchNo = batchNo;

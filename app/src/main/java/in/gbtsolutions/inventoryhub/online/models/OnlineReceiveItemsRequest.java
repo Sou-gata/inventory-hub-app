@@ -1,6 +1,7 @@
 package in.gbtsolutions.inventoryhub.online.models;
 
 import com.google.gson.annotations.SerializedName;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,15 +35,8 @@ public class OnlineReceiveItemsRequest {
         @SerializedName(value = "selling_price", alternate = {"sellingPrice"})
         public Double sellingPrice;
 
-        public ReceiveItemPayload() {
-        }
-
         public ReceiveItemPayload(int productId, double receivedQty, String batchNo, String expiryDate) {
             this(null, productId, receivedQty, batchNo, expiryDate, null);
-        }
-
-        public ReceiveItemPayload(int productId, int receivedQty, String batchNo, String expiryDate) {
-            this(null, productId, (double) receivedQty, batchNo, expiryDate, null);
         }
 
         public ReceiveItemPayload(Integer purchaseItemId, int productId, double receivedQty, String batchNo, String expiryDate, Double sellingPrice) {
@@ -52,10 +46,6 @@ public class OnlineReceiveItemsRequest {
             this.batchNo = batchNo;
             this.expiryDate = expiryDate;
             this.sellingPrice = sellingPrice;
-        }
-
-        public ReceiveItemPayload(Integer purchaseItemId, int productId, int receivedQty, String batchNo, String expiryDate, Double sellingPrice) {
-            this(purchaseItemId, productId, (double) receivedQty, batchNo, expiryDate, sellingPrice);
         }
     }
 }

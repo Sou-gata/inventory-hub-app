@@ -44,30 +44,35 @@ public interface PurchaseDao {
     int count();
 
     @Transaction
-    @Query("SELECT * FROM purchases ORDER BY purchase_id DESC")
+    @Query("SELECT purchases.*, users.name AS created_by_name, users.role AS created_by_role FROM purchases " +
+            "LEFT JOIN users ON purchases.created_by = users.id " +
+            "ORDER BY purchases.purchase_id DESC")
     LiveData<List<PurchaseWithSupplier>> getAllPurchasesWithSupplier();
 
     @Transaction
-    @Query("SELECT purchases.* FROM purchases " +
+    @Query("SELECT purchases.*, users.name AS created_by_name, users.role AS created_by_role FROM purchases " +
             "LEFT JOIN suppliers ON purchases.supplier_id = suppliers.supplier_id " +
+            "LEFT JOIN users ON purchases.created_by = users.id " +
             "WHERE (:startDate IS NULL OR :startDate = '' OR purchases.billing_date >= :startDate) " +
-            "  AND (:endDate IS NULL OR :endDate = '' OR purchases.billing_date <= :endDate) " +
-            "  AND (:supplierQuery IS NULL OR :supplierQuery = '' OR suppliers.supplier_name LIKE '%' || :supplierQuery || '%' OR purchases.invoice_id LIKE '%' || :supplierQuery || '%') " +
+            "AND (:endDate IS NULL OR :endDate = '' OR purchases.billing_date <= :endDate) " +
+            "AND (:supplierQuery IS NULL OR :supplierQuery = '' OR suppliers.supplier_name LIKE '%' || :supplierQuery || '%' OR purchases.invoice_id LIKE '%' || :supplierQuery || '%') " +
             "ORDER BY purchases.purchase_id DESC")
     LiveData<List<PurchaseWithSupplier>> getFilteredPurchases(String startDate, String endDate, String supplierQuery);
 
     @Transaction
-    @Query("SELECT purchases.* FROM purchases " +
+    @Query("SELECT purchases.*, users.name AS created_by_name, users.role AS created_by_role FROM purchases " +
             "LEFT JOIN suppliers ON purchases.supplier_id = suppliers.supplier_id " +
+            "LEFT JOIN users ON purchases.created_by = users.id " +
             "WHERE purchases.status IN ('Pending', 'Partially Received') " +
             "ORDER BY purchases.purchase_id DESC")
     LiveData<List<PurchaseWithSupplier>> getPendingPurchasesWithSupplier();
 
     @Transaction
-    @Query("SELECT purchases.* FROM purchases " +
+    @Query("SELECT purchases.*, users.name AS created_by_name, users.role AS created_by_role FROM purchases " +
             "LEFT JOIN suppliers ON purchases.supplier_id = suppliers.supplier_id " +
+            "LEFT JOIN users ON purchases.created_by = users.id " +
             "WHERE purchases.status IN ('Pending', 'Partially Received') " +
-            "  AND (:supplierQuery IS NULL OR :supplierQuery = '' OR suppliers.supplier_name LIKE '%' || :supplierQuery || '%' OR purchases.invoice_id LIKE '%' || :supplierQuery || '%') " +
+            "AND (:supplierQuery IS NULL OR :supplierQuery = '' OR suppliers.supplier_name LIKE '%' || :supplierQuery || '%' OR purchases.invoice_id LIKE '%' || :supplierQuery || '%') " +
             "ORDER BY purchases.purchase_id DESC")
     LiveData<List<PurchaseWithSupplier>> getFilteredPendingPurchases(String supplierQuery);
 
@@ -81,7 +86,8 @@ public interface PurchaseDao {
     void updateCreatedBy(int purchaseId, long userId);
 
     @Transaction
-    @Query("SELECT purchases.* FROM purchases " +
+    @Query("SELECT purchases.*, users.name AS created_by_name, users.role AS created_by_role FROM purchases " +
+            "LEFT JOIN users ON purchases.created_by = users.id " +
             "WHERE (:startDate IS NULL OR :startDate = '' OR billing_date >= :startDate) " +
             "  AND (:endDate IS NULL OR :endDate = '' OR billing_date <= :endDate) " +
             "ORDER BY billing_date ASC, purchase_id ASC")

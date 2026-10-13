@@ -36,6 +36,15 @@
         android:textSize="12sp"
         android:text="Choose quantities from one or more batches to add to cart" />
 
+    <ProgressBar
+        android:id="@+id/progress_select_batches"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginVertical="16dp"
+        android:indeterminateTint="@color/accent_teal"
+        android:visibility="gone" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_select_batches"
         android:layout_width="match_parent"

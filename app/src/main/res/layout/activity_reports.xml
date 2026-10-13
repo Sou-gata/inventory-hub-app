@@ -29,6 +29,7 @@
                 android:layout_height="?attr/actionBarSize"
                 android:background="@android:color/transparent"
                 app:navigationIconTint="@color/white"
+                app:subtitleTextColor="#D0E1FD"
                 app:title="GSTR-1 Summary Report"
                 app:titleTextColor="@color/white" />
         </FrameLayout>

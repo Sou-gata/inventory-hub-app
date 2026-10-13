@@ -22,16 +22,19 @@ public class OnlineCategoryRepository {
 
     public interface CategoryListCallback {
         void onSuccess(List<Category> categories);
+
         void onError(String errorMessage);
     }
 
     public interface CategoryActionCallback {
         void onSuccess(Category category);
+
         void onError(String errorMessage);
     }
 
     public interface CategoryDeleteCallback {
         void onSuccess();
+
         void onError(String errorMessage);
     }
 
@@ -50,8 +53,7 @@ public class OnlineCategoryRepository {
     public void fetchCategories(CategoryListCallback callback) {
         getApi().getCategories().enqueue(new Callback<ApiResponse<List<OnlineCategoryDto>>>() {
             @Override
-            public void onResponse(Call<ApiResponse<List<OnlineCategoryDto>>> call,
-                                   Response<ApiResponse<List<OnlineCategoryDto>>> response) {
+            public void onResponse(Call<ApiResponse<List<OnlineCategoryDto>>> call, Response<ApiResponse<List<OnlineCategoryDto>>> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     ApiResponse<List<OnlineCategoryDto>> body = response.body();
                     if (body.isSuccess() && body.getData() != null) {
@@ -63,7 +65,8 @@ public class OnlineCategoryRepository {
                     } else {
                         String msg = body.getMessage();
                         mainHandler.post(() -> {
-                            if (callback != null) callback.onError(!msg.isEmpty() ? msg : "Failed to load categories");
+                            if (callback != null)
+                                callback.onError(!msg.isEmpty() ? msg : "Failed to load categories");
                         });
                         return;
                     }
@@ -86,8 +89,7 @@ public class OnlineCategoryRepository {
         OnlineCategoryDto dto = CategoryMapper.toDto(category);
         getApi().createCategory(dto).enqueue(new Callback<ApiResponse<OnlineCategoryDto>>() {
             @Override
-            public void onResponse(Call<ApiResponse<OnlineCategoryDto>> call,
-                                   Response<ApiResponse<OnlineCategoryDto>> response) {
+            public void onResponse(Call<ApiResponse<OnlineCategoryDto>> call, Response<ApiResponse<OnlineCategoryDto>> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     ApiResponse<OnlineCategoryDto> body = response.body();
                     if (body.isSuccess() && body.getData() != null) {
@@ -99,7 +101,8 @@ public class OnlineCategoryRepository {
                     } else {
                         String msg = body.getMessage();
                         mainHandler.post(() -> {
-                            if (callback != null) callback.onError(!msg.isEmpty() ? msg : "Failed to create category");
+                            if (callback != null)
+                                callback.onError(!msg.isEmpty() ? msg : "Failed to create category");
                         });
                         return;
                     }
@@ -110,7 +113,8 @@ public class OnlineCategoryRepository {
             @Override
             public void onFailure(Call<ApiResponse<OnlineCategoryDto>> call, Throwable t) {
                 mainHandler.post(() -> {
-                    if (callback != null) callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
+                    if (callback != null)
+                        callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
                 });
             }
         });
@@ -120,8 +124,7 @@ public class OnlineCategoryRepository {
         OnlineCategoryDto dto = CategoryMapper.toDto(category);
         getApi().updateCategory(category.categoryId, dto).enqueue(new Callback<ApiResponse<OnlineCategoryDto>>() {
             @Override
-            public void onResponse(Call<ApiResponse<OnlineCategoryDto>> call,
-                                   Response<ApiResponse<OnlineCategoryDto>> response) {
+            public void onResponse(Call<ApiResponse<OnlineCategoryDto>> call, Response<ApiResponse<OnlineCategoryDto>> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     ApiResponse<OnlineCategoryDto> body = response.body();
                     if (body.isSuccess() && body.getData() != null) {
@@ -133,7 +136,8 @@ public class OnlineCategoryRepository {
                     } else {
                         String msg = body.getMessage();
                         mainHandler.post(() -> {
-                            if (callback != null) callback.onError(!msg.isEmpty() ? msg : "Failed to update category");
+                            if (callback != null)
+                                callback.onError(!msg.isEmpty() ? msg : "Failed to update category");
                         });
                         return;
                     }
@@ -144,7 +148,8 @@ public class OnlineCategoryRepository {
             @Override
             public void onFailure(Call<ApiResponse<OnlineCategoryDto>> call, Throwable t) {
                 mainHandler.post(() -> {
-                    if (callback != null) callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
+                    if (callback != null)
+                        callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
                 });
             }
         });
@@ -165,7 +170,8 @@ public class OnlineCategoryRepository {
                             ApiResponse<?> err = gson.fromJson(response.errorBody().string(), ApiResponse.class);
                             if (err != null && err.getMessage() != null) msg = err.getMessage();
                         }
-                    } catch (Exception ignored) {}
+                    } catch (Exception ignored) {
+                    }
                     final String finalMsg = msg;
                     mainHandler.post(() -> {
                         if (callback != null) callback.onError(finalMsg);
@@ -176,7 +182,8 @@ public class OnlineCategoryRepository {
             @Override
             public void onFailure(Call<ApiResponse<Object>> call, Throwable t) {
                 mainHandler.post(() -> {
-                    if (callback != null) callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
+                    if (callback != null)
+                        callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
                 });
             }
         });
@@ -191,7 +198,8 @@ public class OnlineCategoryRepository {
                     msg = err.getMessage();
                 }
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         final String finalMsg = msg;
         mainHandler.post(() -> {
             if (callback != null) callback.onError(finalMsg);
@@ -207,7 +215,8 @@ public class OnlineCategoryRepository {
                     msg = err.getMessage();
                 }
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         final String finalMsg = msg;
         mainHandler.post(() -> {
             if (callback != null) callback.onError(finalMsg);

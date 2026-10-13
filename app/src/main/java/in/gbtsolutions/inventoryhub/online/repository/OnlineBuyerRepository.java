@@ -22,16 +22,19 @@ public class OnlineBuyerRepository {
 
     public interface BuyerListCallback {
         void onSuccess(List<Buyer> buyers);
+
         void onError(String errorMessage);
     }
 
     public interface BuyerActionCallback {
         void onSuccess(Buyer buyer);
+
         void onError(String errorMessage);
     }
 
     public interface BuyerDeleteCallback {
         void onSuccess();
+
         void onError(String errorMessage);
     }
 
@@ -54,8 +57,7 @@ public class OnlineBuyerRepository {
     public void fetchBuyers(String search, BuyerListCallback callback) {
         getApi().getBuyers(search).enqueue(new Callback<ApiResponse<List<OnlineBuyerDto>>>() {
             @Override
-            public void onResponse(Call<ApiResponse<List<OnlineBuyerDto>>> call,
-                                   Response<ApiResponse<List<OnlineBuyerDto>>> response) {
+            public void onResponse(Call<ApiResponse<List<OnlineBuyerDto>>> call, Response<ApiResponse<List<OnlineBuyerDto>>> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     ApiResponse<List<OnlineBuyerDto>> body = response.body();
                     if (body.isSuccess() && body.getData() != null) {
@@ -67,7 +69,8 @@ public class OnlineBuyerRepository {
                     } else {
                         String msg = body.getMessage();
                         mainHandler.post(() -> {
-                            if (callback != null) callback.onError(!msg.isEmpty() ? msg : "Failed to load buyers");
+                            if (callback != null)
+                                callback.onError(!msg.isEmpty() ? msg : "Failed to load buyers");
                         });
                         return;
                     }
@@ -90,8 +93,7 @@ public class OnlineBuyerRepository {
         OnlineBuyerDto dto = BuyerMapper.toDto(buyer);
         getApi().createBuyer(dto).enqueue(new Callback<ApiResponse<OnlineBuyerDto>>() {
             @Override
-            public void onResponse(Call<ApiResponse<OnlineBuyerDto>> call,
-                                   Response<ApiResponse<OnlineBuyerDto>> response) {
+            public void onResponse(Call<ApiResponse<OnlineBuyerDto>> call, Response<ApiResponse<OnlineBuyerDto>> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     ApiResponse<OnlineBuyerDto> body = response.body();
                     if (body.isSuccess() && body.getData() != null) {
@@ -103,7 +105,8 @@ public class OnlineBuyerRepository {
                     } else {
                         String msg = body.getMessage();
                         mainHandler.post(() -> {
-                            if (callback != null) callback.onError(!msg.isEmpty() ? msg : "Failed to create buyer");
+                            if (callback != null)
+                                callback.onError(!msg.isEmpty() ? msg : "Failed to create buyer");
                         });
                         return;
                     }
@@ -114,7 +117,8 @@ public class OnlineBuyerRepository {
             @Override
             public void onFailure(Call<ApiResponse<OnlineBuyerDto>> call, Throwable t) {
                 mainHandler.post(() -> {
-                    if (callback != null) callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
+                    if (callback != null)
+                        callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
                 });
             }
         });
@@ -124,8 +128,7 @@ public class OnlineBuyerRepository {
         OnlineBuyerDto dto = BuyerMapper.toDto(buyer);
         getApi().updateBuyer(buyer.buyerId, dto).enqueue(new Callback<ApiResponse<OnlineBuyerDto>>() {
             @Override
-            public void onResponse(Call<ApiResponse<OnlineBuyerDto>> call,
-                                   Response<ApiResponse<OnlineBuyerDto>> response) {
+            public void onResponse(Call<ApiResponse<OnlineBuyerDto>> call, Response<ApiResponse<OnlineBuyerDto>> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     ApiResponse<OnlineBuyerDto> body = response.body();
                     if (body.isSuccess() && body.getData() != null) {
@@ -137,7 +140,8 @@ public class OnlineBuyerRepository {
                     } else {
                         String msg = body.getMessage();
                         mainHandler.post(() -> {
-                            if (callback != null) callback.onError(!msg.isEmpty() ? msg : "Failed to update buyer");
+                            if (callback != null)
+                                callback.onError(!msg.isEmpty() ? msg : "Failed to update buyer");
                         });
                         return;
                     }
@@ -148,7 +152,8 @@ public class OnlineBuyerRepository {
             @Override
             public void onFailure(Call<ApiResponse<OnlineBuyerDto>> call, Throwable t) {
                 mainHandler.post(() -> {
-                    if (callback != null) callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
+                    if (callback != null)
+                        callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
                 });
             }
         });
@@ -169,7 +174,8 @@ public class OnlineBuyerRepository {
                             ApiResponse<?> err = gson.fromJson(response.errorBody().string(), ApiResponse.class);
                             if (err != null && err.getMessage() != null) msg = err.getMessage();
                         }
-                    } catch (Exception ignored) {}
+                    } catch (Exception ignored) {
+                    }
                     final String finalMsg = msg;
                     mainHandler.post(() -> {
                         if (callback != null) callback.onError(finalMsg);
@@ -180,7 +186,8 @@ public class OnlineBuyerRepository {
             @Override
             public void onFailure(Call<ApiResponse<Object>> call, Throwable t) {
                 mainHandler.post(() -> {
-                    if (callback != null) callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
+                    if (callback != null)
+                        callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
                 });
             }
         });
@@ -195,7 +202,8 @@ public class OnlineBuyerRepository {
                     msg = err.getMessage();
                 }
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         final String finalMsg = msg;
         mainHandler.post(() -> {
             if (callback != null) callback.onError(finalMsg);
@@ -211,7 +219,8 @@ public class OnlineBuyerRepository {
                     msg = err.getMessage();
                 }
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         final String finalMsg = msg;
         mainHandler.post(() -> {
             if (callback != null) callback.onError(finalMsg);

@@ -4,6 +4,11 @@ import android.content.Context;
 
 import java.util.concurrent.TimeUnit;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonPrimitive;
+
 import in.gbtsolutions.inventoryhub.online.config.AppModeManager;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -33,7 +38,8 @@ public class OnlineApiClient {
     }
 
     public synchronized OnlineApiService getApiService(Context context) {
-        String baseUrl = AppModeManager.getInstance(context).getServerUrl();
+        Context appContext = context != null ? context.getApplicationContext() : null;
+        String baseUrl = AppModeManager.getInstance(appContext != null ? appContext : context).getServerUrl();
         if (retrofit == null || !baseUrl.equalsIgnoreCase(currentBaseUrl) || apiService == null) {
             this.currentBaseUrl = baseUrl;
 
@@ -48,12 +54,19 @@ public class OnlineApiClient {
                         Request original = chain.request();
                         Request.Builder builder = original.newBuilder()
                                 .header("Accept", "application/json")
-                                .header("Content-Type", "application/json");
+                                .header("Content-Type", "application/json")
+                                .header("X-Client-Type", "android");
 
-                        // Dynamically retrieve bearer token saved in SharedPreferences
-                        String token = AppModeManager.getInstance(context).getAuthToken();
-                        if (token != null && !token.trim().isEmpty()) {
-                            builder.header("Authorization", "Bearer " + token.trim());
+                        Context ctx = appContext != null ? appContext : context;
+                        if (ctx != null) {
+                            String deviceId = AppModeManager.getInstance(ctx).getDeviceId();
+                            builder.header("X-Device-Id", deviceId != null ? deviceId.trim() : "");
+
+                            // Dynamically retrieve bearer token saved in SharedPreferences
+                            String token = AppModeManager.getInstance(ctx).getAuthToken();
+                            if (token != null && !token.trim().isEmpty()) {
+                                builder.header("Authorization", "Bearer " + token.trim());
+                            }
                         }
 
                         return chain.proceed(builder.build());
@@ -61,10 +74,39 @@ public class OnlineApiClient {
                     .addInterceptor(logging)
                     .build();
 
+            Gson gson = new GsonBuilder()
+                    .registerTypeAdapter(Boolean.class, (JsonDeserializer<Boolean>) (json, typeOfT, context1) -> {
+                        if (json == null || json.isJsonNull()) return false;
+                        if (json.isJsonPrimitive()) {
+                            JsonPrimitive p = json.getAsJsonPrimitive();
+                            if (p.isBoolean()) return p.getAsBoolean();
+                            if (p.isNumber()) return p.getAsInt() != 0;
+                            if (p.isString()) {
+                                String s = p.getAsString().trim();
+                                return "1".equals(s) || "true".equalsIgnoreCase(s);
+                            }
+                        }
+                        return false;
+                    })
+                    .registerTypeAdapter(boolean.class, (JsonDeserializer<Boolean>) (json, typeOfT, context1) -> {
+                        if (json == null || json.isJsonNull()) return false;
+                        if (json.isJsonPrimitive()) {
+                            JsonPrimitive p = json.getAsJsonPrimitive();
+                            if (p.isBoolean()) return p.getAsBoolean();
+                            if (p.isNumber()) return p.getAsInt() != 0;
+                            if (p.isString()) {
+                                String s = p.getAsString().trim();
+                                return "1".equals(s) || "true".equalsIgnoreCase(s);
+                            }
+                        }
+                        return false;
+                    })
+                    .create();
+
             this.retrofit = new Retrofit.Builder()
                     .baseUrl(currentBaseUrl)
                     .client(okHttpClient)
-                    .addConverterFactory(GsonConverterFactory.create())
+                    .addConverterFactory(GsonConverterFactory.create(gson))
                     .build();
 
             this.apiService = retrofit.create(OnlineApiService.class);

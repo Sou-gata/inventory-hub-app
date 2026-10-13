@@ -31,7 +31,7 @@ public class OnlineBuyerDto {
     @SerializedName(value = "billing_state_code", alternate = {"billingStateCode"})
     public String billingStateCode;
 
-    @SerializedName(value = "shipping_state_code", alternate = {"shipping_state_code", "shippingStateCode"})
+    @SerializedName(value = "shipping_state_code", alternate = {"shippingStateCode"})
     public String shippingStateCode;
 
     @SerializedName(value = "is_registered", alternate = {"isRegistered"})

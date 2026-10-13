@@ -4,7 +4,9 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
+
 import java.io.File;
+
 import android.text.Editable;
 import android.text.InputFilter;
 import android.text.InputType;
@@ -132,7 +134,8 @@ public class PendingReceiveActivity extends BaseActivity implements PendingRecei
     private void setupSearch() {
         editSearchPending.addTextChangedListener(new TextWatcher() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
@@ -189,6 +192,12 @@ public class PendingReceiveActivity extends BaseActivity implements PendingRecei
                             pws.purchase.billingDate = dto.purchaseDate;
                             pws.purchase.totalAmount = dto.totalAmount;
                             pws.purchase.status = dto.status;
+                            if (dto.createdBy != null) {
+                                pws.purchase.createdBy = dto.createdBy;
+                            }
+
+                            pws.createdByName = dto.createdByName;
+                            pws.createdByRole = dto.createdByRole;
 
                             pws.supplier = new Suppliers();
                             pws.supplier.supplierName = dto.supplierName != null ? dto.supplierName : "Supplier";
@@ -310,7 +319,8 @@ public class PendingReceiveActivity extends BaseActivity implements PendingRecei
             try {
                 Date date = isoDateFormat.parse(purchase.billingDate);
                 if (date != null) formattedDate = displayDateFormat.format(date);
-            } catch (ParseException ignored) {}
+            } catch (ParseException ignored) {
+            }
         }
         textDateTime.setText(String.format("Ordered on %s", formattedDate != null ? formattedDate : ""));
 
@@ -322,9 +332,20 @@ public class PendingReceiveActivity extends BaseActivity implements PendingRecei
 
         final long orderedById = purchase.createdBy;
         if (textReceiveOrderedBy != null) {
-            textReceiveOrderedBy.setText(orderedById > 0 ? ("User #" + orderedById) : "Staff");
+            if (!TextUtils.isEmpty(item.createdByName)) {
+                textReceiveOrderedBy.setText(item.createdByName);
+            } else {
+                textReceiveOrderedBy.setText(orderedById > 0 ? ("User #" + orderedById) : "Staff");
+            }
         }
-        if (orderedById > 0) {
+        if (textReceiveOrderedByRole != null) {
+            if (!TextUtils.isEmpty(item.createdByRole)) {
+                textReceiveOrderedByRole.setText(item.createdByRole.trim().toUpperCase(Locale.getDefault()));
+            } else {
+                textReceiveOrderedByRole.setText("STAFF");
+            }
+        }
+        if (orderedById > 0 && TextUtils.isEmpty(item.createdByName)) {
             UserHelper.getUserByIdAsync(this, orderedById, user -> {
                 if (user != null) {
                     if (textReceiveOrderedBy != null) {
@@ -484,7 +505,8 @@ public class PendingReceiveActivity extends BaseActivity implements PendingRecei
                             try {
                                 Date d = parseFormat.parse(record.createdAt);
                                 if (d != null) dateDisplay = dtDisplayFormat.format(d);
-                            } catch (ParseException ignored) {}
+                            } catch (ParseException ignored) {
+                            }
                         } else if (!TextUtils.isEmpty(record.receiveDate)) {
                             dateDisplay = record.receiveDate;
                         }
@@ -636,6 +658,9 @@ public class PendingReceiveActivity extends BaseActivity implements PendingRecei
                             public void onSuccess() {
                                 Toast.makeText(PendingReceiveActivity.this, "Order cancelled.", Toast.LENGTH_SHORT).show();
                                 dialog.dismiss();
+                                if (purchaseRepository != null && purchaseRepository.isOnlineMode()) {
+                                    loadPendingPurchases("");
+                                }
                             }
 
                             @Override
@@ -889,10 +914,12 @@ public class PendingReceiveActivity extends BaseActivity implements PendingRecei
 
                 editReceiveQty.addTextChangedListener(new TextWatcher() {
                     @Override
-                    public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                    public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                    }
 
                     @Override
-                    public void onTextChanged(CharSequence s, int start, int before, int count) {}
+                    public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    }
 
                     @Override
                     public void afterTextChanged(Editable s) {

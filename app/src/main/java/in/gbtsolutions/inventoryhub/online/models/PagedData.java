@@ -5,9 +5,6 @@ import com.google.gson.annotations.SerializedName;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Generic container for paginated server responses inside ApiResponse.data
- */
 public class PagedData<T> {
 
     @SerializedName(value = "items", alternate = {"products", "rows", "records", "list"})
@@ -56,10 +53,6 @@ public class PagedData<T> {
         return totalRecords;
     }
 
-    public void setTotalRecords(int totalRecords) {
-        this.totalRecords = totalRecords;
-    }
-
     public int getTotalPages() {
         if (totalPages <= 0 && limit > 0 && totalRecords > 0) {
             return (int) Math.ceil((double) totalRecords / limit);
@@ -67,18 +60,10 @@ public class PagedData<T> {
         return totalPages > 0 ? totalPages : 1;
     }
 
-    public void setTotalPages(int totalPages) {
-        this.totalPages = totalPages;
-    }
-
     public boolean hasMore() {
         if (hasMore != null) {
             return hasMore;
         }
         return page < getTotalPages();
-    }
-
-    public void setHasMore(Boolean hasMore) {
-        this.hasMore = hasMore;
     }
 }

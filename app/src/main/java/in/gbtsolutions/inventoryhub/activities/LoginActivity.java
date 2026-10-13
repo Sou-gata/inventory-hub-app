@@ -63,6 +63,7 @@ import in.gbtsolutions.inventoryhub.models.Config;
 import in.gbtsolutions.inventoryhub.models.User;
 import in.gbtsolutions.inventoryhub.online.api.OnlineApiClient;
 import in.gbtsolutions.inventoryhub.online.api.OnlineApiService;
+import in.gbtsolutions.inventoryhub.online.config.AppMode;
 import in.gbtsolutions.inventoryhub.online.config.AppModeManager;
 import in.gbtsolutions.inventoryhub.online.models.ApiResponse;
 import retrofit2.Call;
@@ -116,6 +117,9 @@ public class LoginActivity extends AppCompatActivity {
         setupMenu();
 
         serialNo = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+        if (serialNo != null && !serialNo.trim().isEmpty()) {
+            AppModeManager.getInstance(this).setDeviceId(serialNo.trim());
+        }
         String serialText = "Device ID: " + (serialNo != null ? serialNo.toUpperCase() : "");
         tvDeviceID.setText(serialText);
 
@@ -244,10 +248,11 @@ public class LoginActivity extends AppCompatActivity {
         AppModeManager modeManager = AppModeManager.getInstance(getApplicationContext());
 
         if (modeManager.isOnlineMode()) {
+            String deviceId = modeManager.getDeviceId();
             JsonObject req = new JsonObject();
             req.addProperty("username", email);
             req.addProperty("mobile", email);
-            req.addProperty("device_id", Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID));
+            req.addProperty("device_id", deviceId);
             req.addProperty("password", password);
 
             OnlineApiService apiService = OnlineApiClient.getInstance().getApiService(LoginActivity.this);
@@ -522,7 +527,7 @@ public class LoginActivity extends AppCompatActivity {
         showSyncDialog();
 
         if (serialNo == null || serialNo.isEmpty()) {
-            serialNo = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+            serialNo = AppModeManager.getInstance(this).getDeviceId();
         }
         String deviceId = serialNo != null ? serialNo.trim().toUpperCase() : "";
         String appVersion = getAppVersion();
@@ -595,6 +600,21 @@ public class LoginActivity extends AppCompatActivity {
                                         JsonObject agency = data.getAsJsonObject("agency");
                                         int agencyId = data.has("agency_id") && !data.get("agency_id").isJsonNull() ? data.get("agency_id").getAsInt() : 0;
                                         saveAgencyConfigs(db, agencyId, agency);
+                                    }
+
+                                    // Update configs table with key-value map from "configs" object
+                                    if (data.has("configs") && data.get("configs").isJsonObject()) {
+                                        JsonObject configsObj = data.getAsJsonObject("configs");
+                                        saveConfigsMap(db, sharedPreferences, configsObj);
+                                    }
+
+                                    if (data.has("mode") && !data.get("mode").isJsonNull()) {
+                                        String mVal = data.get("mode").getAsString();
+                                        saveSingleConfig(db, sharedPreferences, Configurations.KEY_MODE, mVal);
+                                    }
+                                    if (data.has("tier") && !data.get("tier").isJsonNull()) {
+                                        String tVal = data.get("tier").getAsString();
+                                        saveSingleConfig(db, sharedPreferences, Configurations.KEY_TIER, tVal);
                                     }
 
                                     // Clear any stale auto-login session
@@ -689,6 +709,9 @@ public class LoginActivity extends AppCompatActivity {
         putIfPresent(configs, Configurations.KEY_FOOTER_2, agency, "footer_2");
         putIfPresent(configs, Configurations.KEY_FOOTER_3, agency, "footer_3");
         putIfPresent(configs, Configurations.KEY_FOOTER_4, agency, "footer_4");
+        putIfPresent(configs, Configurations.KEY_UPI_ID, agency, "upi_id");
+        putIfPresent(configs, Configurations.KEY_MODE, agency, "mode");
+        putIfPresent(configs, Configurations.KEY_TIER, agency, "tier");
         if (agencyId > 0) {
             configs.put("agency_id", String.valueOf(agencyId));
         }
@@ -715,6 +738,47 @@ public class LoginActivity extends AppCompatActivity {
     private void putIfPresent(Map<String, String> map, String configKey, JsonObject json, String jsonKey) {
         if (json.has(jsonKey) && !json.get(jsonKey).isJsonNull()) {
             map.put(configKey, json.get(jsonKey).getAsString());
+        }
+    }
+
+    private void saveConfigsMap(Database db, SharedPreferences sharedPreferences, JsonObject configsObj) {
+        if (configsObj == null) return;
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        for (Map.Entry<String, JsonElement> entry : configsObj.entrySet()) {
+            String key = entry.getKey();
+            if (key == null || key.trim().isEmpty()) continue;
+            JsonElement elem = entry.getValue();
+            String val = (elem != null && !elem.isJsonNull()) ? elem.getAsString() : "";
+
+            Config existing = db.configDao().getConfigByKey(key);
+            if (existing != null) {
+                existing.setConfigValue(val);
+                db.configDao().update(existing);
+            } else {
+                db.configDao().insert(new Config(key, val));
+            }
+
+            editor.putString(key, val);
+            if (Configurations.KEY_MODE.equalsIgnoreCase(key)) {
+                editor.putString(AppModeManager.KEY_APP_MODE, AppMode.fromKey(val).getKey());
+                AppModeManager.getInstance(getApplicationContext()).setAppMode(AppMode.fromKey(val));
+            }
+        }
+        editor.apply();
+    }
+
+    private void saveSingleConfig(Database db, SharedPreferences sharedPreferences, String key, String val) {
+        if (key == null || val == null) return;
+        Config existing = db.configDao().getConfigByKey(key);
+        if (existing != null) {
+            existing.setConfigValue(val);
+            db.configDao().update(existing);
+        } else {
+            db.configDao().insert(new Config(key, val));
+        }
+        sharedPreferences.edit().putString(key, val).apply();
+        if (Configurations.KEY_MODE.equalsIgnoreCase(key)) {
+            AppModeManager.getInstance(getApplicationContext()).setAppMode(AppMode.fromKey(val));
         }
     }
 

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_dialog_rounded"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <!-- Icon Container -->
+    <FrameLayout
+        android:id="@+id/layout_icon_container"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:background="@drawable/bg_status_chip"
+        android:backgroundTint="@color/status_blue_bg">
+
+        <ImageView
+            android:id="@+id/iv_migration_icon"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_gravity="center"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_cloud"
+            app:tint="@color/material_blue" />
+    </FrameLayout>
+
+    <!-- Title -->
+    <TextView
+        android:id="@+id/tv_migration_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="center"
+        android:text="Cloud Migration"
+        android:textColor="@color/fg"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <!-- Subtitle -->
+    <TextView
+        android:id="@+id/tv_migration_subtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:fontFamily="sans-serif"
+        android:gravity="center"
+        android:text="Please keep this screen open while data is migrating to the cloud server."
+        android:textColor="@color/fg_muted"
+        android:textSize="13sp" />
+
+    <!-- Horizontal ProgressBar -->
+    <ProgressBar
+        android:id="@+id/progress_migration"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="8dp"
+        android:layout_marginTop="20dp"
+        android:indeterminate="true"
+        android:indeterminateTint="@color/material_blue"
+        android:progressTint="@color/material_blue" />
+
+    <!-- Live Status Text -->
+    <TextView
+        android:id="@+id/tv_migration_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="center"
+        android:text="Initializing migration..."
+        android:textColor="@color/fg"
+        android:textSize="14sp" />
+
+    <!-- Detail / Warning Text -->
+    <TextView
+        android:id="@+id/tv_migration_detail"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:fontFamily="sans-serif"
+        android:gravity="center"
+        android:text="Do not close the app or disconnect from the internet."
+        android:textColor="@color/fg_dim"
+        android:textSize="12sp" />
+
+    <!-- Action / Close Button (hidden while running) -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_migration_action"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:backgroundTint="@color/material_blue"
+        android:fontFamily="sans-serif-medium"
+        android:paddingVertical="12dp"
+        android:text="Close"
+        android:textColor="@color/white"
+        android:textSize="14sp"
+        android:visibility="gone"
+        app:cornerRadius="16dp" />
+
+</LinearLayout>

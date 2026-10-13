@@ -261,4 +261,10 @@ public class ProductRepository {
     public Cursor getProductExportCursor() {
         return productDao.getProductExportCursor();
     }
+
+    public void getBatchesForProduct(int productId, String status, OnlineProductRepository.BatchesCallback callback) {
+        if (appModeManager.isOnlineMode()) {
+            onlineProductRepository.getBatchesForProduct(productId, status, callback);
+        }
+    }
 }

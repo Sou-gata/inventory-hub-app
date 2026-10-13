@@ -53,6 +53,8 @@ import java.util.concurrent.Executors;
 
 import in.gbtsolutions.inventoryhub.GlobalStore;
 import in.gbtsolutions.inventoryhub.R;
+import in.gbtsolutions.inventoryhub.online.config.AppModeManager;
+import in.gbtsolutions.inventoryhub.online.repository.OnlineReportRepository;
 import in.gbtsolutions.inventoryhub.reports.gstr1.GSTR1CsvExporter;
 import in.gbtsolutions.inventoryhub.reports.gstr1.GSTR1ExcelExporter;
 import in.gbtsolutions.inventoryhub.reports.gstr1.GSTR1Models;
@@ -129,6 +131,11 @@ public class ReportsActivity extends BaseActivity {
     private int activeSubtabIndex = 1;   // 1 or 2
     private GSTR1Models.ReportData currentReportData = null;
 
+    // Online integration
+    private AppModeManager appModeManager;
+    private OnlineReportRepository onlineReportRepository;
+    private AppModeManager.OnModeChangeListener modeChangeListener;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -149,6 +156,13 @@ public class ReportsActivity extends BaseActivity {
 
         initViews();
         initListeners();
+
+        appModeManager = AppModeManager.getInstance(this);
+        onlineReportRepository = new OnlineReportRepository(this);
+        modeChangeListener = newMode -> {
+            loadReport();
+        };
+        appModeManager.addOnModeChangeListener(modeChangeListener);
         setDefaultDateRangeThisMonth();
         loadReport();
     }
@@ -332,19 +346,47 @@ public class ReportsActivity extends BaseActivity {
 
     private void loadReport() {
         btnGenerate.setEnabled(false);
-        btnGenerate.setText("Calculating...");
 
-        Executors.newSingleThreadExecutor().execute(() -> {
-            GSTR1Models.ReportData report = GSTR1ReportCalculator.generateReport(ReportsActivity.this, selectedStartDate, selectedEndDate, 100000.0 // B2C Large Threshold
-            );
+        if (appModeManager != null && appModeManager.isOnlineMode()) {
+            btnGenerate.setText("Fetching...");
+            onlineReportRepository.fetchGstr1Report(selectedStartDate, selectedEndDate, 100000.0, new OnlineReportRepository.ReportCallback() {
+                @Override
+                public void onSuccess(GSTR1Models.ReportData report) {
+                    if (isFinishing() || isDestroyed()) return;
+                    btnGenerate.setEnabled(true);
+                    btnGenerate.setText("Generate");
+                    currentReportData = report;
+                    renderReport();
+                }
 
-            new Handler(Looper.getMainLooper()).post(() -> {
-                btnGenerate.setEnabled(true);
-                btnGenerate.setText("Generate");
-                currentReportData = report;
-                renderReport();
+                @Override
+                public void onError(String errorMessage, boolean sessionExpired) {
+                    if (isFinishing() || isDestroyed()) return;
+                    btnGenerate.setEnabled(true);
+                    btnGenerate.setText("Generate");
+                    if (sessionExpired) {
+                        Toast.makeText(ReportsActivity.this, "Session expired. Please log in again.", Toast.LENGTH_LONG).show();
+                        appModeManager.clearAuthToken();
+                        navigateTo(LoginActivity.class, true);
+                    } else {
+                        Toast.makeText(ReportsActivity.this, "GSTR-1 sync error: " + errorMessage, Toast.LENGTH_SHORT).show();
+                    }
+                }
             });
-        });
+        } else {
+            btnGenerate.setText("Calculating...");
+            Executors.newSingleThreadExecutor().execute(() -> {
+                GSTR1Models.ReportData report = GSTR1ReportCalculator.generateReport(ReportsActivity.this, selectedStartDate, selectedEndDate, 100000.0 // B2C Large Threshold
+                );
+
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    btnGenerate.setEnabled(true);
+                    btnGenerate.setText("Generate");
+                    currentReportData = report;
+                    renderReport();
+                });
+            });
+        }
     }
 
     private void renderReport() {
@@ -724,6 +766,31 @@ public class ReportsActivity extends BaseActivity {
 
     private void exportPdf() {
         Toast.makeText(this, "Generating PDF...", Toast.LENGTH_SHORT).show();
+        if (appModeManager != null && appModeManager.isOnlineMode()) {
+            onlineReportRepository.downloadGstr1Report("pdf", selectedStartDate, selectedEndDate, 100000.0, new OnlineReportRepository.DownloadCallback() {
+                @Override
+                public void onSuccess(File downloadedFile, String mimeType) {
+                    showExportSuccess(downloadedFile, mimeType);
+                }
+
+                @Override
+                public void onError(String errorMessage, boolean sessionExpired) {
+                    if (sessionExpired) {
+                        Toast.makeText(ReportsActivity.this, "Session expired. Please log in again.", Toast.LENGTH_LONG).show();
+                        appModeManager.clearAuthToken();
+                        navigateTo(LoginActivity.class, true);
+                        return;
+                    }
+                    Toast.makeText(ReportsActivity.this, "Online download failed: " + errorMessage + ". Generating locally...", Toast.LENGTH_SHORT).show();
+                    exportPdfLocally();
+                }
+            });
+        } else {
+            exportPdfLocally();
+        }
+    }
+
+    private void exportPdfLocally() {
         Executors.newSingleThreadExecutor().execute(() -> {
             try {
                 File file = GSTR1PdfExporter.exportToPdf(ReportsActivity.this, currentReportData);
@@ -736,6 +803,31 @@ public class ReportsActivity extends BaseActivity {
 
     private void exportExcel() {
         Toast.makeText(this, "Generating Excel...", Toast.LENGTH_SHORT).show();
+        if (appModeManager != null && appModeManager.isOnlineMode()) {
+            onlineReportRepository.downloadGstr1Report("excel", selectedStartDate, selectedEndDate, 100000.0, new OnlineReportRepository.DownloadCallback() {
+                @Override
+                public void onSuccess(File downloadedFile, String mimeType) {
+                    showExportSuccess(downloadedFile, mimeType);
+                }
+
+                @Override
+                public void onError(String errorMessage, boolean sessionExpired) {
+                    if (sessionExpired) {
+                        Toast.makeText(ReportsActivity.this, "Session expired. Please log in again.", Toast.LENGTH_LONG).show();
+                        appModeManager.clearAuthToken();
+                        navigateTo(LoginActivity.class, true);
+                        return;
+                    }
+                    Toast.makeText(ReportsActivity.this, "Online download failed: " + errorMessage + ". Generating locally...", Toast.LENGTH_SHORT).show();
+                    exportExcelLocally();
+                }
+            });
+        } else {
+            exportExcelLocally();
+        }
+    }
+
+    private void exportExcelLocally() {
         Executors.newSingleThreadExecutor().execute(() -> {
             try {
                 File file = GSTR1ExcelExporter.exportToExcel(ReportsActivity.this, currentReportData);
@@ -748,6 +840,31 @@ public class ReportsActivity extends BaseActivity {
 
     private void exportCsv() {
         Toast.makeText(this, "Generating CSV...", Toast.LENGTH_SHORT).show();
+        if (appModeManager != null && appModeManager.isOnlineMode()) {
+            onlineReportRepository.downloadGstr1Report("csv", selectedStartDate, selectedEndDate, 100000.0, new OnlineReportRepository.DownloadCallback() {
+                @Override
+                public void onSuccess(File downloadedFile, String mimeType) {
+                    showExportSuccess(downloadedFile, mimeType);
+                }
+
+                @Override
+                public void onError(String errorMessage, boolean sessionExpired) {
+                    if (sessionExpired) {
+                        Toast.makeText(ReportsActivity.this, "Session expired. Please log in again.", Toast.LENGTH_LONG).show();
+                        appModeManager.clearAuthToken();
+                        navigateTo(LoginActivity.class, true);
+                        return;
+                    }
+                    Toast.makeText(ReportsActivity.this, "Online download failed: " + errorMessage + ". Generating locally...", Toast.LENGTH_SHORT).show();
+                    exportCsvLocally();
+                }
+            });
+        } else {
+            exportCsvLocally();
+        }
+    }
+
+    private void exportCsvLocally() {
         Executors.newSingleThreadExecutor().execute(() -> {
             try {
                 File file = GSTR1CsvExporter.exportToCsv(ReportsActivity.this, currentReportData);
@@ -925,6 +1042,17 @@ public class ReportsActivity extends BaseActivity {
         GlobalStore.getInstance().loadSettings(this);
         if (navView != null) {
             navView.setCheckedItem(R.id.nav_reports_gstr1);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (appModeManager != null && modeChangeListener != null) {
+            appModeManager.removeOnModeChangeListener(modeChangeListener);
+        }
+        if (onlineReportRepository != null) {
+            onlineReportRepository.cancel();
         }
     }
 }

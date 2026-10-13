@@ -43,10 +43,17 @@ public class SellCartManager {
         return cartItems.get(buildKey(productId, batchId));
     }
 
-    public void addProduct(@NonNull Product product) {
+    public boolean addProduct(@NonNull Product product) {
+        if (product.quantity <= 0) {
+            return false;
+        }
         String key = buildKey(product.productId, null);
         CartItem existing = cartItems.get(key);
         if (existing != null) {
+            boolean allowOutOfStock = GlobalStore.getInstance().isAllowOutOfStockSell();
+            if (!allowOutOfStock && existing.quantity + 1 > product.quantity) {
+                return false;
+            }
             existing.quantity += 1;
             if (product.sellingPrice > 0) {
                 existing.sellingPrice = product.sellingPrice;
@@ -55,18 +62,24 @@ public class SellCartManager {
             cartItems.put(key, new CartItem(product));
         }
         notifyListeners();
+        return true;
     }
 
-    public void addBatchItem(@Nullable Product product, @Nullable ProductBatch batch, double quantity) {
-        if (product == null) {
-            return;
+    public boolean addBatchItem(@Nullable Product product, @Nullable ProductBatch batch, double quantity) {
+        if (product == null || quantity <= 0) {
+            return false;
+        }
+        if (product.quantity <= 0 && (batch == null || batch.quantity <= 0)) {
+            return false;
         }
         if (batch == null) {
-            addProduct(product);
-            return;
+            return addProduct(product);
+        }
+        if (batch.quantity <= 0) {
+            return false;
         }
         String key = buildKey(product.productId, batch.batchId);
-        double price = product.sellingPrice > 0 ? product.sellingPrice : (batch.sellingPrice > 0 ? batch.sellingPrice : product.sellingPrice);
+        double price = batch.sellingPrice > 0 ? batch.sellingPrice : (product.sellingPrice > 0 ? product.sellingPrice : 0);
         CartItem existing = cartItems.get(key);
         if (existing != null) {
             boolean allowOutOfStock = GlobalStore.getInstance().isAllowOutOfStockSell();
@@ -81,10 +94,11 @@ public class SellCartManager {
             cartItems.put(key, newItem);
         }
         notifyListeners();
+        return true;
     }
 
-    public void addBatchItem(@Nullable Product product, @Nullable ProductBatch batch, int quantity) {
-        addBatchItem(product, batch, (double) quantity);
+    public boolean addBatchItem(@Nullable Product product, @Nullable ProductBatch batch, int quantity) {
+        return addBatchItem(product, batch, (double) quantity);
     }
 
     public void removeProduct(int productId) {
@@ -113,11 +127,15 @@ public class SellCartManager {
         }
     }
 
-    public void toggleProduct(@NonNull Product product) {
+    public boolean toggleProduct(@NonNull Product product) {
         if (isInCart(product.productId)) {
             removeProduct(product.productId);
+            return false;
         } else {
-            addProduct(product);
+            if (product.quantity <= 0) {
+                return false;
+            }
+            return addProduct(product);
         }
     }
 

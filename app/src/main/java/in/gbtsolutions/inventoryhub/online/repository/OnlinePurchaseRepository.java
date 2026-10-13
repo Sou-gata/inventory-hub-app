@@ -10,12 +10,14 @@ import java.util.List;
 
 import in.gbtsolutions.inventoryhub.models.Purchase;
 import in.gbtsolutions.inventoryhub.models.PurchaseItem;
+import in.gbtsolutions.inventoryhub.models.PurchaseWithSupplier;
 import in.gbtsolutions.inventoryhub.online.api.OnlineApiClient;
 import in.gbtsolutions.inventoryhub.online.api.OnlineApiService;
 import in.gbtsolutions.inventoryhub.online.models.ApiResponse;
 import in.gbtsolutions.inventoryhub.online.models.OnlinePendingReceiveDto;
 import in.gbtsolutions.inventoryhub.online.models.OnlinePurchaseDto;
 import in.gbtsolutions.inventoryhub.online.models.OnlineReceiveItemsRequest;
+import in.gbtsolutions.inventoryhub.online.models.PurchaseMapper;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -24,16 +26,25 @@ public class OnlinePurchaseRepository {
 
     public interface PurchaseCreateCallback {
         void onSuccess(int purchaseId);
+
+        void onError(String errorMessage);
+    }
+
+    public interface PurchaseListCallback {
+        void onSuccess(List<PurchaseWithSupplier> purchases);
+
         void onError(String errorMessage);
     }
 
     public interface PendingReceivesCallback {
         void onSuccess(List<OnlinePendingReceiveDto> pendingList);
+
         void onError(String errorMessage);
     }
 
     public interface ReceiveActionCallback {
         void onSuccess();
+
         void onError(String errorMessage);
     }
 
@@ -84,7 +95,8 @@ public class OnlinePurchaseRepository {
                     } else {
                         String msg = body.getMessage();
                         mainHandler.post(() -> {
-                            if (callback != null) callback.onError(!msg.isEmpty() ? msg : "Failed to record purchase on server");
+                            if (callback != null)
+                                callback.onError(!msg.isEmpty() ? msg : "Failed to record purchase on server");
                         });
                         return;
                     }
@@ -95,7 +107,43 @@ public class OnlinePurchaseRepository {
             @Override
             public void onFailure(Call<ApiResponse<OnlinePurchaseDto>> call, Throwable t) {
                 mainHandler.post(() -> {
-                    if (callback != null) callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
+                    if (callback != null)
+                        callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
+                });
+            }
+        });
+    }
+
+    public void fetchPurchases(String startDate, String endDate, String search, PurchaseListCallback callback) {
+        getApi().getPurchases(search, startDate, endDate).enqueue(new Callback<ApiResponse<List<OnlinePurchaseDto>>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<List<OnlinePurchaseDto>>> call,
+                                   Response<ApiResponse<List<OnlinePurchaseDto>>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    ApiResponse<List<OnlinePurchaseDto>> body = response.body();
+                    if (body.isSuccess() && body.getData() != null) {
+                        List<PurchaseWithSupplier> domainPurchases = PurchaseMapper.toDomainList(body.getData());
+                        mainHandler.post(() -> {
+                            if (callback != null) callback.onSuccess(domainPurchases);
+                        });
+                        return;
+                    } else {
+                        String msg = body.getMessage();
+                        mainHandler.post(() -> {
+                            if (callback != null)
+                                callback.onError(!msg.isEmpty() ? msg : "Failed to load purchases");
+                        });
+                        return;
+                    }
+                }
+                handleError(response, callback != null ? callback::onError : null, "Failed to load purchases from server");
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<List<OnlinePurchaseDto>>> call, Throwable t) {
+                mainHandler.post(() -> {
+                    if (callback != null)
+                        callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
                 });
             }
         });
@@ -116,7 +164,8 @@ public class OnlinePurchaseRepository {
                     } else {
                         String msg = body.getMessage();
                         mainHandler.post(() -> {
-                            if (callback != null) callback.onError(!msg.isEmpty() ? msg : "Failed to load pending receives");
+                            if (callback != null)
+                                callback.onError(!msg.isEmpty() ? msg : "Failed to load pending receives");
                         });
                         return;
                     }
@@ -127,7 +176,8 @@ public class OnlinePurchaseRepository {
             @Override
             public void onFailure(Call<ApiResponse<List<OnlinePendingReceiveDto>>> call, Throwable t) {
                 mainHandler.post(() -> {
-                    if (callback != null) callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
+                    if (callback != null)
+                        callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
                 });
             }
         });
@@ -156,7 +206,31 @@ public class OnlinePurchaseRepository {
             @Override
             public void onFailure(Call<ApiResponse<Object>> call, Throwable t) {
                 mainHandler.post(() -> {
-                    if (callback != null) callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
+                    if (callback != null)
+                        callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
+                });
+            }
+        });
+    }
+
+    public void cancelPurchase(int purchaseId, ReceiveActionCallback callback) {
+        getApi().cancelPurchase(purchaseId).enqueue(new Callback<ApiResponse<Object>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<Object>> call, Response<ApiResponse<Object>> response) {
+                if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
+                    mainHandler.post(() -> {
+                        if (callback != null) callback.onSuccess();
+                    });
+                } else {
+                    handleError(response, callback != null ? callback::onError : null, "Failed to cancel purchase");
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<Object>> call, Throwable t) {
+                mainHandler.post(() -> {
+                    if (callback != null)
+                        callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
                 });
             }
         });
@@ -171,7 +245,8 @@ public class OnlinePurchaseRepository {
                     msg = err.getMessage();
                 }
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         final String finalMsg = msg;
         if (callback != null) {
             mainHandler.post(() -> callback.onError(finalMsg));

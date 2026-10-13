@@ -131,15 +131,22 @@ public class SelectProductsFragment extends Fragment {
         recyclerView.addOnScrollListener(endlessScrollListener);
 
         adapter.setOnAddToCartClickListener(product -> {
+            boolean wasInCart = SellCartManager.getInstance().isInCart(product.productId);
+            if (product.quantity <= 0 && !wasInCart) {
+                if (getContext() != null) {
+                    Toast.makeText(getContext(), "Product is out of stock", Toast.LENGTH_SHORT).show();
+                }
+                return;
+            }
+
             boolean batchMode = product.batchEnabled;
             if (batchMode) {
                 BatchSelectDialog dialog = BatchSelectDialog.newInstance(product);
                 dialog.setOnBatchesSelectedListener((prod, selections) -> {
-                    boolean wasInCart = SellCartManager.getInstance().isInCart(prod.productId);
                     SellCartManager.getInstance().removeProduct(prod.productId);
                     if (selections != null) {
                         for (BatchSelectDialog.BatchSelection sel : selections) {
-                            if (sel != null && sel.batch != null) {
+                            if (sel != null && sel.batch != null && sel.quantity > 0 && sel.batch.quantity > 0) {
                                 SellCartManager.getInstance().addBatchItem(prod, sel.batch, sel.quantity);
                             }
                         }
@@ -149,7 +156,7 @@ public class SelectProductsFragment extends Fragment {
                         String name = (prod.productName != null && !prod.productName.trim().isEmpty())
                                 ? prod.productName.trim()
                                 : "Product";
-                        if (!selections.isEmpty()) {
+                        if (selections != null && !selections.isEmpty()) {
                             Toast.makeText(getContext(), name + " added to cart", Toast.LENGTH_SHORT).show();
                         } else if (wasInCart) {
                             Toast.makeText(getContext(), name + " removed from cart", Toast.LENGTH_SHORT).show();
@@ -158,17 +165,27 @@ public class SelectProductsFragment extends Fragment {
                 });
                 dialog.show(getParentFragmentManager(), "BatchSelectDialog");
             } else {
-                boolean wasInCart = SellCartManager.getInstance().isInCart(product.productId);
-                SellCartManager.getInstance().toggleProduct(product);
-                if (adapter != null) adapter.notifyDataSetChanged();
-                if (getContext() != null) {
-                    String name = (product.productName != null && !product.productName.trim().isEmpty())
-                            ? product.productName.trim()
-                            : "Product";
-                    if (wasInCart) {
+                if (wasInCart) {
+                    SellCartManager.getInstance().removeProduct(product.productId);
+                    if (adapter != null) adapter.notifyDataSetChanged();
+                    if (getContext() != null) {
+                        String name = (product.productName != null && !product.productName.trim().isEmpty())
+                                ? product.productName.trim()
+                                : "Product";
                         Toast.makeText(getContext(), name + " removed from cart", Toast.LENGTH_SHORT).show();
-                    } else {
-                        Toast.makeText(getContext(), name + " added to cart", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    boolean added = SellCartManager.getInstance().addProduct(product);
+                    if (adapter != null) adapter.notifyDataSetChanged();
+                    if (getContext() != null) {
+                        String name = (product.productName != null && !product.productName.trim().isEmpty())
+                                ? product.productName.trim()
+                                : "Product";
+                        if (added) {
+                            Toast.makeText(getContext(), name + " added to cart", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(getContext(), "Product is out of stock", Toast.LENGTH_SHORT).show();
+                        }
                     }
                 }
             }

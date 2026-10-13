@@ -129,18 +129,20 @@
 
     <!-- About Module Strings -->
     <string name="about">About</string>
-    <string name="about_app_subtitle">Enterprise Inventory, POS &amp; Warehouse Suite</string>
-    <string name="about_app_desc">Inventory Hub is an enterprise-grade, offline-first inventory, point-of-sale, and supply chain management suite. Engineered for high-speed retail and warehouse operations with instant barcode/QR scanning, lot &amp; expiry tracking, goods intake, and comprehensive business intelligence.</string>
-    <string name="about_badge_offline">100% Offline</string>
-    <string name="about_badge_encrypted">AES-256 Secured</string>
-    <string name="about_badge_realtime">Cloud Connected</string>
+    <string name="about_app_subtitle">Smart Inventory, POS &amp; Cloud Suite</string>
+    <string name="about_app_desc">Inventory Hub is a modern business inventory, point-of-sale, and supply chain management suite. Engineered with seamless dual-mode capability (Offline &amp; Cloud Sync), fast barcode and handheld scanner support, batch and expiry tracking, goods intake verification, GST tax reporting (GSTR-1, Sales &amp; Purchase Registers), role permissions, and complete audit activity logs.</string>
+    <string name="about_badge_offline">Offline Ready</string>
+    <string name="about_badge_encrypted">Secure &amp; Encrypted</string>
+    <string name="about_badge_realtime">Cloud Sync</string>
+    <string name="about_badge_gst">GSTR-1 Ready</string>
+    <string name="about_badge_pda">Barcode &amp; Laser</string>
     <string name="about_section_highlights">CURRENT VERSION</string>
-    <string name="about_section_features">CORE CAPABILITIES</string>
-    <string name="about_section_specs">SYSTEM &amp; SPECIFICATIONS</string>
+    <string name="about_section_features">CORE CAPABILITIES &amp; MODULES</string>
+    <string name="about_section_cloud">CLOUD SYNCHRONIZATION &amp; MODE</string>
     <string name="about_section_company">DEVELOPER &amp; SUPPORT</string>
     <string name="about_section_legal">LEGAL &amp; COMPLIANCE</string>
     <string name="about_whats_new">What\'s New in v1.0.1</string>
-    <string name="about_whats_new_desc">View recent updates, feature additions &amp; improvements</string>
+    <string name="about_whats_new_desc">Cloud sync, GSTR-1 reports, receiving workflow &amp; audit trail</string>
     <string name="about_share_app">Share Inventory Hub</string>
     <string name="about_share_app_desc">Recommend this application to team members</string>
     <string name="about_contact_support">Contact Support</string>
@@ -150,7 +152,7 @@
     <string name="about_privacy_policy">Privacy Policy</string>
     <string name="about_terms">Terms of Service</string>
     <string name="about_open_source_licenses">Open Source Licenses</string>
-    <string name="about_copyright">© 2026 GBT Solutions. All rights reserved.</string>
+    <string name="about_copyright">© 2026 GBT Solutions. Engineered for Modern Business.</string>
 
     <!-- Backup and Restore Strings -->
     <string name="backup_restore">Backup &amp; Restore</string>

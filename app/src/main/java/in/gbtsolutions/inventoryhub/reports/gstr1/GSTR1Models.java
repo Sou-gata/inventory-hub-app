@@ -5,6 +5,8 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.google.gson.annotations.SerializedName;
+
 public class GSTR1Models {
 
     public static BigDecimal roundMoney(BigDecimal val) {
@@ -136,11 +138,27 @@ public class GSTR1Models {
 
     // Validation Issue
     public static class ValidationIssue {
-        public enum Severity { ERROR, WARNING }
-        public final Severity severity;
-        public final String invoiceOrRef;
-        public final String title;
-        public final String description;
+        public enum Severity {
+            @SerializedName("ERROR")
+            ERROR,
+            @SerializedName("WARNING")
+            WARNING
+        }
+        @SerializedName("severity")
+        public Severity severity;
+        @SerializedName("invoiceOrRef")
+        public String invoiceOrRef;
+        @SerializedName("title")
+        public String title;
+        @SerializedName("description")
+        public String description;
+
+        public ValidationIssue() {
+            this.severity = Severity.WARNING;
+            this.invoiceOrRef = "";
+            this.title = "";
+            this.description = "";
+        }
 
         public ValidationIssue(Severity severity, String invoiceOrRef, String title, String description) {
             this.severity = severity;
@@ -180,20 +198,159 @@ public class GSTR1Models {
         public List<ValidationIssue> validationIssues = new ArrayList<>();
         public ReconciliationResult reconciliation = new ReconciliationResult();
 
+        @SerializedName("errorCount")
+        public int errorCount = -1;
+
+        @SerializedName("warningCount")
+        public int warningCount = -1;
+
         public int getErrorCount() {
+            if (errorCount >= 0) return errorCount;
             int count = 0;
-            for (ValidationIssue issue : validationIssues) {
-                if (issue.severity == ValidationIssue.Severity.ERROR) count++;
+            if (validationIssues != null) {
+                for (ValidationIssue issue : validationIssues) {
+                    if (issue != null && issue.severity == ValidationIssue.Severity.ERROR) count++;
+                }
             }
             return count;
         }
 
         public int getWarningCount() {
+            if (warningCount >= 0) return warningCount;
             int count = 0;
-            for (ValidationIssue issue : validationIssues) {
-                if (issue.severity == ValidationIssue.Severity.WARNING) count++;
+            if (validationIssues != null) {
+                for (ValidationIssue issue : validationIssues) {
+                    if (issue != null && issue.severity == ValidationIssue.Severity.WARNING) count++;
+                }
             }
             return count;
+        }
+
+        public void ensureNonNull() {
+            if (kpi == null) kpi = new KPISummary();
+            if (kpi.totalSales == null) kpi.totalSales = BigDecimal.ZERO;
+            if (kpi.taxableValue == null) kpi.taxableValue = BigDecimal.ZERO;
+            if (kpi.cgst == null) kpi.cgst = BigDecimal.ZERO;
+            if (kpi.sgst == null) kpi.sgst = BigDecimal.ZERO;
+            if (kpi.igst == null) kpi.igst = BigDecimal.ZERO;
+            if (kpi.cess == null) kpi.cess = BigDecimal.ZERO;
+            if (kpi.totalGst == null) kpi.totalGst = BigDecimal.ZERO;
+
+            if (b2bList == null) b2bList = new ArrayList<>();
+            for (B2BRow row : b2bList) {
+                if (row == null) continue;
+                if (row.taxableValue == null) row.taxableValue = BigDecimal.ZERO;
+                if (row.cgst == null) row.cgst = BigDecimal.ZERO;
+                if (row.sgst == null) row.sgst = BigDecimal.ZERO;
+                if (row.igst == null) row.igst = BigDecimal.ZERO;
+                if (row.cess == null) row.cess = BigDecimal.ZERO;
+                if (row.totalTax == null) row.totalTax = BigDecimal.ZERO;
+                if (row.invoiceValue == null) row.invoiceValue = BigDecimal.ZERO;
+            }
+
+            if (b2cLargeList == null) b2cLargeList = new ArrayList<>();
+            for (B2CRow row : b2cLargeList) {
+                if (row == null) continue;
+                if (row.taxableValue == null) row.taxableValue = BigDecimal.ZERO;
+                if (row.cgst == null) row.cgst = BigDecimal.ZERO;
+                if (row.sgst == null) row.sgst = BigDecimal.ZERO;
+                if (row.igst == null) row.igst = BigDecimal.ZERO;
+                if (row.cess == null) row.cess = BigDecimal.ZERO;
+                if (row.totalTax == null) row.totalTax = BigDecimal.ZERO;
+                if (row.invoiceValue == null) row.invoiceValue = BigDecimal.ZERO;
+            }
+
+            if (b2cOthersList == null) b2cOthersList = new ArrayList<>();
+            for (B2CRow row : b2cOthersList) {
+                if (row == null) continue;
+                if (row.taxableValue == null) row.taxableValue = BigDecimal.ZERO;
+                if (row.cgst == null) row.cgst = BigDecimal.ZERO;
+                if (row.sgst == null) row.sgst = BigDecimal.ZERO;
+                if (row.igst == null) row.igst = BigDecimal.ZERO;
+                if (row.cess == null) row.cess = BigDecimal.ZERO;
+                if (row.totalTax == null) row.totalTax = BigDecimal.ZERO;
+                if (row.invoiceValue == null) row.invoiceValue = BigDecimal.ZERO;
+            }
+
+            if (exportList == null) exportList = new ArrayList<>();
+            for (ExportRow row : exportList) {
+                if (row == null) continue;
+                if (row.taxableValue == null) row.taxableValue = BigDecimal.ZERO;
+                if (row.invoiceValue == null) row.invoiceValue = BigDecimal.ZERO;
+                if (row.igst == null) row.igst = BigDecimal.ZERO;
+                if (row.cgst == null) row.cgst = BigDecimal.ZERO;
+                if (row.sgst == null) row.sgst = BigDecimal.ZERO;
+                if (row.cess == null) row.cess = BigDecimal.ZERO;
+            }
+
+            if (creditNotesList == null) creditNotesList = new ArrayList<>();
+            for (CreditDebitNoteRow row : creditNotesList) {
+                if (row == null) continue;
+                if (row.taxableValue == null) row.taxableValue = BigDecimal.ZERO;
+                if (row.cgst == null) row.cgst = BigDecimal.ZERO;
+                if (row.sgst == null) row.sgst = BigDecimal.ZERO;
+                if (row.igst == null) row.igst = BigDecimal.ZERO;
+                if (row.cess == null) row.cess = BigDecimal.ZERO;
+                if (row.totalTax == null) row.totalTax = BigDecimal.ZERO;
+                if (row.totalValue == null) row.totalValue = BigDecimal.ZERO;
+            }
+
+            if (debitNotesList == null) debitNotesList = new ArrayList<>();
+            for (CreditDebitNoteRow row : debitNotesList) {
+                if (row == null) continue;
+                if (row.taxableValue == null) row.taxableValue = BigDecimal.ZERO;
+                if (row.cgst == null) row.cgst = BigDecimal.ZERO;
+                if (row.sgst == null) row.sgst = BigDecimal.ZERO;
+                if (row.igst == null) row.igst = BigDecimal.ZERO;
+                if (row.cess == null) row.cess = BigDecimal.ZERO;
+                if (row.totalTax == null) row.totalTax = BigDecimal.ZERO;
+                if (row.totalValue == null) row.totalValue = BigDecimal.ZERO;
+            }
+
+            if (nilExemptList == null) nilExemptList = new ArrayList<>();
+            for (NilExemptRow row : nilExemptList) {
+                if (row == null) continue;
+                if (row.reportedValue == null) row.reportedValue = BigDecimal.ZERO;
+            }
+
+            if (hsnB2bList == null) hsnB2bList = new ArrayList<>();
+            for (HsnRow row : hsnB2bList) {
+                if (row == null) continue;
+                if (row.taxableValue == null) row.taxableValue = BigDecimal.ZERO;
+                if (row.cgst == null) row.cgst = BigDecimal.ZERO;
+                if (row.sgst == null) row.sgst = BigDecimal.ZERO;
+                if (row.igst == null) row.igst = BigDecimal.ZERO;
+                if (row.cess == null) row.cess = BigDecimal.ZERO;
+                if (row.totalTax == null) row.totalTax = BigDecimal.ZERO;
+                if (row.totalValue == null) row.totalValue = BigDecimal.ZERO;
+            }
+
+            if (hsnB2cList == null) hsnB2cList = new ArrayList<>();
+            for (HsnRow row : hsnB2cList) {
+                if (row == null) continue;
+                if (row.taxableValue == null) row.taxableValue = BigDecimal.ZERO;
+                if (row.cgst == null) row.cgst = BigDecimal.ZERO;
+                if (row.sgst == null) row.sgst = BigDecimal.ZERO;
+                if (row.igst == null) row.igst = BigDecimal.ZERO;
+                if (row.cess == null) row.cess = BigDecimal.ZERO;
+                if (row.totalTax == null) row.totalTax = BigDecimal.ZERO;
+                if (row.totalValue == null) row.totalValue = BigDecimal.ZERO;
+            }
+
+            if (taxDocSummary == null) taxDocSummary = new TaxAndDocSummary();
+            if (taxDocSummary.grossInvoiceValue == null) taxDocSummary.grossInvoiceValue = BigDecimal.ZERO;
+            if (taxDocSummary.taxableValue == null) taxDocSummary.taxableValue = BigDecimal.ZERO;
+            if (taxDocSummary.cgst == null) taxDocSummary.cgst = BigDecimal.ZERO;
+            if (taxDocSummary.sgst == null) taxDocSummary.sgst = BigDecimal.ZERO;
+            if (taxDocSummary.igst == null) taxDocSummary.igst = BigDecimal.ZERO;
+            if (taxDocSummary.cess == null) taxDocSummary.cess = BigDecimal.ZERO;
+            if (taxDocSummary.totalGst == null) taxDocSummary.totalGst = BigDecimal.ZERO;
+
+            if (validationIssues == null) validationIssues = new ArrayList<>();
+            if (reconciliation == null) reconciliation = new ReconciliationResult();
+            if (reconciliation.expectedTaxable == null) reconciliation.expectedTaxable = BigDecimal.ZERO;
+            if (reconciliation.hsnTaxable == null) reconciliation.hsnTaxable = BigDecimal.ZERO;
+            if (reconciliation.difference == null) reconciliation.difference = BigDecimal.ZERO;
         }
     }
 }

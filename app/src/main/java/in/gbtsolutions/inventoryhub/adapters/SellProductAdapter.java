@@ -227,10 +227,16 @@ public class SellProductAdapter extends RecyclerView.Adapter<SellProductAdapter.
                 btnToggleCart.setBackgroundResource(R.drawable.bg_cart_button_added);
                 imageCartIcon.setImageResource(R.drawable.ic_cart_check);
                 imageCartIcon.setContentDescription(itemView.getContext().getString(R.string.btn_remove_from_cart));
+                btnToggleCart.setAlpha(1.0f);
             } else {
                 btnToggleCart.setBackgroundResource(R.drawable.bg_cart_button);
                 imageCartIcon.setImageResource(R.drawable.ic_cart_add);
                 imageCartIcon.setContentDescription(itemView.getContext().getString(R.string.btn_add_to_cart));
+                if (qty <= 0) {
+                    btnToggleCart.setAlpha(0.4f);
+                } else {
+                    btnToggleCart.setAlpha(1.0f);
+                }
             }
 
             btnToggleCart.setOnClickListener(v -> {

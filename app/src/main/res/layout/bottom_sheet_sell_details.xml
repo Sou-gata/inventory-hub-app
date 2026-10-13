@@ -620,13 +620,14 @@
             android:layout_height="48dp"
             android:layout_marginTop="20dp"
             android:background="@drawable/bg_button_danger"
-            android:fontFamily="sans-serif-black"
+            android:fontFamily="sans-serif"
             android:text="Cancel Bill"
             android:textAllCaps="false"
             android:textColor="@color/status_red"
-            android:textSize="14sp" />
+            android:textSize="14sp"
+            app:backgroundTint="@null" />
 
-        <!-- Re-issue Bill Action (Visible when bill IS cancelled) -->
+        <!-- Re-issue Bill Action (Visible when bill IS canceled) -->
         <Button
             android:id="@+id/btn_reissue_sell_bill"
             android:layout_width="match_parent"
@@ -655,11 +656,12 @@
                 android:layout_marginEnd="4dp"
                 android:layout_weight="1"
                 android:background="@drawable/bg_button_secondary"
-                android:fontFamily="sans-serif-bold"
+                android:fontFamily="sans-serif"
                 android:text="Done"
                 android:textAllCaps="false"
-                android:textColor="@color/fg"
-                android:textSize="14sp" />
+                android:textColor="@color/white"
+                android:textSize="14sp"
+                android:textStyle="bold" />
 
             <Button
                 android:id="@+id/btn_print_sell_bill"

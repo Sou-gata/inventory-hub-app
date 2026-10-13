@@ -24,6 +24,15 @@ public class OnlinePendingReceiveDto {
     @SerializedName(value = "totalAmount", alternate = {"total_amount"})
     public double totalAmount;
 
+    @SerializedName(value = "createdByName", alternate = {"created_by_name", "creator_name", "userName", "user_name"})
+    public String createdByName;
+
+    @SerializedName(value = "createdByRole", alternate = {"created_by_role", "creator_role", "userRole", "user_role"})
+    public String createdByRole;
+
+    @SerializedName(value = "createdBy", alternate = {"created_by", "userId", "user_id"})
+    public Long createdBy;
+
     @SerializedName("items")
     public List<PendingItemDto> items = new ArrayList<>();
 

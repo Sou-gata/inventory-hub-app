@@ -104,9 +104,10 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="6dp"
-                    android:fontFamily="sans-serif-bold"
+                    android:fontFamily="sans-serif"
                     android:textColor="@color/status_orange"
                     android:textSize="12sp"
+                    android:textStyle="bold"
                     tools:text="Pending" />
             </LinearLayout>
 
@@ -155,10 +156,11 @@
                 android:layout_marginStart="4dp"
                 android:layout_weight="1"
                 android:ellipsize="end"
-                android:fontFamily="sans-serif-bold"
+                android:fontFamily="sans-serif"
                 android:maxLines="1"
                 android:textColor="@color/fg"
                 android:textSize="12sp"
+                android:textStyle="bold"
                 tools:text="Sougata (@sougata)" />
 
             <TextView
@@ -167,11 +169,12 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="6dp"
                 android:background="@drawable/bg_glass_pill"
-                android:fontFamily="sans-serif-bold"
+                android:fontFamily="sans-serif"
                 android:paddingHorizontal="6dp"
                 android:paddingVertical="1dp"
                 android:textColor="@color/accent_teal"
                 android:textSize="10sp"
+                android:textStyle="bold"
                 tools:text="ADMIN" />
         </LinearLayout>
 
@@ -295,12 +298,13 @@
                 android:background="@drawable/bg_status_chip"
                 android:clickable="true"
                 android:focusable="true"
-                android:fontFamily="sans-serif-bold"
+                android:fontFamily="sans-serif"
                 android:gravity="center"
                 android:paddingHorizontal="10dp"
                 android:text="Receive All"
                 android:textColor="@color/accent_teal"
-                android:textSize="11sp" />
+                android:textSize="11sp"
+                android:textStyle="bold" />
         </LinearLayout>
 
         <!-- Progress Spinner while loading items -->
@@ -354,10 +358,11 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:fontFamily="sans-serif-bold"
+            android:fontFamily="sans-serif"
             android:text="Receive Notes (Optional)"
             android:textColor="@color/fg_muted"
-            android:textSize="12sp" />
+            android:textSize="12sp"
+            android:textStyle="bold" />
 
         <EditText
             android:id="@+id/edit_receive_notes"
@@ -390,12 +395,14 @@
                 android:layout_height="48dp"
                 android:layout_marginEnd="10dp"
                 android:layout_weight="1"
-                android:background="@drawable/bg_nav_logout_button"
-                android:fontFamily="sans-serif-bold"
+                android:background="@drawable/bg_button_danger"
+                android:fontFamily="sans-serif"
                 android:text="@string/btn_cancel_order"
                 android:textAllCaps="false"
                 android:textColor="@color/error_red"
-                android:textSize="14sp" />
+                android:textSize="14sp"
+                android:textStyle="bold"
+                app:backgroundTint="@null" />
 
             <!-- Confirm Receive Button -->
             <Button

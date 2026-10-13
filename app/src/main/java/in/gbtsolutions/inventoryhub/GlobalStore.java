@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import in.gbtsolutions.inventoryhub.helpers.Mode;
 import in.gbtsolutions.inventoryhub.models.Config;
 import in.gbtsolutions.inventoryhub.models.User;
 
@@ -21,7 +22,10 @@ public class GlobalStore {
     private String upiId = "";
     private boolean saveBillToGallery = true;
     private boolean printBill = false;
+    private String mode = Mode.OFFLINE.name();
+    private String tier = Mode.OfflineTier.STANDARD.name();
     private final Map<String, Object> settingsMap = new HashMap<>();
+    public static final String KEY_ALLOW_OUT_OF_STOCK_SELL = "allow_out_of_stock_sell";
 
     private GlobalStore() {
     }
@@ -52,7 +56,7 @@ public class GlobalStore {
         if (context == null) return;
         SharedPreferences prefs = context.getApplicationContext().getSharedPreferences(Configurations.PREF_NAME, Context.MODE_PRIVATE);
 
-        this.allowOutOfStockSell = prefs.getBoolean(Configurations.KEY_ALLOW_OUT_OF_STOCK_SELL, false);
+        this.allowOutOfStockSell = prefs.getBoolean(KEY_ALLOW_OUT_OF_STOCK_SELL, false);
         this.csvMandatoryField = prefs.getString(Configurations.KEY_CSV_MANDATORY_FIELD, Configurations.MANDATORY_FIELD_HSN);
         this.showPaymentMethodDialog = prefs.getBoolean(Configurations.KEY_SHOW_PAYMENT_METHOD_DIALOG, false);
         this.upiId = prefs.getString(Configurations.KEY_UPI_ID, "");
@@ -64,7 +68,7 @@ public class GlobalStore {
         if (all != null) {
             settingsMap.putAll(all);
         }
-        settingsMap.put(Configurations.KEY_ALLOW_OUT_OF_STOCK_SELL, this.allowOutOfStockSell);
+        settingsMap.put(KEY_ALLOW_OUT_OF_STOCK_SELL, this.allowOutOfStockSell);
         settingsMap.put(Configurations.KEY_CSV_MANDATORY_FIELD, this.csvMandatoryField);
         settingsMap.put(Configurations.KEY_SHOW_PAYMENT_METHOD_DIALOG, this.showPaymentMethodDialog);
         settingsMap.put(Configurations.KEY_UPI_ID, this.upiId);
@@ -78,12 +82,21 @@ public class GlobalStore {
                     for (Config c : configs) {
                         if (c.getConfigKey() != null && c.getConfigValue() != null) {
                             settingsMap.put(c.getConfigKey(), c.getConfigValue());
-                            if (Configurations.KEY_UPI_ID.equals(c.getConfigKey()) && !c.getConfigValue().isEmpty()) {
+                            if (Configurations.KEY_UPI_ID.equalsIgnoreCase(c.getConfigKey())) {
                                 this.upiId = c.getConfigValue();
-                            } else if (Configurations.KEY_SAVE_BILL_TO_GALLERY.equals(c.getConfigKey())) {
+                            } else if (Configurations.KEY_SAVE_BILL_TO_GALLERY.equalsIgnoreCase(c.getConfigKey())) {
                                 this.saveBillToGallery = "true".equalsIgnoreCase(c.getConfigValue());
                             } else if (Configurations.KEY_PRINT_BILL.equals(c.getConfigKey())) {
                                 this.printBill = "true".equalsIgnoreCase(c.getConfigValue());
+                            } else if (Configurations.KEY_MODE.equalsIgnoreCase(c.getConfigKey())) {
+                                this.mode = c.getConfigValue();
+                                try {
+                                    in.gbtsolutions.inventoryhub.online.config.AppModeManager.getInstance(context)
+                                            .setAppMode(in.gbtsolutions.inventoryhub.online.config.AppMode.fromKey(c.getConfigValue()));
+                                } catch (Exception ignored) {
+                                }
+                            } else if (Configurations.KEY_TIER.equalsIgnoreCase(c.getConfigKey()) || "tire".equalsIgnoreCase(c.getConfigKey())) {
+                                this.tier = c.getConfigValue();
                             }
                         }
                     }
@@ -137,7 +150,7 @@ public class GlobalStore {
 
     public void setAllowOutOfStockSell(boolean allowOutOfStockSell) {
         this.allowOutOfStockSell = allowOutOfStockSell;
-        settingsMap.put(Configurations.KEY_ALLOW_OUT_OF_STOCK_SELL, allowOutOfStockSell);
+        settingsMap.put(KEY_ALLOW_OUT_OF_STOCK_SELL, allowOutOfStockSell);
     }
 
     public String getCsvMandatoryField() {
@@ -147,6 +160,28 @@ public class GlobalStore {
     public void setCsvMandatoryField(String mandatoryField) {
         this.csvMandatoryField = mandatoryField;
         settingsMap.put(Configurations.KEY_CSV_MANDATORY_FIELD, mandatoryField);
+    }
+
+    public String getMode() {
+        return mode != null ? mode : Mode.OFFLINE.name();
+    }
+
+    public boolean isOnlineMode() {
+        return "online".equalsIgnoreCase(getMode());
+    }
+
+    public void setMode(String mode) {
+        this.mode = mode;
+        settingsMap.put(Configurations.KEY_MODE, mode);
+    }
+
+    public String getTier() {
+        return tier != null ? tier : Mode.OfflineTier.STANDARD.name();
+    }
+
+    public void setTier(String tier) {
+        this.tier = tier;
+        settingsMap.put(Configurations.KEY_TIER, tier);
     }
 
     public Object getSetting(String key) {
