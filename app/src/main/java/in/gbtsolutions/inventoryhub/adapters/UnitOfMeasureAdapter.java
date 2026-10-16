@@ -19,13 +19,21 @@ import java.util.Locale;
 import in.gbtsolutions.inventoryhub.R;
 import in.gbtsolutions.inventoryhub.models.UnitOfMeasure;
 
-public class UnitOfMeasureAdapter extends RecyclerView.Adapter<UnitOfMeasureAdapter.UomViewHolder> {
+public class UnitOfMeasureAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+
+    private static final int VIEW_TYPE_ITEM = 0;
+    private static final int VIEW_TYPE_FOOTER = 1;
 
     private final List<UnitOfMeasure> uomList = new ArrayList<>();
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
     private OnUomClickListener clickListener;
     private OnUomEditListener editListener;
     private OnUomDeleteListener deleteListener;
+
+    private boolean isFooterAdded = false;
+    private boolean isRetryActive = false;
+    private String retryMessage = null;
+    private Runnable retryAction = null;
 
     public UnitOfMeasureAdapter() {
     }
@@ -43,6 +51,8 @@ public class UnitOfMeasureAdapter extends RecyclerView.Adapter<UnitOfMeasureAdap
     }
 
     public void setUnits(@NonNull List<UnitOfMeasure> newUnits) {
+        isFooterAdded = false;
+        isRetryActive = false;
         DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new DiffUtil.Callback() {
             @Override
             public int getOldListSize() {
@@ -72,22 +82,96 @@ public class UnitOfMeasureAdapter extends RecyclerView.Adapter<UnitOfMeasureAdap
         diffResult.dispatchUpdatesTo(this);
     }
 
+    public void addUnits(@NonNull List<UnitOfMeasure> moreUnits) {
+        if (moreUnits.isEmpty()) return;
+        int startPos = uomList.size();
+        uomList.addAll(moreUnits);
+        notifyItemRangeInserted(startPos, moreUnits.size());
+    }
+
+    public void clearUnits() {
+        int count = getItemCount();
+        uomList.clear();
+        isFooterAdded = false;
+        isRetryActive = false;
+        if (count > 0) {
+            notifyItemRangeRemoved(0, count);
+        }
+    }
+
+    public List<UnitOfMeasure> getUnits() {
+        return new ArrayList<>(uomList);
+    }
+
+    public void showLoadingFooter() {
+        if (!isFooterAdded) {
+            isFooterAdded = true;
+            isRetryActive = false;
+            notifyItemInserted(uomList.size());
+        } else if (isRetryActive) {
+            isRetryActive = false;
+            notifyItemChanged(uomList.size());
+        }
+    }
+
+    public void showRetryFooter(String message, Runnable retry) {
+        this.retryMessage = message;
+        this.retryAction = retry;
+        this.isRetryActive = true;
+        if (!isFooterAdded) {
+            isFooterAdded = true;
+            notifyItemInserted(uomList.size());
+        } else {
+            notifyItemChanged(uomList.size());
+        }
+    }
+
+    public void removeFooter() {
+        if (isFooterAdded) {
+            isFooterAdded = false;
+            isRetryActive = false;
+            retryMessage = null;
+            retryAction = null;
+            notifyItemRemoved(uomList.size());
+        }
+    }
+
+    public boolean isFooterAdded() {
+        return isFooterAdded;
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        if (isFooterAdded && position == uomList.size()) {
+            return VIEW_TYPE_FOOTER;
+        }
+        return VIEW_TYPE_ITEM;
+    }
+
     @NonNull
     @Override
-    public UomViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        if (viewType == VIEW_TYPE_FOOTER) {
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_loading_footer, parent, false);
+            return new FooterViewHolder(view);
+        }
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_unit_of_measure, parent, false);
         return new UomViewHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull UomViewHolder holder, int position) {
-        UnitOfMeasure uom = uomList.get(position);
-        holder.bind(uom);
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+        if (holder instanceof UomViewHolder) {
+            UnitOfMeasure uom = uomList.get(position);
+            ((UomViewHolder) holder).bind(uom);
+        } else if (holder instanceof FooterViewHolder) {
+            ((FooterViewHolder) holder).bind(isRetryActive, retryMessage, retryAction);
+        }
     }
 
     @Override
     public int getItemCount() {
-        return uomList.size();
+        return isFooterAdded ? uomList.size() + 1 : uomList.size();
     }
 
     public interface OnUomClickListener {
@@ -184,4 +268,42 @@ public class UnitOfMeasureAdapter extends RecyclerView.Adapter<UnitOfMeasureAdap
             }
         }
     }
+
+    public static class FooterViewHolder extends RecyclerView.ViewHolder {
+        private final View containerLoading;
+        private final View containerRetry;
+        private final TextView textRetryMessage;
+        private final TextView btnRetryLoad;
+
+        public FooterViewHolder(@NonNull View itemView) {
+            super(itemView);
+            containerLoading = itemView.findViewById(R.id.container_loading);
+            containerRetry = itemView.findViewById(R.id.container_retry);
+            textRetryMessage = itemView.findViewById(R.id.text_retry_message);
+            btnRetryLoad = itemView.findViewById(R.id.btn_retry_load);
+        }
+
+        public void bind(boolean isRetry, String message, Runnable retryAction) {
+            if (isRetry) {
+                if (containerLoading != null) containerLoading.setVisibility(View.GONE);
+                if (containerRetry != null) {
+                    containerRetry.setVisibility(View.VISIBLE);
+                    if (textRetryMessage != null && message != null) {
+                        textRetryMessage.setText(message);
+                    }
+                    if (btnRetryLoad != null) {
+                        btnRetryLoad.setOnClickListener(v -> {
+                            if (retryAction != null) {
+                                retryAction.run();
+                            }
+                        });
+                    }
+                }
+            } else {
+                if (containerRetry != null) containerRetry.setVisibility(View.GONE);
+                if (containerLoading != null) containerLoading.setVisibility(View.VISIBLE);
+            }
+        }
+    }
 }
+

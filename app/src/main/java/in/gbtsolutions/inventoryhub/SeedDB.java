@@ -440,6 +440,7 @@ public class SeedDB {
             db.configDao().insert(new Config(Configurations.KEY_PRINT_BILL, "false"));
             db.configDao().insert(new Config(Configurations.KEY_MODE, Mode.OFFLINE.name()));
             db.configDao().insert(new Config(Configurations.KEY_TIER, Mode.OfflineTier.STANDARD.name()));
+            db.configDao().insert(new Config(Configurations.KEY_MIGRATION_COMPLETED, "0/0"));
             Log.d(TAG, "Seeded initial configs.");
         }
     }

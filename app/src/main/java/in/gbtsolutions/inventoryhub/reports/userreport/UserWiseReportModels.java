@@ -89,5 +89,64 @@ public class UserWiseReportModels {
         public String filterUserName = "All Users";
         public UserWiseReportSummary summary = new UserWiseReportSummary();
         public List<UserWiseReportRow> rows = new ArrayList<>();
+
+        public void ensureNonNull() {
+            if (companyName == null) companyName = "";
+            if (companyGst == null) companyGst = "";
+            if (companyPhone == null) companyPhone = "";
+            if (companyAddress == null) companyAddress = "";
+            if (startDate == null) startDate = "";
+            if (endDate == null) endDate = "";
+            if (filterUserName == null) filterUserName = "All Users";
+
+            if (summary == null) summary = new UserWiseReportSummary();
+            if (summary.totalGrossSales == null) summary.totalGrossSales = BigDecimal.ZERO;
+            if (summary.totalSalesTaxable == null) summary.totalSalesTaxable = BigDecimal.ZERO;
+            if (summary.totalSalesCgst == null) summary.totalSalesCgst = BigDecimal.ZERO;
+            if (summary.totalSalesSgst == null) summary.totalSalesSgst = BigDecimal.ZERO;
+            if (summary.totalSalesIgst == null) summary.totalSalesIgst = BigDecimal.ZERO;
+            if (summary.totalSalesCess == null) summary.totalSalesCess = BigDecimal.ZERO;
+            if (summary.totalSalesGst == null) summary.totalSalesGst = BigDecimal.ZERO;
+
+            if (summary.totalGrossPurchases == null) summary.totalGrossPurchases = BigDecimal.ZERO;
+            if (summary.totalPurchaseTaxable == null) summary.totalPurchaseTaxable = BigDecimal.ZERO;
+            if (summary.totalPurchaseCgst == null) summary.totalPurchaseCgst = BigDecimal.ZERO;
+            if (summary.totalPurchaseSgst == null) summary.totalPurchaseSgst = BigDecimal.ZERO;
+            if (summary.totalPurchaseIgst == null) summary.totalPurchaseIgst = BigDecimal.ZERO;
+            if (summary.totalPurchaseGst == null) summary.totalPurchaseGst = BigDecimal.ZERO;
+
+            if (summary.totalCombinedGst == null) summary.totalCombinedGst = BigDecimal.ZERO;
+            if (summary.netGstLiability == null) summary.netGstLiability = BigDecimal.ZERO;
+            if (summary.netTurnover == null) summary.netTurnover = BigDecimal.ZERO;
+
+            if (rows == null) rows = new ArrayList<>();
+            for (UserWiseReportRow row : rows) {
+                if (row == null) continue;
+                if (row.userName == null) row.userName = "";
+                if (row.username == null) row.username = "";
+                if (row.role == null) row.role = "";
+                if (row.contact == null) row.contact = "";
+                if (row.email == null) row.email = "";
+
+                if (row.salesTaxable == null) row.salesTaxable = BigDecimal.ZERO;
+                if (row.salesCgst == null) row.salesCgst = BigDecimal.ZERO;
+                if (row.salesSgst == null) row.salesSgst = BigDecimal.ZERO;
+                if (row.salesIgst == null) row.salesIgst = BigDecimal.ZERO;
+                if (row.salesCess == null) row.salesCess = BigDecimal.ZERO;
+                if (row.salesTotalGst == null) row.salesTotalGst = BigDecimal.ZERO;
+                if (row.salesGrossTotal == null) row.salesGrossTotal = BigDecimal.ZERO;
+
+                if (row.purchaseTaxable == null) row.purchaseTaxable = BigDecimal.ZERO;
+                if (row.purchaseCgst == null) row.purchaseCgst = BigDecimal.ZERO;
+                if (row.purchaseSgst == null) row.purchaseSgst = BigDecimal.ZERO;
+                if (row.purchaseIgst == null) row.purchaseIgst = BigDecimal.ZERO;
+                if (row.purchaseTotalGst == null) row.purchaseTotalGst = BigDecimal.ZERO;
+                if (row.purchaseGrossTotal == null) row.purchaseGrossTotal = BigDecimal.ZERO;
+
+                if (row.totalCombinedGst == null) row.totalCombinedGst = BigDecimal.ZERO;
+                if (row.netGstLiability == null) row.netGstLiability = BigDecimal.ZERO;
+                if (row.netTurnover == null) row.netTurnover = BigDecimal.ZERO;
+            }
+        }
     }
 }

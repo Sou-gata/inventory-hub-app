@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import in.gbtsolutions.inventoryhub.models.Product;
+import in.gbtsolutions.inventoryhub.online.api.NetworkErrorHelper;
 import in.gbtsolutions.inventoryhub.online.api.OnlineApiClient;
 import in.gbtsolutions.inventoryhub.online.api.OnlineApiService;
 import in.gbtsolutions.inventoryhub.online.models.ApiResponse;
@@ -103,7 +104,7 @@ public class OnlineProductRepository {
                 if (call.isCanceled()) return;
                 mainHandler.post(() -> {
                     if (callback != null) {
-                        String msg = t.getMessage() != null ? t.getMessage() : "Network connection error";
+                        String msg = NetworkErrorHelper.getErrorMessage(t);
                         callback.onError(msg, false);
                     }
                 });
@@ -143,7 +144,7 @@ public class OnlineProductRepository {
             public void onFailure(Call<ApiResponse<OnlineProductDto>> call, Throwable t) {
                 mainHandler.post(() -> {
                     if (callback != null) {
-                        callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
+                        callback.onError(NetworkErrorHelper.getErrorMessage(t));
                     }
                 });
             }
@@ -182,7 +183,7 @@ public class OnlineProductRepository {
             public void onFailure(Call<ApiResponse<OnlineProductDto>> call, Throwable t) {
                 mainHandler.post(() -> {
                     if (callback != null) {
-                        callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
+                        callback.onError(NetworkErrorHelper.getErrorMessage(t));
                     }
                 });
             }
@@ -209,7 +210,7 @@ public class OnlineProductRepository {
             public void onFailure(Call<ApiResponse<Object>> call, Throwable t) {
                 mainHandler.post(() -> {
                     if (callback != null) {
-                        callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
+                        callback.onError(NetworkErrorHelper.getErrorMessage(t));
                     }
                 });
             }
@@ -244,7 +245,7 @@ public class OnlineProductRepository {
             public void onFailure(Call<ApiResponse<OnlineProductDto>> call, Throwable t) {
                 mainHandler.post(() -> {
                     if (callback != null) {
-                        callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
+                        callback.onError(NetworkErrorHelper.getErrorMessage(t));
                     }
                 });
             }
@@ -282,7 +283,7 @@ public class OnlineProductRepository {
             public void onFailure(Call<ApiResponse<OnlineProductDto>> call, Throwable t) {
                 mainHandler.post(() -> {
                     if (callback != null) {
-                        callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
+                        callback.onError(NetworkErrorHelper.getErrorMessage(t));
                     }
                 });
             }
@@ -307,7 +308,7 @@ public class OnlineProductRepository {
             public void onFailure(Call<ApiResponse<OnlineProductDto.OnlineBatchDto>> call, Throwable t) {
                 mainHandler.post(() -> {
                     if (callback != null) {
-                        callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
+                        callback.onError(NetworkErrorHelper.getErrorMessage(t));
                     }
                 });
             }
@@ -368,7 +369,7 @@ public class OnlineProductRepository {
             public void onFailure(Call<ApiResponse<List<OnlineProductDto.OnlineBatchDto>>> call, Throwable t) {
                 mainHandler.post(() -> {
                     if (callback != null) {
-                        callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
+                        callback.onError(NetworkErrorHelper.getErrorMessage(t));
                     }
                 });
             }

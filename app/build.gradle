@@ -69,6 +69,15 @@ android {
     }
 }
 
+androidComponents {
+    onVariants(selector().withBuildType("release")) { variant ->
+        variant.outputs.each { output ->
+            output.outputFileName.set(
+                "Inventory-Hub-V${android.defaultConfig.versionName}.apk"
+            )
+        }
+    }
+}
 
 
 dependencies {

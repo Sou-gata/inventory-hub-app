@@ -17,6 +17,8 @@ import in.gbtsolutions.inventoryhub.dao.UnitOfMeasureDao;
 import in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper;
 import in.gbtsolutions.inventoryhub.models.AuditTrail;
 import in.gbtsolutions.inventoryhub.models.UnitOfMeasure;
+import in.gbtsolutions.inventoryhub.online.config.AppModeManager;
+import in.gbtsolutions.inventoryhub.online.repository.OnlineUnitOfMeasureRepository;
 
 public class UnitOfMeasureRepository {
 
@@ -39,6 +41,8 @@ public class UnitOfMeasureRepository {
     private final LiveData<List<UnitOfMeasure>> allUnits;
     private final ExecutorService executorService;
     private final Handler mainHandler;
+    private final OnlineUnitOfMeasureRepository onlineUnitOfMeasureRepository;
+    private final AppModeManager appModeManager;
 
     public UnitOfMeasureRepository(Application application) {
         this.application = application;
@@ -47,9 +51,31 @@ public class UnitOfMeasureRepository {
         this.allUnits = unitOfMeasureDao.getAllUnitsOfMeasure();
         this.executorService = Executors.newFixedThreadPool(3);
         this.mainHandler = new Handler(Looper.getMainLooper());
+        this.onlineUnitOfMeasureRepository = new OnlineUnitOfMeasureRepository(application);
+        this.appModeManager = AppModeManager.getInstance(application);
 
         // Ensure default units exist in background
         ensureDefaultUnitsExist(null);
+    }
+
+    public boolean isOnlineMode() {
+        return appModeManager.isOnlineMode();
+    }
+
+    public OnlineUnitOfMeasureRepository getOnlineRepository() {
+        return onlineUnitOfMeasureRepository;
+    }
+
+    public void fetchUnitsPaged(int page, int limit, String search, OnlineUnitOfMeasureRepository.PagedUnitCallback callback) {
+        if (appModeManager.isOnlineMode()) {
+            onlineUnitOfMeasureRepository.fetchUnitsPaged(page, limit, search, callback);
+        }
+    }
+
+    public void fetchUnitsOnline(OnlineUnitOfMeasureRepository.UnitListCallback callback) {
+        if (appModeManager.isOnlineMode()) {
+            onlineUnitOfMeasureRepository.fetchAllUnits(callback);
+        }
     }
 
     public LiveData<List<UnitOfMeasure>> getAllUnitsOfMeasure() {
@@ -83,6 +109,21 @@ public class UnitOfMeasureRepository {
         final String name = uom.name != null ? uom.name.trim() : "";
         if (name.isEmpty()) {
             if (callback != null) callback.onError("Unit name cannot be empty.");
+            return;
+        }
+
+        if (appModeManager.isOnlineMode()) {
+            onlineUnitOfMeasureRepository.createUnit(uom, new OnlineUnitOfMeasureRepository.UnitActionCallback() {
+                @Override
+                public void onSuccess(UnitOfMeasure unit) {
+                    postSuccess(callback);
+                }
+
+                @Override
+                public void onError(String errorMessage) {
+                    postError(callback, errorMessage);
+                }
+            });
             return;
         }
 
@@ -126,6 +167,21 @@ public class UnitOfMeasureRepository {
             return;
         }
 
+        if (appModeManager.isOnlineMode()) {
+            onlineUnitOfMeasureRepository.updateUnit(uom, new OnlineUnitOfMeasureRepository.UnitActionCallback() {
+                @Override
+                public void onSuccess(UnitOfMeasure unit) {
+                    postSuccess(callback);
+                }
+
+                @Override
+                public void onError(String errorMessage) {
+                    postError(callback, errorMessage);
+                }
+            });
+            return;
+        }
+
         executorService.execute(() -> {
             try {
                 UnitOfMeasure existing = unitOfMeasureDao.getById(uom.uomId);
@@ -165,6 +221,21 @@ public class UnitOfMeasureRepository {
     }
 
     public void delete(@NonNull UnitOfMeasure uom, @Nullable ActionCallback callback) {
+        if (appModeManager.isOnlineMode()) {
+            onlineUnitOfMeasureRepository.deleteUnit(uom.uomId, new OnlineUnitOfMeasureRepository.UnitDeleteCallback() {
+                @Override
+                public void onSuccess() {
+                    postSuccess(callback);
+                }
+
+                @Override
+                public void onError(String errorMessage) {
+                    postError(callback, errorMessage);
+                }
+            });
+            return;
+        }
+
         executorService.execute(() -> {
             try {
                 UnitOfMeasure existing = unitOfMeasureDao.getById(uom.uomId);

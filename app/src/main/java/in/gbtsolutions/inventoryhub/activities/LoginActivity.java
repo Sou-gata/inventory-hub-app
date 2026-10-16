@@ -61,6 +61,7 @@ import in.gbtsolutions.inventoryhub.helpers.HelperMethods;
 import in.gbtsolutions.inventoryhub.helpers.ThemeManager;
 import in.gbtsolutions.inventoryhub.models.Config;
 import in.gbtsolutions.inventoryhub.models.User;
+import in.gbtsolutions.inventoryhub.online.api.NetworkErrorHelper;
 import in.gbtsolutions.inventoryhub.online.api.OnlineApiClient;
 import in.gbtsolutions.inventoryhub.online.api.OnlineApiService;
 import in.gbtsolutions.inventoryhub.online.config.AppMode;
@@ -97,7 +98,6 @@ public class LoginActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
-
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
@@ -296,7 +296,7 @@ public class LoginActivity extends AppCompatActivity {
                         onLoginSuccess();
                     } else {
                         setLoading(false);
-                        String errorMsg = "Invalid credentials.";
+                        String errorMsg = response.code() >= 500 ? "Failed to connect with the server" : "Invalid credentials.";
                         if (response.body() != null && !TextUtils.isEmpty(response.body().getMessage())) {
                             errorMsg = response.body().getMessage();
                         } else {
@@ -311,7 +311,7 @@ public class LoginActivity extends AppCompatActivity {
                             } catch (Exception ignored) {
                             }
                         }
-                        showError(errorMsg);
+                        showError(NetworkErrorHelper.sanitizeMessage(errorMsg));
                     }
                 }
 
@@ -320,7 +320,7 @@ public class LoginActivity extends AppCompatActivity {
                                       @NonNull Throwable t) {
                     if (isFinishing() || isDestroyed()) return;
                     setLoading(false);
-                    showError("Connection error: " + (t.getMessage() != null ? t.getMessage() : "Unable to reach server"));
+                    showError(NetworkErrorHelper.getErrorMessage(t));
                 }
             });
             return;
@@ -656,7 +656,9 @@ public class LoginActivity extends AppCompatActivity {
                     Toast.makeText(LoginActivity.this, msg, Toast.LENGTH_LONG).show();
                 } else {
                     // HTTP error code (e.g. 400, 404, etc.)
-                    String errorMsg = "Device verification failed (HTTP " + response.code() + ")";
+                    String errorMsg = response.code() >= 500
+                            ? "Failed to connect with the server"
+                            : "Device verification failed (HTTP " + response.code() + ")";
                     try {
                         if (response.errorBody() != null) {
                             String errStr = response.errorBody().string();
@@ -669,8 +671,9 @@ public class LoginActivity extends AppCompatActivity {
                     }
                     isSyncing = false;
                     dismissSyncDialog();
-                    showError(errorMsg);
-                    Toast.makeText(LoginActivity.this, errorMsg, Toast.LENGTH_LONG).show();
+                    String cleanMsg = NetworkErrorHelper.sanitizeMessage(errorMsg);
+                    showError(cleanMsg);
+                    Toast.makeText(LoginActivity.this, cleanMsg, Toast.LENGTH_LONG).show();
                 }
             }
 
@@ -682,7 +685,7 @@ public class LoginActivity extends AppCompatActivity {
                 }
                 isSyncing = false;
                 dismissSyncDialog();
-                String msg = "Connection error: " + (t.getMessage() != null ? t.getMessage() : "Unable to reach server");
+                String msg = NetworkErrorHelper.getErrorMessage(t);
                 showError(msg);
                 Toast.makeText(LoginActivity.this, msg, Toast.LENGTH_LONG).show();
             }
@@ -763,6 +766,9 @@ public class LoginActivity extends AppCompatActivity {
                 editor.putString(AppModeManager.KEY_APP_MODE, AppMode.fromKey(val).getKey());
                 AppModeManager.getInstance(getApplicationContext()).setAppMode(AppMode.fromKey(val));
             }
+            if (Configurations.KEY_MIGRATION_COMPLETED.equalsIgnoreCase(key)) {
+                AppModeManager.getInstance(getApplicationContext()).setMigrationStatus(val);
+            }
         }
         editor.apply();
     }
@@ -779,6 +785,9 @@ public class LoginActivity extends AppCompatActivity {
         sharedPreferences.edit().putString(key, val).apply();
         if (Configurations.KEY_MODE.equalsIgnoreCase(key)) {
             AppModeManager.getInstance(getApplicationContext()).setAppMode(AppMode.fromKey(val));
+        }
+        if (Configurations.KEY_MIGRATION_COMPLETED.equalsIgnoreCase(key)) {
+            AppModeManager.getInstance(getApplicationContext()).setMigrationStatus(val);
         }
     }
 

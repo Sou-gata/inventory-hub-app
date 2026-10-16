@@ -15,10 +15,13 @@ import in.gbtsolutions.inventoryhub.online.models.OnlineQrLookupRequest;
 import in.gbtsolutions.inventoryhub.online.models.OnlineReceiveItemsRequest;
 import in.gbtsolutions.inventoryhub.online.models.OnlineSaleDto;
 import in.gbtsolutions.inventoryhub.online.models.OnlineSupplierDto;
+import in.gbtsolutions.inventoryhub.online.models.OnlineUnitOfMeasureDto;
 import in.gbtsolutions.inventoryhub.online.models.PagedData;
+import in.gbtsolutions.inventoryhub.reports.audittrail.AuditTrailReportModels;
 import in.gbtsolutions.inventoryhub.reports.gstr1.GSTR1Models;
 import in.gbtsolutions.inventoryhub.reports.purchaseregister.PurchaseRegisterModels;
 import in.gbtsolutions.inventoryhub.reports.salesregister.SalesRegisterModels;
+import in.gbtsolutions.inventoryhub.reports.userreport.UserWiseReportModels;
 import okhttp3.MultipartBody;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -312,6 +315,110 @@ public interface OnlineApiService {
     Call<ResponseBody> downloadPurchaseRegisterPdf(
             @Query("startDate") String startDate,
             @Query("endDate") String endDate
+    );
+
+    // Audit Trail Report
+    @GET("api/v1/reports/audit-trail")
+    Call<ApiResponse<AuditTrailReportModels.ReportData>> getAuditTrailReport(
+            @Query("startDate") String startDate,
+            @Query("endDate") String endDate,
+            @Query("module") String module,
+            @Query("action") String action,
+            @Query("search") String search,
+            @Query("page") Integer page,
+            @Query("limit") Integer limit
+    );
+
+    @Streaming
+    @GET("api/v1/reports/audit-trail/csv")
+    Call<ResponseBody> downloadAuditTrailCsv(
+            @Query("startDate") String startDate,
+            @Query("endDate") String endDate,
+            @Query("module") String module,
+            @Query("action") String action,
+            @Query("search") String search
+    );
+
+    @Streaming
+    @GET("api/v1/reports/audit-trail/excel")
+    Call<ResponseBody> downloadAuditTrailExcel(
+            @Query("startDate") String startDate,
+            @Query("endDate") String endDate,
+            @Query("module") String module,
+            @Query("action") String action,
+            @Query("search") String search
+    );
+
+    @Streaming
+    @GET("api/v1/reports/audit-trail/pdf")
+    Call<ResponseBody> downloadAuditTrailPdf(
+            @Query("startDate") String startDate,
+            @Query("endDate") String endDate,
+            @Query("module") String module,
+            @Query("action") String action,
+            @Query("search") String search
+    );
+
+    // User Wise Report
+    @GET("api/v1/reports/user-report")
+    Call<ApiResponse<UserWiseReportModels.ReportData>> getUserReport(
+            @Query("startDate") String startDate,
+            @Query("endDate") String endDate,
+            @Query("filterUserId") Long filterUserId
+    );
+
+    @Streaming
+    @GET("api/v1/reports/user-report/csv")
+    Call<ResponseBody> downloadUserReportCsv(
+            @Query("startDate") String startDate,
+            @Query("endDate") String endDate,
+            @Query("filterUserId") Long filterUserId
+    );
+
+    @Streaming
+    @GET("api/v1/reports/user-report/excel")
+    Call<ResponseBody> downloadUserReportExcel(
+            @Query("startDate") String startDate,
+            @Query("endDate") String endDate,
+            @Query("filterUserId") Long filterUserId
+    );
+
+    @Streaming
+    @GET("api/v1/reports/user-report/pdf")
+    Call<ResponseBody> downloadUserReportPdf(
+            @Query("startDate") String startDate,
+            @Query("endDate") String endDate,
+            @Query("filterUserId") Long filterUserId
+    );
+
+    // Units of Measure
+    @GET("api/v1/units-of-measure/paginated")
+    Call<ApiResponse<PagedData<OnlineUnitOfMeasureDto>>> getPaginatedUnits(
+            @Query("page") int page,
+            @Query("limit") int limit,
+            @Query("search") String search,
+            @Query("is_default") Boolean isDefault,
+            @Query("sortBy") String sortBy,
+            @Query("sortOrder") String sortOrder
+    );
+
+    @GET("api/v1/units-of-measure")
+    Call<ApiResponse<List<OnlineUnitOfMeasureDto>>> getAllUnits();
+
+    @POST("api/v1/units-of-measure")
+    Call<ApiResponse<OnlineUnitOfMeasureDto>> createUnit(
+            @Body OnlineUnitOfMeasureDto unitDto
+    );
+
+    @PUT("api/v1/units-of-measure/{id}")
+    Call<ApiResponse<OnlineUnitOfMeasureDto>> updateUnit(
+            @Path("id") int unitId,
+            @Body OnlineUnitOfMeasureDto unitDto
+    );
+
+    @DELETE("api/v1/units-of-measure/{id}")
+    Call<ApiResponse<Object>> deleteUnit(
+            @Path("id") int unitId
     );
 
     // Offline to Online Migration

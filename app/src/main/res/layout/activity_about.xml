@@ -372,6 +372,7 @@
                         </LinearLayout>
 
                         <ImageView
+                            android:id="@+id/iv_migrate_action_arrow"
                             android:layout_width="16dp"
                             android:layout_height="16dp"
                             android:alpha="0.5"

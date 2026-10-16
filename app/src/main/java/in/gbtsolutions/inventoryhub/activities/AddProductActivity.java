@@ -281,7 +281,12 @@ public class AddProductActivity extends BaseActivity {
 
         View.OnClickListener showUomDropdown = v -> {
             if (uomNames.isEmpty()) {
-                showToast("No units of measure found. Please add units first.");
+                if (AppModeManager.getInstance(this).isOnlineMode()) {
+                    showToast("Loading units from server, please wait...");
+                    observeUnitsOfMeasure();
+                } else {
+                    showToast("No units of measure found. Please add units first.");
+                }
                 return;
             }
             dropdownUnitOfMeasure.showDropDown();
@@ -361,6 +366,21 @@ public class AddProductActivity extends BaseActivity {
 
     private void observeUnitsOfMeasure() {
         UnitOfMeasureRepository uomRepo = new UnitOfMeasureRepository(getApplication());
+        if (AppModeManager.getInstance(this).isOnlineMode()) {
+            uomRepo.fetchUnitsOnline(new in.gbtsolutions.inventoryhub.online.repository.OnlineUnitOfMeasureRepository.UnitListCallback() {
+                @Override
+                public void onSuccess(List<UnitOfMeasure> units) {
+                    populateUnitsOfMeasure(units);
+                }
+
+                @Override
+                public void onError(String errorMessage) {
+                    showToast("Failed to load online units: " + errorMessage);
+                }
+            });
+            return;
+        }
+
         uomRepo.getAllUnitsOfMeasure().observe(this, this::populateUnitsOfMeasure);
     }
 
@@ -562,6 +582,14 @@ public class AddProductActivity extends BaseActivity {
     protected void onResume() {
         super.onResume();
         setupMandatoryIndicators();
+        if (AppModeManager.getInstance(this).isOnlineMode()) {
+            if (categoryList.isEmpty()) {
+                observeCategories();
+            }
+            if (uomList.isEmpty()) {
+                observeUnitsOfMeasure();
+            }
+        }
     }
 
     private void saveProduct() {
@@ -944,5 +972,6 @@ public class AddProductActivity extends BaseActivity {
         }
         return null;
     }
+
 }
 

@@ -11,6 +11,7 @@ import java.util.List;
 import in.gbtsolutions.inventoryhub.models.Purchase;
 import in.gbtsolutions.inventoryhub.models.PurchaseItem;
 import in.gbtsolutions.inventoryhub.models.PurchaseWithSupplier;
+import in.gbtsolutions.inventoryhub.online.api.NetworkErrorHelper;
 import in.gbtsolutions.inventoryhub.online.api.OnlineApiClient;
 import in.gbtsolutions.inventoryhub.online.api.OnlineApiService;
 import in.gbtsolutions.inventoryhub.online.models.ApiResponse;
@@ -108,7 +109,7 @@ public class OnlinePurchaseRepository {
             public void onFailure(Call<ApiResponse<OnlinePurchaseDto>> call, Throwable t) {
                 mainHandler.post(() -> {
                     if (callback != null)
-                        callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
+                        callback.onError(NetworkErrorHelper.getErrorMessage(t));
                 });
             }
         });
@@ -143,7 +144,7 @@ public class OnlinePurchaseRepository {
             public void onFailure(Call<ApiResponse<List<OnlinePurchaseDto>>> call, Throwable t) {
                 mainHandler.post(() -> {
                     if (callback != null)
-                        callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
+                        callback.onError(NetworkErrorHelper.getErrorMessage(t));
                 });
             }
         });
@@ -177,7 +178,7 @@ public class OnlinePurchaseRepository {
             public void onFailure(Call<ApiResponse<List<OnlinePendingReceiveDto>>> call, Throwable t) {
                 mainHandler.post(() -> {
                     if (callback != null)
-                        callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
+                        callback.onError(NetworkErrorHelper.getErrorMessage(t));
                 });
             }
         });
@@ -207,7 +208,7 @@ public class OnlinePurchaseRepository {
             public void onFailure(Call<ApiResponse<Object>> call, Throwable t) {
                 mainHandler.post(() -> {
                     if (callback != null)
-                        callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
+                        callback.onError(NetworkErrorHelper.getErrorMessage(t));
                 });
             }
         });
@@ -230,7 +231,7 @@ public class OnlinePurchaseRepository {
             public void onFailure(Call<ApiResponse<Object>> call, Throwable t) {
                 mainHandler.post(() -> {
                     if (callback != null)
-                        callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"));
+                        callback.onError(NetworkErrorHelper.getErrorMessage(t));
                 });
             }
         });

@@ -17,10 +17,13 @@ import java.util.concurrent.Executors;
 
 import in.gbtsolutions.inventoryhub.online.api.OnlineApiClient;
 import in.gbtsolutions.inventoryhub.online.api.OnlineApiService;
+import in.gbtsolutions.inventoryhub.online.api.NetworkErrorHelper;
 import in.gbtsolutions.inventoryhub.online.models.ApiResponse;
+import in.gbtsolutions.inventoryhub.reports.audittrail.AuditTrailReportModels;
 import in.gbtsolutions.inventoryhub.reports.gstr1.GSTR1Models;
 import in.gbtsolutions.inventoryhub.reports.purchaseregister.PurchaseRegisterModels;
 import in.gbtsolutions.inventoryhub.reports.salesregister.SalesRegisterModels;
+import in.gbtsolutions.inventoryhub.reports.userreport.UserWiseReportModels;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -43,6 +46,16 @@ public class OnlineReportRepository {
         void onError(String errorMessage, boolean sessionExpired);
     }
 
+    public interface AuditTrailCallback {
+        void onSuccess(AuditTrailReportModels.ReportData reportData);
+        void onError(String errorMessage, boolean sessionExpired);
+    }
+
+    public interface UserWiseReportCallback {
+        void onSuccess(UserWiseReportModels.ReportData reportData);
+        void onError(String errorMessage, boolean sessionExpired);
+    }
+
     public interface DownloadCallback {
         void onSuccess(File downloadedFile, String mimeType);
         void onError(String errorMessage, boolean sessionExpired);
@@ -54,6 +67,8 @@ public class OnlineReportRepository {
     private Call<ApiResponse<GSTR1Models.ReportData>> currentGstr1Call;
     private Call<ApiResponse<SalesRegisterModels.ReportData>> currentSalesCall;
     private Call<ApiResponse<PurchaseRegisterModels.ReportData>> currentPurchaseCall;
+    private Call<ApiResponse<AuditTrailReportModels.ReportData>> currentAuditTrailCall;
+    private Call<ApiResponse<UserWiseReportModels.ReportData>> currentUserReportCall;
 
     public OnlineReportRepository(Context context) {
         this.context = context.getApplicationContext();
@@ -111,7 +126,7 @@ public class OnlineReportRepository {
                 if (call.isCanceled()) return;
                 mainHandler.post(() -> {
                     if (callback != null) {
-                        callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Connection failed"), false);
+                        callback.onError(NetworkErrorHelper.getErrorMessage(t), false);
                     }
                 });
             }
@@ -187,7 +202,7 @@ public class OnlineReportRepository {
                 if (call.isCanceled()) return;
                 mainHandler.post(() -> {
                     if (callback != null) {
-                        callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Connection failed"), false);
+                        callback.onError(NetworkErrorHelper.getErrorMessage(t), false);
                     }
                 });
             }
@@ -263,7 +278,7 @@ public class OnlineReportRepository {
                 if (call.isCanceled()) return;
                 mainHandler.post(() -> {
                     if (callback != null) {
-                        callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Connection failed"), false);
+                        callback.onError(NetworkErrorHelper.getErrorMessage(t), false);
                     }
                 });
             }
@@ -289,6 +304,165 @@ public class OnlineReportRepository {
         }
 
         streamResponseToFile(call, "Purchase_Register_", extension, mimeType, callback);
+    }
+
+    // =========================================================================
+    // AUDIT TRAIL REPORT
+    // =========================================================================
+
+    public synchronized void fetchAuditTrailReport(String startDate, String endDate, String module, String action, String search, Integer page, Integer limit, AuditTrailCallback callback) {
+        if (currentAuditTrailCall != null && !currentAuditTrailCall.isCanceled()) {
+            currentAuditTrailCall.cancel();
+        }
+
+        currentAuditTrailCall = getApi().getAuditTrailReport(startDate, endDate, module, action, search, page, limit);
+        currentAuditTrailCall.enqueue(new Callback<ApiResponse<AuditTrailReportModels.ReportData>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<AuditTrailReportModels.ReportData>> call, Response<ApiResponse<AuditTrailReportModels.ReportData>> response) {
+                if (call.isCanceled()) return;
+
+                if (response.isSuccessful() && response.body() != null) {
+                    ApiResponse<AuditTrailReportModels.ReportData> apiResp = response.body();
+                    if (apiResp.isSuccess() && apiResp.getData() != null) {
+                        AuditTrailReportModels.ReportData data = apiResp.getData();
+                        data.ensureNonNull();
+                        mainHandler.post(() -> {
+                            if (callback != null) {
+                                callback.onSuccess(data);
+                            }
+                        });
+                        return;
+                    } else {
+                        String errMsg = apiResp.getMessage();
+                        boolean sessionExpired = apiResp.isSessionExpired();
+                        mainHandler.post(() -> {
+                            if (callback != null) {
+                                callback.onError(errMsg != null && !errMsg.isEmpty() ? errMsg : "Failed to load Audit Trail report", sessionExpired);
+                            }
+                        });
+                        return;
+                    }
+                }
+
+                handleHttpError(response, "Failed to load Audit Trail report", (msg, sessionExpired) -> {
+                    if (callback != null) callback.onError(msg, sessionExpired);
+                });
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<AuditTrailReportModels.ReportData>> call, Throwable t) {
+                if (call.isCanceled()) return;
+                mainHandler.post(() -> {
+                    if (callback != null) {
+                        callback.onError(NetworkErrorHelper.getErrorMessage(t), false);
+                    }
+                });
+            }
+        });
+    }
+
+    public synchronized void fetchAuditTrailReport(String startDate, String endDate, String module, String action, String search, AuditTrailCallback callback) {
+        fetchAuditTrailReport(startDate, endDate, module, action, search, null, null, callback);
+    }
+
+    public synchronized void downloadAuditTrailReport(String format, String startDate, String endDate, String module, String action, String search, DownloadCallback callback) {
+        Call<ResponseBody> call;
+        String mimeType;
+        String extension;
+        if ("excel".equalsIgnoreCase(format) || "xlsx".equalsIgnoreCase(format)) {
+            call = getApi().downloadAuditTrailExcel(startDate, endDate, module, action, search);
+            mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            extension = ".xlsx";
+        } else if ("csv".equalsIgnoreCase(format)) {
+            call = getApi().downloadAuditTrailCsv(startDate, endDate, module, action, search);
+            mimeType = "text/csv";
+            extension = ".csv";
+        } else {
+            call = getApi().downloadAuditTrailPdf(startDate, endDate, module, action, search);
+            mimeType = "application/pdf";
+            extension = ".pdf";
+        }
+
+        streamResponseToFile(call, "Audit_Trail_", extension, mimeType, callback);
+    }
+
+    // =========================================================================
+    // USER WISE REPORT
+    // =========================================================================
+
+    public synchronized void fetchUserWiseReport(String startDate, String endDate, Long filterUserId, UserWiseReportCallback callback) {
+        if (currentUserReportCall != null && !currentUserReportCall.isCanceled()) {
+            currentUserReportCall.cancel();
+        }
+
+        Long filterParam = (filterUserId != null && filterUserId > 0) ? filterUserId : null;
+        currentUserReportCall = getApi().getUserReport(startDate, endDate, filterParam);
+        currentUserReportCall.enqueue(new Callback<ApiResponse<UserWiseReportModels.ReportData>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<UserWiseReportModels.ReportData>> call, Response<ApiResponse<UserWiseReportModels.ReportData>> response) {
+                if (call.isCanceled()) return;
+
+                if (response.isSuccessful() && response.body() != null) {
+                    ApiResponse<UserWiseReportModels.ReportData> apiResp = response.body();
+                    if (apiResp.isSuccess() && apiResp.getData() != null) {
+                        UserWiseReportModels.ReportData data = apiResp.getData();
+                        data.ensureNonNull();
+                        mainHandler.post(() -> {
+                            if (callback != null) {
+                                callback.onSuccess(data);
+                            }
+                        });
+                        return;
+                    } else {
+                        String errMsg = apiResp.getMessage();
+                        boolean sessionExpired = apiResp.isSessionExpired();
+                        mainHandler.post(() -> {
+                            if (callback != null) {
+                                callback.onError(errMsg != null && !errMsg.isEmpty() ? errMsg : "Failed to load User Wise report", sessionExpired);
+                            }
+                        });
+                        return;
+                    }
+                }
+
+                handleHttpError(response, "Failed to load User Wise report", (msg, sessionExpired) -> {
+                    if (callback != null) callback.onError(msg, sessionExpired);
+                });
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<UserWiseReportModels.ReportData>> call, Throwable t) {
+                if (call.isCanceled()) return;
+                mainHandler.post(() -> {
+                    if (callback != null) {
+                        callback.onError(NetworkErrorHelper.getErrorMessage(t), false);
+                    }
+                });
+            }
+        });
+    }
+
+    public synchronized void downloadUserWiseReport(String format, String startDate, String endDate, Long filterUserId, DownloadCallback callback) {
+        Call<ResponseBody> call;
+        String mimeType;
+        String extension;
+        Long filterParam = (filterUserId != null && filterUserId > 0) ? filterUserId : null;
+
+        if ("excel".equalsIgnoreCase(format) || "xlsx".equalsIgnoreCase(format)) {
+            call = getApi().downloadUserReportExcel(startDate, endDate, filterParam);
+            mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            extension = ".xlsx";
+        } else if ("csv".equalsIgnoreCase(format)) {
+            call = getApi().downloadUserReportCsv(startDate, endDate, filterParam);
+            mimeType = "text/csv";
+            extension = ".csv";
+        } else {
+            call = getApi().downloadUserReportPdf(startDate, endDate, filterParam);
+            mimeType = "application/pdf";
+            extension = ".pdf";
+        }
+
+        streamResponseToFile(call, "User_Wise_Report_", extension, mimeType, callback);
     }
 
     // =========================================================================
@@ -373,7 +547,7 @@ public class OnlineReportRepository {
             public void onFailure(Call<ResponseBody> call, Throwable t) {
                 mainHandler.post(() -> {
                     if (callback != null) {
-                        callback.onError("Download network error: " + (t.getMessage() != null ? t.getMessage() : "Connection failed"), false);
+                        callback.onError(NetworkErrorHelper.getErrorMessage(t), false);
                     }
                 });
             }
@@ -389,6 +563,12 @@ public class OnlineReportRepository {
         }
         if (currentPurchaseCall != null && !currentPurchaseCall.isCanceled()) {
             currentPurchaseCall.cancel();
+        }
+        if (currentAuditTrailCall != null && !currentAuditTrailCall.isCanceled()) {
+            currentAuditTrailCall.cancel();
+        }
+        if (currentUserReportCall != null && !currentUserReportCall.isCanceled()) {
+            currentUserReportCall.cancel();
         }
     }
 }

@@ -21,7 +21,8 @@ public class Configurations {
     public static final String KEY_FOOTER_4 = "footer_4";
     public static final String KEY_MODE = "mode";
     public static final String KEY_TIER = "tier";
+    public static final String KEY_MIGRATION_COMPLETED = "migration_completed";
 
-//     public static final String DEFAULT_ONLINE_SERVER_URL = "https://imgbt.gbtsolutions.in/";
-    public static final String DEFAULT_ONLINE_SERVER_URL = "http://192.168.0.181:3000/";
+     public static final String DEFAULT_ONLINE_SERVER_URL = "https://imgbt.gbtsolutions.in/";
+//    public static final String DEFAULT_ONLINE_SERVER_URL = "http://192.168.0.181:3000/";
 }

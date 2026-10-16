@@ -267,9 +267,21 @@ public class AboutActivity extends BaseActivity {
         View btnMigrate = findViewById(R.id.btn_migrate_data);
         if (btnMigrate != null) {
             btnMigrate.setOnClickListener(v -> {
+                if (!AppModeManager.getInstance(this).canMigrate()) {
+                    int migrated = AppModeManager.getInstance(this).getMigratedCount();
+                    int allowed = AppModeManager.getInstance(this).getAllowedMigrationCount();
+                    if (allowed <= 0) {
+                        Toast.makeText(this, "Cloud migration is not permitted for this device (" + migrated + "/" + allowed + " allowed).", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "Migration limit reached (" + migrated + "/" + allowed + " used).", Toast.LENGTH_SHORT).show();
+                    }
+                    return;
+                }
+                int migrated = AppModeManager.getInstance(this).getMigratedCount();
+                int allowed = AppModeManager.getInstance(this).getAllowedMigrationCount();
                 new MaterialAlertDialogBuilder(this)
                         .setTitle("Migrate Offline Data to Cloud")
-                        .setMessage("This will upload all your local offline products, inventory batches, sales, and purchases to the online cloud server.\n\nMake sure your device has a stable internet connection before starting.")
+                        .setMessage("This will upload all your local offline products, inventory batches, sales, and purchases to the online cloud server.\n\nMigration count: " + migrated + "/" + allowed + " used.\n\nMake sure your device has a stable internet connection before starting.")
                         .setPositiveButton("Start Migration", (d, which) -> showMigrationProgressDialog())
                         .setNegativeButton("Cancel", null)
                         .show();
@@ -279,6 +291,10 @@ public class AboutActivity extends BaseActivity {
 
     private void updateModeAndMigrationState() {
         boolean isOnline = AppModeManager.getInstance(this).isOnlineMode();
+        boolean canMigrate = AppModeManager.getInstance(this).canMigrate();
+        int migrated = AppModeManager.getInstance(this).getMigratedCount();
+        int allowed = AppModeManager.getInstance(this).getAllowedMigrationCount();
+        String statusString = AppModeManager.getInstance(this).getMigrationStatusString();
 
         // Top Hero Mode Badge
         TextView tvAppModeStatus = findViewById(R.id.tv_app_mode_status);
@@ -316,13 +332,17 @@ public class AboutActivity extends BaseActivity {
             ));
         }
 
-        // Mode-wise visibility for Migration Button & Divider
+        // Mode-wise visibility and count-based disabled state for Migration Button & Divider
         // The migrate button will show in online mode only.
+        // Displays details according to migration_completed (e.g. 0/1, 1/1, 0/0).
         View btnMigrate = findViewById(R.id.btn_migrate_data);
         View dividerMigration = findViewById(R.id.divider_migration_action);
 
         if (btnMigrate != null) {
             btnMigrate.setVisibility(isOnline ? View.VISIBLE : View.GONE);
+            btnMigrate.setEnabled(isOnline && canMigrate);
+            btnMigrate.setClickable(isOnline && canMigrate);
+            btnMigrate.setAlpha((isOnline && canMigrate) ? 1.0f : 0.6f);
         }
         if (dividerMigration != null) {
             dividerMigration.setVisibility(isOnline ? View.VISIBLE : View.GONE);
@@ -331,16 +351,40 @@ public class AboutActivity extends BaseActivity {
         TextView tvMigrateTitle = findViewById(R.id.tv_migration_button_title);
         TextView tvMigrateSubtitle = findViewById(R.id.tv_migration_button_subtitle);
         ImageView ivMigrateIcon = findViewById(R.id.iv_migrate_action_icon);
+        ImageView ivMigrateArrow = findViewById(R.id.iv_migrate_action_arrow);
 
         if (tvMigrateTitle != null) {
-            tvMigrateTitle.setText("Migrate Offline Data to Cloud");
+            if (canMigrate) {
+                tvMigrateTitle.setText("Migrate Offline Data to Cloud");
+            } else if (allowed <= 0) {
+                tvMigrateTitle.setText("Cloud Migration Disabled");
+            } else {
+                tvMigrateTitle.setText("Data Migration Completed");
+            }
         }
         if (tvMigrateSubtitle != null) {
-            tvMigrateSubtitle.setText("Upload local inventory, batches & orders to online server");
+            if (canMigrate) {
+                tvMigrateSubtitle.setText("Upload local database to cloud (Migrations: " + migrated + "/" + allowed + " used)");
+            } else if (allowed <= 0) {
+                tvMigrateSubtitle.setText("Migration not permitted by server policy (" + statusString + " allowed)");
+            } else {
+                tvMigrateSubtitle.setText("Offline database already migrated to cloud (Limit: " + statusString + " reached)");
+            }
         }
         if (ivMigrateIcon != null) {
-            ivMigrateIcon.setImageResource(R.drawable.ic_sync);
-            ivMigrateIcon.setImageTintList(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.material_blue)));
+            if (canMigrate) {
+                ivMigrateIcon.setImageResource(R.drawable.ic_sync);
+                ivMigrateIcon.setImageTintList(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.material_blue)));
+            } else if (allowed <= 0) {
+                ivMigrateIcon.setImageResource(R.drawable.ic_sync);
+                ivMigrateIcon.setImageTintList(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.fg_muted)));
+            } else {
+                ivMigrateIcon.setImageResource(R.drawable.ic_check);
+                ivMigrateIcon.setImageTintList(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.status_green)));
+            }
+        }
+        if (ivMigrateArrow != null) {
+            ivMigrateArrow.setVisibility(canMigrate ? View.VISIBLE : View.GONE);
         }
     }
 
@@ -375,10 +419,16 @@ public class AboutActivity extends BaseActivity {
                     tvStatus.setText(progressMsg);
                 }
             } else if (state == WorkInfo.State.SUCCEEDED) {
+                AppModeManager.getInstance(this).incrementMigrationCount();
+                updateModeAndMigrationState();
+
+                int migrated = AppModeManager.getInstance(this).getMigratedCount();
+                int allowed = AppModeManager.getInstance(this).getAllowedMigrationCount();
+
                 progressBar.setVisibility(View.GONE);
                 tvDetail.setVisibility(View.GONE);
                 tvTitle.setText("Migration Successful!");
-                tvSubtitle.setText("Your offline database has been migrated to the online server.");
+                tvSubtitle.setText("Your offline database has been migrated to the online server (" + migrated + "/" + allowed + " used).");
                 tvStatus.setText("Application is now running in Online Cloud Mode.");
 
                 ivIcon.setImageResource(R.drawable.ic_check);

@@ -3,6 +3,8 @@ package in.gbtsolutions.inventoryhub.activities;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.Menu;
@@ -13,6 +15,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.widget.Toolbar;
@@ -33,15 +36,26 @@ import in.gbtsolutions.inventoryhub.R;
 import in.gbtsolutions.inventoryhub.adapters.UnitOfMeasureAdapter;
 import in.gbtsolutions.inventoryhub.helpers.ThemeManager;
 import in.gbtsolutions.inventoryhub.models.UnitOfMeasure;
+import in.gbtsolutions.inventoryhub.online.config.AppMode;
+import in.gbtsolutions.inventoryhub.online.config.AppModeManager;
+import in.gbtsolutions.inventoryhub.online.paging.EndlessRecyclerScrollListener;
+import in.gbtsolutions.inventoryhub.online.repository.OnlineUnitOfMeasureRepository;
 import in.gbtsolutions.inventoryhub.repository.UnitOfMeasureRepository;
 
 public class UnitOfMeasureActivity extends BaseActivity {
 
     private final List<UnitOfMeasure> allUnits = new ArrayList<>();
+    private final Handler searchHandler = new Handler(Looper.getMainLooper());
+    private Runnable searchRunnable;
+
     private NavigationView navView;
     private RecyclerView recyclerUom;
     private UnitOfMeasureAdapter uomAdapter;
     private UnitOfMeasureRepository uomRepository;
+    private AppModeManager appModeManager;
+    private AppModeManager.OnModeChangeListener modeChangeListener;
+    private EndlessRecyclerScrollListener endlessScrollListener;
+
     private View layoutEmptyState;
     private View layoutListContainer;
     private TextView textUomCount;
@@ -51,14 +65,30 @@ public class UnitOfMeasureActivity extends BaseActivity {
     private View layoutSearchEmpty;
     private TextView textSearchEmptyQuery;
     private View btnResetSearch;
+
     private String currentSearchQuery = "";
+    private int onlineCurrentPage = 1;
+    private boolean onlineHasMore = true;
+    private boolean onlineIsLoading = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_unit_of_measure);
 
+        appModeManager = AppModeManager.getInstance(this);
         uomRepository = new UnitOfMeasureRepository(getApplication());
+
+        modeChangeListener = newMode -> {
+            if (newMode == AppMode.ONLINE) {
+                loadOnlineUnits(1, true);
+            } else {
+                uomAdapter.clearUnits();
+                uomAdapter.setUnits(allUnits);
+                filterUnits(currentSearchQuery);
+            }
+        };
+        appModeManager.addOnModeChangeListener(modeChangeListener);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         DrawerLayout drawerLayout = findViewById(R.id.drawer_layout);
@@ -116,7 +146,16 @@ public class UnitOfMeasureActivity extends BaseActivity {
                     if (btnClearSearch != null) {
                         btnClearSearch.setVisibility(query.isEmpty() ? View.GONE : View.VISIBLE);
                     }
-                    filterUnits(query);
+                    if (appModeManager != null && appModeManager.isOnlineMode()) {
+                        currentSearchQuery = query.trim();
+                        if (searchRunnable != null) {
+                            searchHandler.removeCallbacks(searchRunnable);
+                        }
+                        searchRunnable = () -> loadOnlineUnits(1, true);
+                        searchHandler.postDelayed(searchRunnable, 350);
+                    } else {
+                        filterUnits(query);
+                    }
                 }
 
                 @Override
@@ -128,6 +167,12 @@ public class UnitOfMeasureActivity extends BaseActivity {
                 if (actionId == EditorInfo.IME_ACTION_SEARCH) {
                     hideKeyboard(v);
                     editSearchUom.clearFocus();
+                    if (appModeManager != null && appModeManager.isOnlineMode()) {
+                        if (searchRunnable != null) {
+                            searchHandler.removeCallbacks(searchRunnable);
+                        }
+                        loadOnlineUnits(1, true);
+                    }
                     return true;
                 }
                 return false;
@@ -139,6 +184,13 @@ public class UnitOfMeasureActivity extends BaseActivity {
                 if (editSearchUom != null) {
                     editSearchUom.setText("");
                 }
+                if (appModeManager != null && appModeManager.isOnlineMode()) {
+                    currentSearchQuery = "";
+                    if (searchRunnable != null) {
+                        searchHandler.removeCallbacks(searchRunnable);
+                    }
+                    loadOnlineUnits(1, true);
+                }
             });
         }
 
@@ -147,14 +199,32 @@ public class UnitOfMeasureActivity extends BaseActivity {
                 if (editSearchUom != null) {
                     editSearchUom.setText("");
                 }
+                if (appModeManager != null && appModeManager.isOnlineMode()) {
+                    currentSearchQuery = "";
+                    if (searchRunnable != null) {
+                        searchHandler.removeCallbacks(searchRunnable);
+                    }
+                    loadOnlineUnits(1, true);
+                }
             });
         }
     }
 
     private void setupRecyclerView() {
         uomAdapter = new UnitOfMeasureAdapter();
-        recyclerUom.setLayoutManager(new LinearLayoutManager(this));
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        recyclerUom.setLayoutManager(layoutManager);
         recyclerUom.setAdapter(uomAdapter);
+
+        endlessScrollListener = new EndlessRecyclerScrollListener(layoutManager) {
+            @Override
+            public void onLoadMore(int page, int totalItemsCount, RecyclerView view) {
+                if (appModeManager != null && appModeManager.isOnlineMode() && onlineHasMore && !onlineIsLoading) {
+                    loadOnlineUnits(onlineCurrentPage + 1, false);
+                }
+            }
+        };
+        recyclerUom.addOnScrollListener(endlessScrollListener);
 
         uomAdapter.setOnUomClickListener(uom -> {
             if (uom.isDefault) {
@@ -169,12 +239,116 @@ public class UnitOfMeasureActivity extends BaseActivity {
     }
 
     private void observeUnits() {
+        if (appModeManager != null && appModeManager.isOnlineMode()) {
+            loadOnlineUnits(1, true);
+            return;
+        }
+
         uomRepository.getAllUnitsOfMeasure().observe(this, units -> {
             allUnits.clear();
             if (units != null) {
                 allUnits.addAll(units);
             }
             filterUnits(currentSearchQuery);
+        });
+    }
+
+    private void loadOnlineUnits(int page, boolean isNewSearch) {
+        if (onlineIsLoading && !isNewSearch) return;
+        onlineIsLoading = true;
+
+        if (isNewSearch) {
+            onlineCurrentPage = 1;
+            onlineHasMore = true;
+            if (endlessScrollListener != null) {
+                endlessScrollListener.resetState();
+            }
+            uomAdapter.clearUnits();
+            if (textUomCount != null) {
+                textUomCount.setText("Loading...");
+            }
+        }
+
+        uomAdapter.showLoadingFooter();
+
+        uomRepository.fetchUnitsPaged(page, EndlessRecyclerScrollListener.PAGE_SIZE, currentSearchQuery, new OnlineUnitOfMeasureRepository.PagedUnitCallback() {
+            @Override
+            public void onSuccess(List<UnitOfMeasure> units, int currentPage, int totalPages, int totalRecords, boolean hasMore) {
+                onlineIsLoading = false;
+                onlineCurrentPage = currentPage;
+                onlineHasMore = hasMore;
+                if (endlessScrollListener != null) {
+                    endlessScrollListener.setHasMore(hasMore);
+                    endlessScrollListener.setLoading(false);
+                }
+
+                uomAdapter.removeFooter();
+                if (currentPage == 1) {
+                    allUnits.clear();
+                    if (units != null) {
+                        allUnits.addAll(units);
+                    }
+                    uomAdapter.setUnits(units != null ? units : new ArrayList<>());
+                } else {
+                    if (units != null && !units.isEmpty()) {
+                        allUnits.addAll(units);
+                        uomAdapter.addUnits(units);
+                    }
+                }
+
+                int totalLoaded = uomAdapter.getUnits().size();
+                if (currentSearchQuery.isEmpty()) {
+                    if (textMetaLabel != null) {
+                        textMetaLabel.setText("ALL UNITS OF MEASURE");
+                    }
+                    if (textUomCount != null) {
+                        textUomCount.setText(String.format(Locale.getDefault(), "%d / %d Units", totalLoaded, totalRecords));
+                    }
+                } else {
+                    if (textMetaLabel != null) {
+                        textMetaLabel.setText("SEARCH RESULTS");
+                    }
+                    if (textUomCount != null) {
+                        textUomCount.setText(String.format(Locale.getDefault(), "%d / %d Found", totalLoaded, totalRecords));
+                    }
+                }
+
+                if (totalLoaded == 0) {
+                    if (!currentSearchQuery.isEmpty()) {
+                        layoutListContainer.setVisibility(View.GONE);
+                        layoutEmptyState.setVisibility(View.GONE);
+                        if (layoutSearchEmpty != null) {
+                            layoutSearchEmpty.setVisibility(View.VISIBLE);
+                            if (textSearchEmptyQuery != null) {
+                                textSearchEmptyQuery.setText("No units found matching \"" + currentSearchQuery + "\"");
+                            }
+                        }
+                    } else {
+                        layoutListContainer.setVisibility(View.GONE);
+                        layoutEmptyState.setVisibility(View.VISIBLE);
+                        if (layoutSearchEmpty != null) {
+                            layoutSearchEmpty.setVisibility(View.GONE);
+                        }
+                    }
+                } else {
+                    layoutEmptyState.setVisibility(View.GONE);
+                    if (layoutSearchEmpty != null) {
+                        layoutSearchEmpty.setVisibility(View.GONE);
+                    }
+                    layoutListContainer.setVisibility(View.VISIBLE);
+                    recyclerUom.setVisibility(View.VISIBLE);
+                }
+            }
+
+            @Override
+            public void onError(String errorMessage, boolean sessionExpired) {
+                onlineIsLoading = false;
+                if (endlessScrollListener != null) {
+                    endlessScrollListener.setLoading(false);
+                }
+                uomAdapter.showRetryFooter("Error: " + errorMessage, () -> loadOnlineUnits(page, isNewSearch));
+                Toast.makeText(UnitOfMeasureActivity.this, "Cloud: " + errorMessage, Toast.LENGTH_SHORT).show();
+            }
         });
     }
 
@@ -259,6 +433,9 @@ public class UnitOfMeasureActivity extends BaseActivity {
                 @Override
                 public void onSuccess() {
                     showToast("Unit of measure \"" + uom.name + "\" deleted successfully");
+                    if (appModeManager != null && appModeManager.isOnlineMode()) {
+                        loadOnlineUnits(1, true);
+                    }
                 }
 
                 @Override
@@ -309,6 +486,20 @@ public class UnitOfMeasureActivity extends BaseActivity {
         if (navView != null) {
             navView.setCheckedItem(R.id.nav_uom);
         }
+        if (appModeManager != null && appModeManager.isOnlineMode()) {
+            loadOnlineUnits(1, true);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (searchRunnable != null) {
+            searchHandler.removeCallbacks(searchRunnable);
+        }
+        if (appModeManager != null && modeChangeListener != null) {
+            appModeManager.removeOnModeChangeListener(modeChangeListener);
+        }
     }
 
     @Override
@@ -344,3 +535,4 @@ public class UnitOfMeasureActivity extends BaseActivity {
         return super.onOptionsItemSelected(item);
     }
 }
+

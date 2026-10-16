@@ -15,6 +15,7 @@ import com.google.gson.JsonObject;
 import java.io.File;
 import in.gbtsolutions.inventoryhub.Database;
 import in.gbtsolutions.inventoryhub.R;
+import in.gbtsolutions.inventoryhub.online.api.NetworkErrorHelper;
 import in.gbtsolutions.inventoryhub.online.api.OnlineApiClient;
 import in.gbtsolutions.inventoryhub.online.api.OnlineApiService;
 import in.gbtsolutions.inventoryhub.online.config.AppMode;
@@ -74,6 +75,7 @@ public class MigrationWorker extends Worker {
 
             // 3. Poll for Status until COMPLETED or FAILED
             boolean completed = false;
+            String serverMigrationStatus = null;
             while (!completed) {
                 Thread.sleep(2500);
                 Response<ApiResponse<JsonObject>> statusRes = api.getMigrationStatus(jobId).execute();
@@ -88,6 +90,9 @@ public class MigrationWorker extends Worker {
 
                         if ("COMPLETED".equalsIgnoreCase(status)) {
                             completed = true;
+                            if (data.has("migration_completed") && !data.get("migration_completed").isJsonNull()) {
+                                serverMigrationStatus = data.get("migration_completed").getAsString();
+                            }
                         } else if ("FAILED".equalsIgnoreCase(status)) {
                             String err = data.has("error") ? data.get("error").getAsString() : "Migration failed on server";
                             return Result.failure(new Data.Builder().putString(KEY_ERROR, err).build());
@@ -96,8 +101,13 @@ public class MigrationWorker extends Worker {
                 }
             }
 
-            // 4. Finalize Mode Switch
+            // 4. Finalize Mode Switch & Update Migration Count in Android DB and Prefs
             AppModeManager.getInstance(context).setAppMode(AppMode.ONLINE);
+            if (serverMigrationStatus != null && !serverMigrationStatus.trim().isEmpty()) {
+                AppModeManager.getInstance(context).setMigrationStatus(serverMigrationStatus.trim());
+            } else {
+                AppModeManager.getInstance(context).incrementMigrationCount();
+            }
 
             // 5. Invalidate Local DB and rename to backup
             Database.invalidateInstance();
@@ -111,7 +121,7 @@ public class MigrationWorker extends Worker {
             return Result.success();
 
         } catch (Exception e) {
-            return Result.failure(new Data.Builder().putString(KEY_ERROR, e.getMessage()).build());
+            return Result.failure(new Data.Builder().putString(KEY_ERROR, NetworkErrorHelper.getErrorMessage(e, e.getMessage())).build());
         } finally {
             if (dumpGz != null && dumpGz.exists()) {
                 dumpGz.delete();

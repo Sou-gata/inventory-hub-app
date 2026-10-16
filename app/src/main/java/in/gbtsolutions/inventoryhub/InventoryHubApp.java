@@ -6,6 +6,7 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
 
+import in.gbtsolutions.inventoryhub.helpers.CrashLogger;
 import in.gbtsolutions.inventoryhub.helpers.ThemeManager;
 
 public class InventoryHubApp extends Application implements DefaultLifecycleObserver {
@@ -16,6 +17,7 @@ public class InventoryHubApp extends Application implements DefaultLifecycleObse
     public void onCreate() {
         super.onCreate();
         instance = this;
+        CrashLogger.init(this);
         ThemeManager.applyTheme(this);
         GlobalStore.getInstance().loadSettings(this);
         SeedDB.seedDB(this);

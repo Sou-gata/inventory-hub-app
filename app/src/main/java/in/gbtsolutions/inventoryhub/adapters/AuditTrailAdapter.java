@@ -20,10 +20,18 @@ import java.util.List;
 import in.gbtsolutions.inventoryhub.R;
 import in.gbtsolutions.inventoryhub.models.AuditTrail;
 
-public class AuditTrailAdapter extends RecyclerView.Adapter<AuditTrailAdapter.AuditTrailViewHolder> {
+public class AuditTrailAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+
+    public static final int VIEW_TYPE_ITEM = 0;
+    public static final int VIEW_TYPE_FOOTER = 1;
 
     private final List<AuditTrail> auditList = new ArrayList<>();
     private OnAuditTrailClickListener clickListener;
+
+    private boolean isFooterAdded = false;
+    private boolean isRetryActive = false;
+    private String retryMessage = null;
+    private Runnable retryAction = null;
 
     public AuditTrailAdapter() {
     }
@@ -32,7 +40,72 @@ public class AuditTrailAdapter extends RecyclerView.Adapter<AuditTrailAdapter.Au
         this.clickListener = listener;
     }
 
+    public void clearAuditTrails() {
+        int count = getItemCount();
+        auditList.clear();
+        isFooterAdded = false;
+        isRetryActive = false;
+        retryMessage = null;
+        retryAction = null;
+        if (count > 0) {
+            notifyDataSetChanged();
+        }
+    }
+
+    public void addAuditTrails(@NonNull List<AuditTrail> newBatch) {
+        if (newBatch.isEmpty()) return;
+        int insertPos = auditList.size();
+        auditList.addAll(newBatch);
+        notifyItemRangeInserted(insertPos, newBatch.size());
+    }
+
+    public void showLoadingFooter() {
+        if (!isFooterAdded) {
+            isFooterAdded = true;
+            isRetryActive = false;
+            notifyItemInserted(auditList.size());
+        } else if (isRetryActive) {
+            isRetryActive = false;
+            notifyItemChanged(auditList.size());
+        }
+    }
+
+    public void showRetryFooter(String message, Runnable retry) {
+        this.retryMessage = message;
+        this.retryAction = retry;
+        this.isRetryActive = true;
+        if (!isFooterAdded) {
+            isFooterAdded = true;
+            notifyItemInserted(auditList.size());
+        } else {
+            notifyItemChanged(auditList.size());
+        }
+    }
+
+    public void removeFooter() {
+        if (isFooterAdded) {
+            isFooterAdded = false;
+            isRetryActive = false;
+            retryMessage = null;
+            retryAction = null;
+            notifyItemRemoved(auditList.size());
+        }
+    }
+
+    public boolean isFooterAdded() {
+        return isFooterAdded;
+    }
+
+    public List<AuditTrail> getAuditTrails() {
+        return new ArrayList<>(auditList);
+    }
+
     public void setAuditTrails(@NonNull List<AuditTrail> newAuditTrails) {
+        isFooterAdded = false;
+        isRetryActive = false;
+        retryMessage = null;
+        retryAction = null;
+
         DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new DiffUtil.Callback() {
             @Override
             public int getOldListSize() {
@@ -53,7 +126,12 @@ public class AuditTrailAdapter extends RecyclerView.Adapter<AuditTrailAdapter.Au
             public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
                 AuditTrail oldItem = auditList.get(oldItemPosition);
                 AuditTrail newItem = newAuditTrails.get(newItemPosition);
-                return TextUtils.equals(oldItem.actionType, newItem.actionType) && TextUtils.equals(oldItem.module, newItem.module) && TextUtils.equals(oldItem.recordId, newItem.recordId) && TextUtils.equals(oldItem.details, newItem.details) && TextUtils.equals(oldItem.performedBy, newItem.performedBy) && oldItem.timestamp == newItem.timestamp;
+                return TextUtils.equals(oldItem.actionType, newItem.actionType)
+                        && TextUtils.equals(oldItem.module, newItem.module)
+                        && TextUtils.equals(oldItem.recordId, newItem.recordId)
+                        && TextUtils.equals(oldItem.details, newItem.details)
+                        && TextUtils.equals(oldItem.performedBy, newItem.performedBy)
+                        && oldItem.timestamp == newItem.timestamp;
             }
         });
 
@@ -62,21 +140,37 @@ public class AuditTrailAdapter extends RecyclerView.Adapter<AuditTrailAdapter.Au
         diffResult.dispatchUpdatesTo(this);
     }
 
+    @Override
+    public int getItemViewType(int position) {
+        if (isFooterAdded && position == auditList.size()) {
+            return VIEW_TYPE_FOOTER;
+        }
+        return VIEW_TYPE_ITEM;
+    }
+
     @NonNull
     @Override
-    public AuditTrailViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        if (viewType == VIEW_TYPE_FOOTER) {
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_loading_footer, parent, false);
+            return new FooterViewHolder(view);
+        }
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_audit_trail, parent, false);
         return new AuditTrailViewHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull AuditTrailViewHolder holder, int position) {
-        holder.bind(auditList.get(position));
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+        if (holder instanceof AuditTrailViewHolder) {
+            ((AuditTrailViewHolder) holder).bind(auditList.get(position));
+        } else if (holder instanceof FooterViewHolder) {
+            ((FooterViewHolder) holder).bind(isRetryActive, retryMessage, retryAction);
+        }
     }
 
     @Override
     public int getItemCount() {
-        return auditList.size();
+        return isFooterAdded ? auditList.size() + 1 : auditList.size();
     }
 
     public interface OnAuditTrailClickListener {
@@ -168,6 +262,41 @@ public class AuditTrailAdapter extends RecyclerView.Adapter<AuditTrailAdapter.Au
                     clickListener.onAuditTrailClick(item);
                 }
             });
+        }
+    }
+
+    public static class FooterViewHolder extends RecyclerView.ViewHolder {
+        private final View containerLoading;
+        private final View containerRetry;
+        private final TextView textRetryMessage;
+        private final TextView btnRetryLoad;
+
+        public FooterViewHolder(@NonNull View itemView) {
+            super(itemView);
+            containerLoading = itemView.findViewById(R.id.container_loading);
+            containerRetry = itemView.findViewById(R.id.container_retry);
+            textRetryMessage = itemView.findViewById(R.id.text_retry_message);
+            btnRetryLoad = itemView.findViewById(R.id.btn_retry_load);
+        }
+
+        public void bind(boolean isRetry, String message, Runnable retryAction) {
+            if (isRetry) {
+                if (containerLoading != null) containerLoading.setVisibility(View.GONE);
+                if (containerRetry != null) {
+                    containerRetry.setVisibility(View.VISIBLE);
+                    if (textRetryMessage != null && message != null) {
+                        textRetryMessage.setText(message);
+                    }
+                    if (btnRetryLoad != null) {
+                        btnRetryLoad.setOnClickListener(v -> {
+                            if (retryAction != null) retryAction.run();
+                        });
+                    }
+                }
+            } else {
+                if (containerRetry != null) containerRetry.setVisibility(View.GONE);
+                if (containerLoading != null) containerLoading.setVisibility(View.VISIBLE);
+            }
         }
     }
 }

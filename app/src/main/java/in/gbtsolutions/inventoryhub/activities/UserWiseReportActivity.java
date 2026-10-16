@@ -62,6 +62,8 @@ import in.gbtsolutions.inventoryhub.GlobalStore;
 import in.gbtsolutions.inventoryhub.R;
 import in.gbtsolutions.inventoryhub.helpers.UserHelper;
 import in.gbtsolutions.inventoryhub.models.User;
+import in.gbtsolutions.inventoryhub.online.config.AppModeManager;
+import in.gbtsolutions.inventoryhub.online.repository.OnlineReportRepository;
 import in.gbtsolutions.inventoryhub.reports.userreport.UserWiseReportCalculator;
 import in.gbtsolutions.inventoryhub.reports.userreport.UserWiseReportCsvExporter;
 import in.gbtsolutions.inventoryhub.reports.userreport.UserWiseReportExcelExporter;
@@ -143,6 +145,11 @@ public class UserWiseReportActivity extends BaseActivity {
     private String currentSearchQuery = "";
     private UserWiseReportModels.ReportData currentReportData = null;
 
+    // Online integration
+    private AppModeManager appModeManager;
+    private OnlineReportRepository onlineReportRepository;
+    private AppModeManager.OnModeChangeListener modeChangeListener;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -163,6 +170,12 @@ public class UserWiseReportActivity extends BaseActivity {
 
         initViews();
         initListeners();
+
+        appModeManager = AppModeManager.getInstance(this);
+        onlineReportRepository = new OnlineReportRepository(this);
+        modeChangeListener = newMode -> loadReport();
+        appModeManager.addOnModeChangeListener(modeChangeListener);
+
         setDefaultDateRangeThisMonth();
         loadReport();
     }
@@ -320,33 +333,56 @@ public class UserWiseReportActivity extends BaseActivity {
         UserHelper.getAllUsersAsync(this, users -> {
             if (isFinishing() || isDestroyed()) return;
 
-            int count = (users != null ? users.size() : 0) + 1; // +1 for "All Users"
-            String[] items = new String[count];
-            items[0] = "All Users (All Staff & Admins)";
-
-            int checkedIndex = 0;
+            java.util.LinkedHashMap<Long, String> userOptions = new java.util.LinkedHashMap<>();
             if (users != null) {
-                for (int i = 0; i < users.size(); i++) {
-                    User u = users.get(i);
-                    items[i + 1] = UserHelper.formatUserNameAndUsername(u, u.id) + " [" + UserHelper.formatUserRole(u) + "]";
-                    if (selectedUserId == u.id) {
-                        checkedIndex = i + 1;
+                for (User u : users) {
+                    if (u != null && u.id > 0) {
+                        userOptions.put((long) u.id, UserHelper.formatUserNameAndUsername(u, u.id) + " [" + UserHelper.formatUserRole(u) + "]");
                     }
                 }
             }
 
+            // In online mode or if report already loaded, merge any server users from report rows
+            if (currentReportData != null && currentReportData.rows != null) {
+                for (UserWiseReportModels.UserWiseReportRow r : currentReportData.rows) {
+                    if (r != null && r.userId > 0 && !userOptions.containsKey(r.userId)) {
+                        String name = !TextUtils.isEmpty(r.userName) ? r.userName : "User #" + r.userId;
+                        if (!TextUtils.isEmpty(r.username)) name += " (@" + r.username + ")";
+                        String role = !TextUtils.isEmpty(r.role) ? r.role.toUpperCase(Locale.getDefault()) : "STAFF";
+                        userOptions.put(r.userId, name + " [" + role + "]");
+                    }
+                }
+            }
+
+            List<Long> idList = new ArrayList<>();
+            idList.add(-1L);
+            List<String> labelList = new ArrayList<>();
+            labelList.add("All Users (All Staff & Admins)");
+
+            int checkedIndex = 0;
+            int idx = 1;
+            for (java.util.Map.Entry<Long, String> entry : userOptions.entrySet()) {
+                idList.add(entry.getKey());
+                labelList.add(entry.getValue());
+                if (selectedUserId == entry.getKey()) {
+                    checkedIndex = idx;
+                }
+                idx++;
+            }
+
+            String[] items = labelList.toArray(new String[0]);
             new MaterialAlertDialogBuilder(this)
                     .setTitle("Select Target User")
                     .setSingleChoiceItems(items, checkedIndex, (dialog, which) -> {
                         dialog.dismiss();
-                        if (which == 0) {
+                        long chosenId = idList.get(which);
+                        if (chosenId <= 0) {
                             selectedUserId = -1;
                             selectedUserDisplayName = "All Users (Staff & Admins)";
                             btnClearUserFilter.setVisibility(View.GONE);
-                        } else if (users != null && which - 1 < users.size()) {
-                            User chosen = users.get(which - 1);
-                            selectedUserId = chosen.id;
-                            selectedUserDisplayName = UserHelper.formatUserNameAndUsername(chosen, chosen.id);
+                        } else {
+                            selectedUserId = chosenId;
+                            selectedUserDisplayName = items[which];
                             btnClearUserFilter.setVisibility(View.VISIBLE);
                         }
                         tvSelectedUserName.setText(selectedUserDisplayName);
@@ -465,21 +501,53 @@ public class UserWiseReportActivity extends BaseActivity {
     private void loadReport() {
         btnGenerate.setEnabled(false);
 
-        Executors.newSingleThreadExecutor().execute(() -> {
-            UserWiseReportModels.ReportData data = UserWiseReportCalculator.generateReport(
-                    UserWiseReportActivity.this,
-                    selectedStartDate,
-                    selectedEndDate,
-                    selectedUserId
-            );
+        if (appModeManager != null && appModeManager.isOnlineMode()) {
+            btnGenerate.setText("Fetching...");
+            Long filterId = selectedUserId > 0 ? selectedUserId : null;
+            onlineReportRepository.fetchUserWiseReport(selectedStartDate, selectedEndDate, filterId, new OnlineReportRepository.UserWiseReportCallback() {
+                @Override
+                public void onSuccess(UserWiseReportModels.ReportData report) {
+                    if (isFinishing() || isDestroyed()) return;
+                    btnGenerate.setEnabled(true);
+                    btnGenerate.setText("Generate");
+                    currentReportData = report;
+                    updateKpiCards(report.summary);
+                    renderFilteredTable();
+                }
 
-            new Handler(Looper.getMainLooper()).post(() -> {
-                btnGenerate.setEnabled(true);
-                currentReportData = data;
-                updateKpiCards(data.summary);
-                renderFilteredTable();
+                @Override
+                public void onError(String errorMessage, boolean sessionExpired) {
+                    if (isFinishing() || isDestroyed()) return;
+                    btnGenerate.setEnabled(true);
+                    btnGenerate.setText("Generate");
+                    if (sessionExpired) {
+                        Toast.makeText(UserWiseReportActivity.this, "Session expired. Please log in again.", Toast.LENGTH_LONG).show();
+                        appModeManager.clearAuthToken();
+                        navigateTo(LoginActivity.class, true);
+                    } else {
+                        Toast.makeText(UserWiseReportActivity.this, "User Wise Report sync error: " + errorMessage, Toast.LENGTH_SHORT).show();
+                    }
+                }
             });
-        });
+        } else {
+            btnGenerate.setText("Generating...");
+            Executors.newSingleThreadExecutor().execute(() -> {
+                UserWiseReportModels.ReportData data = UserWiseReportCalculator.generateReport(
+                        UserWiseReportActivity.this,
+                        selectedStartDate,
+                        selectedEndDate,
+                        selectedUserId
+                );
+
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    btnGenerate.setEnabled(true);
+                    btnGenerate.setText("Generate");
+                    currentReportData = data;
+                    updateKpiCards(data.summary);
+                    renderFilteredTable();
+                });
+            });
+        }
     }
 
     private void updateKpiCards(UserWiseReportModels.UserWiseReportSummary summary) {
@@ -867,6 +935,32 @@ public class UserWiseReportActivity extends BaseActivity {
 
     private void exportExcel() {
         Toast.makeText(this, "Generating Excel...", Toast.LENGTH_SHORT).show();
+        if (appModeManager != null && appModeManager.isOnlineMode()) {
+            Long filterId = selectedUserId > 0 ? selectedUserId : null;
+            onlineReportRepository.downloadUserWiseReport("excel", selectedStartDate, selectedEndDate, filterId, new OnlineReportRepository.DownloadCallback() {
+                @Override
+                public void onSuccess(File downloadedFile, String mimeType) {
+                    showExportSuccess(downloadedFile, mimeType);
+                }
+
+                @Override
+                public void onError(String errorMessage, boolean sessionExpired) {
+                    if (sessionExpired) {
+                        Toast.makeText(UserWiseReportActivity.this, "Session expired. Please log in again.", Toast.LENGTH_LONG).show();
+                        appModeManager.clearAuthToken();
+                        navigateTo(LoginActivity.class, true);
+                        return;
+                    }
+                    Toast.makeText(UserWiseReportActivity.this, "Online download failed: " + errorMessage + ". Generating locally...", Toast.LENGTH_SHORT).show();
+                    exportExcelLocally();
+                }
+            });
+        } else {
+            exportExcelLocally();
+        }
+    }
+
+    private void exportExcelLocally() {
         Executors.newSingleThreadExecutor().execute(() -> {
             try {
                 File file = UserWiseReportExcelExporter.exportToExcel(UserWiseReportActivity.this, currentReportData);
@@ -881,6 +975,32 @@ public class UserWiseReportActivity extends BaseActivity {
 
     private void exportPdf() {
         Toast.makeText(this, "Generating PDF...", Toast.LENGTH_SHORT).show();
+        if (appModeManager != null && appModeManager.isOnlineMode()) {
+            Long filterId = selectedUserId > 0 ? selectedUserId : null;
+            onlineReportRepository.downloadUserWiseReport("pdf", selectedStartDate, selectedEndDate, filterId, new OnlineReportRepository.DownloadCallback() {
+                @Override
+                public void onSuccess(File downloadedFile, String mimeType) {
+                    showExportSuccess(downloadedFile, mimeType);
+                }
+
+                @Override
+                public void onError(String errorMessage, boolean sessionExpired) {
+                    if (sessionExpired) {
+                        Toast.makeText(UserWiseReportActivity.this, "Session expired. Please log in again.", Toast.LENGTH_LONG).show();
+                        appModeManager.clearAuthToken();
+                        navigateTo(LoginActivity.class, true);
+                        return;
+                    }
+                    Toast.makeText(UserWiseReportActivity.this, "Online download failed: " + errorMessage + ". Generating locally...", Toast.LENGTH_SHORT).show();
+                    exportPdfLocally();
+                }
+            });
+        } else {
+            exportPdfLocally();
+        }
+    }
+
+    private void exportPdfLocally() {
         Executors.newSingleThreadExecutor().execute(() -> {
             try {
                 File file = UserWiseReportPdfExporter.exportToPdf(UserWiseReportActivity.this, currentReportData);
@@ -895,6 +1015,32 @@ public class UserWiseReportActivity extends BaseActivity {
 
     private void exportCsv() {
         Toast.makeText(this, "Generating CSV...", Toast.LENGTH_SHORT).show();
+        if (appModeManager != null && appModeManager.isOnlineMode()) {
+            Long filterId = selectedUserId > 0 ? selectedUserId : null;
+            onlineReportRepository.downloadUserWiseReport("csv", selectedStartDate, selectedEndDate, filterId, new OnlineReportRepository.DownloadCallback() {
+                @Override
+                public void onSuccess(File downloadedFile, String mimeType) {
+                    showExportSuccess(downloadedFile, mimeType);
+                }
+
+                @Override
+                public void onError(String errorMessage, boolean sessionExpired) {
+                    if (sessionExpired) {
+                        Toast.makeText(UserWiseReportActivity.this, "Session expired. Please log in again.", Toast.LENGTH_LONG).show();
+                        appModeManager.clearAuthToken();
+                        navigateTo(LoginActivity.class, true);
+                        return;
+                    }
+                    Toast.makeText(UserWiseReportActivity.this, "Online download failed: " + errorMessage + ". Generating locally...", Toast.LENGTH_SHORT).show();
+                    exportCsvLocally();
+                }
+            });
+        } else {
+            exportCsvLocally();
+        }
+    }
+
+    private void exportCsvLocally() {
         Executors.newSingleThreadExecutor().execute(() -> {
             try {
                 File file = UserWiseReportCsvExporter.exportToCsv(UserWiseReportActivity.this, currentReportData);
@@ -1081,8 +1227,20 @@ public class UserWiseReportActivity extends BaseActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        GlobalStore.getInstance().loadSettings(this);
         if (navView != null) {
             navView.setCheckedItem(R.id.nav_reports_user_summary);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (appModeManager != null && modeChangeListener != null) {
+            appModeManager.removeOnModeChangeListener(modeChangeListener);
+        }
+        if (onlineReportRepository != null) {
+            onlineReportRepository.cancel();
         }
     }
 }

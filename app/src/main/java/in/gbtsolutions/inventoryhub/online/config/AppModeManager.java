@@ -73,6 +73,11 @@ public class AppModeManager {
                         mainHandler.post(() -> setAppMode(mode));
                     }
                 }
+                String migVal = in.gbtsolutions.inventoryhub.Database.getInstance(appContext).configDao().getValueByKey(Configurations.KEY_MIGRATION_COMPLETED);
+                if (migVal != null && !migVal.trim().isEmpty()) {
+                    String normalized = normalizeMigrationStatus(migVal.trim());
+                    preferences.edit().putString(Configurations.KEY_MIGRATION_COMPLETED, normalized).apply();
+                }
             } catch (Exception ignored) {
             }
         });
@@ -162,6 +167,154 @@ public class AppModeManager {
         } else {
             preferences.edit().putString(KEY_DEVICE_ID, deviceId.trim()).apply();
         }
+    }
+
+    public synchronized String getMigrationStatusString() {
+        return preferences.getString(Configurations.KEY_MIGRATION_COMPLETED, "0/0");
+    }
+
+    public synchronized int getMigratedCount() {
+        return parseMigrationCount(getMigrationStatusString(), 0);
+    }
+
+    public synchronized int getAllowedMigrationCount() {
+        return parseMigrationCount(getMigrationStatusString(), 1);
+    }
+
+    public synchronized boolean canMigrate() {
+        String migrationString = getMigrationStatusString();
+        if (migrationString == null || migrationString.trim().isEmpty()) {
+            return false;
+        }
+        String[] migrations = migrationString.trim().split("/");
+        int doneMigration = 0;
+        int allowedMigration = 0;
+        if (migrations.length > 0) {
+            try {
+                doneMigration = Integer.parseInt(migrations[0].trim());
+            } catch (Exception ignored) {
+            }
+        }
+        if (migrations.length > 1) {
+            try {
+                allowedMigration = Integer.parseInt(migrations[1].trim());
+            } catch (Exception ignored) {
+            }
+        }
+        return doneMigration < allowedMigration;
+    }
+
+    public synchronized boolean isMigrationCompleted() {
+        String migrationString = getMigrationStatusString();
+        if (migrationString == null || migrationString.trim().isEmpty()) {
+            return false;
+        }
+        String[] migrations = migrationString.trim().split("/");
+        int doneMigration = 0;
+        int allowedMigration = 0;
+        if (migrations.length > 0) {
+            try {
+                doneMigration = Integer.parseInt(migrations[0].trim());
+            } catch (Exception ignored) {
+            }
+        }
+        if (migrations.length > 1) {
+            try {
+                allowedMigration = Integer.parseInt(migrations[1].trim());
+            } catch (Exception ignored) {
+            }
+        }
+        return allowedMigration > 0 && doneMigration >= allowedMigration;
+    }
+
+    public synchronized String incrementMigrationCount() {
+        String migration = getMigrationStatusString();
+        int doneMigration = 0;
+        int totalMigration = 0;
+        if (migration != null && !migration.trim().isEmpty()) {
+            String[] parts = migration.trim().split("/");
+            if (parts.length > 0) {
+                try {
+                    doneMigration = Integer.parseInt(parts[0].trim());
+                } catch (Exception ignored) {
+                }
+            }
+            if (parts.length > 1) {
+                try {
+                    totalMigration = Integer.parseInt(parts[1].trim());
+                } catch (Exception ignored) {
+                }
+            }
+        }
+        int updatedDone = doneMigration + 1;
+        String newStatus = updatedDone + "/" + totalMigration;
+        setMigrationStatus(newStatus);
+        return newStatus;
+    }
+
+    public synchronized void setMigrationStatus(String status) {
+        String normalized = normalizeMigrationStatus(status);
+        preferences.edit().putString(Configurations.KEY_MIGRATION_COMPLETED, normalized).apply();
+        try {
+            in.gbtsolutions.inventoryhub.GlobalStore.getInstance().setSetting(Configurations.KEY_MIGRATION_COMPLETED, normalized);
+        } catch (Exception ignored) {
+        }
+        executor.execute(() -> {
+            try {
+                in.gbtsolutions.inventoryhub.Database db = in.gbtsolutions.inventoryhub.Database.getInstance(appContext);
+                if (db != null && db.configDao() != null) {
+                    in.gbtsolutions.inventoryhub.models.Config existing = db.configDao().getConfigByKey(Configurations.KEY_MIGRATION_COMPLETED);
+                    if (existing != null) {
+                        existing.setConfigValue(normalized);
+                        db.configDao().update(existing);
+                    } else {
+                        db.configDao().insert(new in.gbtsolutions.inventoryhub.models.Config(Configurations.KEY_MIGRATION_COMPLETED, normalized));
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+        });
+    }
+
+    public synchronized void setMigrationCompleted(boolean completed) {
+        if (completed) {
+            incrementMigrationCount();
+        }
+    }
+
+    public static String normalizeMigrationStatus(String status) {
+        if (status == null || status.trim().isEmpty()) return "0/0";
+        status = status.trim();
+        if ("true".equalsIgnoreCase(status)) return "1/1";
+        if ("false".equalsIgnoreCase(status)) return "0/1";
+        String[] parts = status.split("/");
+        int done = 0;
+        int total = 0;
+        if (parts.length > 0) {
+            try {
+                done = Integer.parseInt(parts[0].trim());
+            } catch (Exception ignored) {
+            }
+        }
+        if (parts.length > 1) {
+            try {
+                total = Integer.parseInt(parts[1].trim());
+            } catch (Exception ignored) {
+            }
+        }
+        return done + "/" + total;
+    }
+
+    public static int parseMigrationCount(String status, int index) {
+        if (status == null || status.trim().isEmpty()) return 0;
+        String[] parts = status.trim().split("/");
+        if (parts.length > index) {
+            try {
+                return Integer.parseInt(parts[index].trim());
+            } catch (Exception ignored) {
+            }
+        }
+        return 0;
     }
 
     public void addOnModeChangeListener(OnModeChangeListener listener) {

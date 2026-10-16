@@ -6,6 +6,7 @@ import android.os.Looper;
 
 import com.google.gson.Gson;
 
+import in.gbtsolutions.inventoryhub.online.api.NetworkErrorHelper;
 import in.gbtsolutions.inventoryhub.online.api.OnlineApiClient;
 import in.gbtsolutions.inventoryhub.online.api.OnlineApiService;
 import in.gbtsolutions.inventoryhub.online.models.ApiResponse;
@@ -102,7 +103,7 @@ public class OnlineDashboardRepository {
                 if (call.isCanceled()) return;
                 mainHandler.post(() -> {
                     if (callback != null) {
-                        callback.onError("Network error: " + (t.getMessage() != null ? t.getMessage() : "Timeout"), false);
+                        callback.onError(NetworkErrorHelper.getErrorMessage(t), false);
                     }
                 });
             }

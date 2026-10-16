@@ -3,6 +3,7 @@
     <cache-path name="shared_qr" path="shared_qr/" />
     <files-path name="bills" path="bills/" />
     <cache-path name="bills_cache" path="bills/" />
+    <cache-path name="reports_cache" path="reports/" />
     <external-files-path name="external_files" path="." />
     <external-path name="external_storage" path="." />
 </paths>

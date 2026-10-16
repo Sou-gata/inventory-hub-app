@@ -24,6 +24,7 @@ public class GlobalStore {
     private boolean printBill = false;
     private String mode = Mode.OFFLINE.name();
     private String tier = Mode.OfflineTier.STANDARD.name();
+    private String migrationCompleted = "0/0";
     private final Map<String, Object> settingsMap = new HashMap<>();
     public static final String KEY_ALLOW_OUT_OF_STOCK_SELL = "allow_out_of_stock_sell";
 
@@ -49,9 +50,7 @@ public class GlobalStore {
         loggedInUser = null;
     }
 
-    /**
-     * Loads all available settings from SharedPreferences and caches them in GlobalStore.
-     */
+    /** Loads all available settings from SharedPreferences and caches them in GlobalStore. */
     public synchronized void loadSettings(Context context) {
         if (context == null) return;
         SharedPreferences prefs = context.getApplicationContext().getSharedPreferences(Configurations.PREF_NAME, Context.MODE_PRIVATE);
@@ -62,6 +61,7 @@ public class GlobalStore {
         this.upiId = prefs.getString(Configurations.KEY_UPI_ID, "");
         this.saveBillToGallery = prefs.getBoolean(Configurations.KEY_SAVE_BILL_TO_GALLERY, true);
         this.printBill = prefs.getBoolean(Configurations.KEY_PRINT_BILL, false);
+        this.migrationCompleted = prefs.getString(Configurations.KEY_MIGRATION_COMPLETED, "0/0");
 
         settingsMap.clear();
         Map<String, ?> all = prefs.getAll();
@@ -74,6 +74,7 @@ public class GlobalStore {
         settingsMap.put(Configurations.KEY_UPI_ID, this.upiId);
         settingsMap.put(Configurations.KEY_SAVE_BILL_TO_GALLERY, this.saveBillToGallery);
         settingsMap.put(Configurations.KEY_PRINT_BILL, this.printBill);
+        settingsMap.put(Configurations.KEY_MIGRATION_COMPLETED, this.migrationCompleted);
 
         new Thread(() -> {
             try {
@@ -97,6 +98,8 @@ public class GlobalStore {
                                 }
                             } else if (Configurations.KEY_TIER.equalsIgnoreCase(c.getConfigKey()) || "tire".equalsIgnoreCase(c.getConfigKey())) {
                                 this.tier = c.getConfigValue();
+                            } else if (Configurations.KEY_MIGRATION_COMPLETED.equalsIgnoreCase(c.getConfigKey())) {
+                                this.migrationCompleted = c.getConfigValue();
                             }
                         }
                     }
@@ -182,6 +185,55 @@ public class GlobalStore {
     public void setTier(String tier) {
         this.tier = tier;
         settingsMap.put(Configurations.KEY_TIER, tier);
+    }
+
+    public String getMigrationStatus() {
+        return migrationCompleted != null ? migrationCompleted : "0/0";
+    }
+
+    public void setMigrationStatus(String migrationStatus) {
+        this.migrationCompleted = migrationStatus != null ? migrationStatus : "0/0";
+        settingsMap.put(Configurations.KEY_MIGRATION_COMPLETED, this.migrationCompleted);
+    }
+
+    public boolean canMigrate() {
+        if (migrationCompleted == null || migrationCompleted.trim().isEmpty()) return false;
+        String[] migrations = migrationCompleted.trim().split("/");
+        int doneMigration = 0;
+        int allowedMigration = 0;
+        if (migrations.length > 0) {
+            try {
+                doneMigration = Integer.parseInt(migrations[0].trim());
+            } catch (Exception ignored) {
+            }
+        }
+        if (migrations.length > 1) {
+            try {
+                allowedMigration = Integer.parseInt(migrations[1].trim());
+            } catch (Exception ignored) {
+            }
+        }
+        return doneMigration < allowedMigration;
+    }
+
+    public boolean isMigrationCompleted() {
+        if (migrationCompleted == null || migrationCompleted.trim().isEmpty()) return false;
+        String[] migrations = migrationCompleted.trim().split("/");
+        int doneMigration = 0;
+        int allowedMigration = 0;
+        if (migrations.length > 0) {
+            try {
+                doneMigration = Integer.parseInt(migrations[0].trim());
+            } catch (Exception ignored) {
+            }
+        }
+        if (migrations.length > 1) {
+            try {
+                allowedMigration = Integer.parseInt(migrations[1].trim());
+            } catch (Exception ignored) {
+            }
+        }
+        return allowedMigration > 0 && doneMigration >= allowedMigration;
     }
 
     public Object getSetting(String key) {

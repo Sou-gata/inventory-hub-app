@@ -118,4 +118,8 @@ public class OnlineApiClient {
         this.retrofit = null;
         this.apiService = null;
     }
+
+    public static String getErrorMessage(Throwable t) {
+        return NetworkErrorHelper.getErrorMessage(t);
+    }
 }
