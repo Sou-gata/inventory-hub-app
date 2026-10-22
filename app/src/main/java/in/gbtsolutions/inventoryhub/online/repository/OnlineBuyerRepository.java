@@ -19,7 +19,15 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import in.gbtsolutions.inventoryhub.online.models.PagedData;
+
 public class OnlineBuyerRepository {
+
+    public interface PagedBuyerCallback {
+        void onSuccess(List<Buyer> buyers, int currentPage, int totalPages, int totalRecords, boolean hasMore);
+
+        void onError(String errorMessage);
+    }
 
     public interface BuyerListCallback {
         void onSuccess(List<Buyer> buyers);
@@ -42,6 +50,7 @@ public class OnlineBuyerRepository {
     private final Context context;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final Gson gson = new Gson();
+    private Call<ApiResponse<PagedData<OnlineBuyerDto>>> currentBuyersCall;
 
     public OnlineBuyerRepository(Context context) {
         this.context = context.getApplicationContext();
@@ -56,31 +65,64 @@ public class OnlineBuyerRepository {
     }
 
     public void fetchBuyers(String search, BuyerListCallback callback) {
-        getApi().getBuyers(search).enqueue(new Callback<ApiResponse<List<OnlineBuyerDto>>>() {
+        fetchBuyersPaged(1, 100, search, null, new PagedBuyerCallback() {
             @Override
-            public void onResponse(Call<ApiResponse<List<OnlineBuyerDto>>> call, Response<ApiResponse<List<OnlineBuyerDto>>> response) {
+            public void onSuccess(List<Buyer> buyers, int currentPage, int totalPages, int totalRecords, boolean hasMore) {
+                if (callback != null) {
+                    callback.onSuccess(buyers);
+                }
+            }
+
+            @Override
+            public void onError(String errorMessage) {
+                if (callback != null) {
+                    callback.onError(errorMessage);
+                }
+            }
+        });
+    }
+
+    public synchronized void fetchBuyersPaged(int page, int limit, String search, String status, PagedBuyerCallback callback) {
+        if (currentBuyersCall != null && !currentBuyersCall.isCanceled()) {
+            currentBuyersCall.cancel();
+        }
+
+        String query = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
+        String statusParam = (status != null && !status.trim().isEmpty()) ? status.trim() : null;
+
+        currentBuyersCall = getApi().getBuyers(page, limit, query, statusParam);
+        currentBuyersCall.enqueue(new Callback<ApiResponse<PagedData<OnlineBuyerDto>>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<PagedData<OnlineBuyerDto>>> call, Response<ApiResponse<PagedData<OnlineBuyerDto>>> response) {
+                if (call.isCanceled()) return;
+
                 if (response.isSuccessful() && response.body() != null) {
-                    ApiResponse<List<OnlineBuyerDto>> body = response.body();
+                    ApiResponse<PagedData<OnlineBuyerDto>> body = response.body();
                     if (body.isSuccess() && body.getData() != null) {
-                        List<Buyer> domainBuyers = BuyerMapper.toDomainList(body.getData());
+                        PagedData<OnlineBuyerDto> pagedData = body.getData();
+                        List<Buyer> domainBuyers = BuyerMapper.toDomainList(pagedData.getItems());
                         mainHandler.post(() -> {
-                            if (callback != null) callback.onSuccess(domainBuyers);
+                            if (callback != null) {
+                                callback.onSuccess(domainBuyers, pagedData.getPage(), pagedData.getTotalPages(), pagedData.getTotalRecords(), pagedData.hasMore());
+                            }
                         });
                         return;
                     } else {
                         String msg = body.getMessage();
                         mainHandler.post(() -> {
-                            if (callback != null)
-                                callback.onError(!msg.isEmpty() ? msg : "Failed to load buyers");
+                            if (callback != null) {
+                                callback.onError(msg != null && !msg.isEmpty() ? msg : "Failed to load buyers");
+                            }
                         });
                         return;
                     }
                 }
-                handleError(response, callback, "Failed to load buyers from server");
+                handlePagedError(response, callback, "Failed to load buyers from server");
             }
 
             @Override
-            public void onFailure(Call<ApiResponse<List<OnlineBuyerDto>>> call, Throwable t) {
+            public void onFailure(Call<ApiResponse<PagedData<OnlineBuyerDto>>> call, Throwable t) {
+                if (call.isCanceled()) return;
                 mainHandler.post(() -> {
                     if (callback != null) {
                         callback.onError(NetworkErrorHelper.getErrorMessage(t));
@@ -191,6 +233,23 @@ public class OnlineBuyerRepository {
                         callback.onError(NetworkErrorHelper.getErrorMessage(t));
                 });
             }
+        });
+    }
+
+    private void handlePagedError(Response<?> response, PagedBuyerCallback callback, String defaultMsg) {
+        String msg = defaultMsg + " (" + response.code() + ")";
+        try {
+            if (response.errorBody() != null) {
+                ApiResponse<?> err = gson.fromJson(response.errorBody().string(), ApiResponse.class);
+                if (err != null && err.getMessage() != null && !err.getMessage().isEmpty()) {
+                    msg = err.getMessage();
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        final String finalMsg = msg;
+        mainHandler.post(() -> {
+            if (callback != null) callback.onError(finalMsg);
         });
     }
 

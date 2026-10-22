@@ -1,6 +1,9 @@
 package in.gbtsolutions.inventoryhub.repository;
 
 import android.app.Application;
+import android.database.sqlite.SQLiteConstraintException;
+import android.os.Handler;
+import android.os.Looper;
 
 import androidx.lifecycle.LiveData;
 
@@ -13,6 +16,8 @@ import in.gbtsolutions.inventoryhub.dao.BuyerDao;
 import in.gbtsolutions.inventoryhub.models.Buyer;
 import in.gbtsolutions.inventoryhub.online.config.AppModeManager;
 import in.gbtsolutions.inventoryhub.online.repository.OnlineBuyerRepository;
+import in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper;
+import in.gbtsolutions.inventoryhub.models.AuditTrail;
 
 public class BuyerRepository {
     private final BuyerDao buyerDao;
@@ -24,6 +29,7 @@ public class BuyerRepository {
 
     public interface BuyerActionCallback {
         void onSuccess();
+
         void onError(String message);
     }
 
@@ -67,6 +73,12 @@ public class BuyerRepository {
         }
     }
 
+    public void fetchBuyersPaged(int page, int limit, String search, String status, OnlineBuyerRepository.PagedBuyerCallback callback) {
+        if (appModeManager.isOnlineMode()) {
+            onlineBuyerRepository.fetchBuyersPaged(page, limit, search, status, callback);
+        }
+    }
+
     public void insert(Buyer buyer) {
         insert(buyer, null);
     }
@@ -90,18 +102,15 @@ public class BuyerRepository {
         executorService.execute(() -> {
             try {
                 long id = buyerDao.insert(buyer);
-                in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper.logAddition(application,
-                        in.gbtsolutions.inventoryhub.models.AuditTrail.MODULE_BUYER,
-                        buyer.buyerName,
-                        "Added buyer: " + buyer.buyerName + " (Phone: " + (buyer.phone != null ? buyer.phone : "N/A") + ")");
+                AuditTrailHelper.logAddition(application, AuditTrail.MODULE_BUYER, buyer.buyerName, "Added buyer: " + buyer.buyerName + " (Phone: " + (buyer.phone != null ? buyer.phone : "N/A") + ")");
                 if (callback != null) {
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(callback::onSuccess);
+                    new Handler(Looper.getMainLooper()).post(callback::onSuccess);
                 }
             } catch (Exception e) {
                 if (callback != null) {
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                    new Handler(Looper.getMainLooper()).post(() -> {
                         String msg = e.getMessage() != null ? e.getMessage() : "Failed to add buyer.";
-                        if (e instanceof android.database.sqlite.SQLiteConstraintException) {
+                        if (e instanceof SQLiteConstraintException) {
                             msg = "A buyer with this phone number, email, or GST already exists.";
                         }
                         callback.onError(msg);
@@ -134,18 +143,15 @@ public class BuyerRepository {
         executorService.execute(() -> {
             try {
                 buyerDao.update(buyer);
-                in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper.logEdit(application,
-                        in.gbtsolutions.inventoryhub.models.AuditTrail.MODULE_BUYER,
-                        buyer.buyerName,
-                        "Updated buyer: " + buyer.buyerName + " (Phone: " + (buyer.phone != null ? buyer.phone : "N/A") + ")");
+                AuditTrailHelper.logEdit(application, AuditTrail.MODULE_BUYER, buyer.buyerName, "Updated buyer: " + buyer.buyerName + " (Phone: " + (buyer.phone != null ? buyer.phone : "N/A") + ")");
                 if (callback != null) {
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(callback::onSuccess);
+                    new Handler(Looper.getMainLooper()).post(callback::onSuccess);
                 }
             } catch (Exception e) {
                 if (callback != null) {
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                    new Handler(Looper.getMainLooper()).post(() -> {
                         String msg = e.getMessage() != null ? e.getMessage() : "Failed to update buyer.";
-                        if (e instanceof android.database.sqlite.SQLiteConstraintException) {
+                        if (e instanceof SQLiteConstraintException) {
                             msg = "A buyer with this phone number, email, or GST already exists.";
                         }
                         callback.onError(msg);
@@ -178,12 +184,11 @@ public class BuyerRepository {
                     buyerDao.delete(b);
                 }
                 if (callback != null) {
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(callback::onSuccess);
+                    new Handler(Looper.getMainLooper()).post(callback::onSuccess);
                 }
             } catch (Exception e) {
                 if (callback != null) {
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() ->
-                            callback.onError(e.getMessage() != null ? e.getMessage() : "Failed to delete buyer."));
+                    new Handler(Looper.getMainLooper()).post(() -> callback.onError(e.getMessage() != null ? e.getMessage() : "Failed to delete buyer."));
                 }
             }
         });
@@ -217,17 +222,13 @@ public class BuyerRepository {
                 buyerDao.updateStatus(buyerId, isActive, System.currentTimeMillis());
                 Buyer b = buyerDao.getBuyerById(buyerId);
                 String name = b != null ? b.buyerName : ("ID:" + buyerId);
-                in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper.logEdit(application,
-                        in.gbtsolutions.inventoryhub.models.AuditTrail.MODULE_BUYER,
-                        name,
-                        (isActive ? "Activated" : "Deactivated") + " buyer: " + name);
+                AuditTrailHelper.logEdit(application, AuditTrail.MODULE_BUYER, name, (isActive ? "Activated" : "Deactivated") + " buyer: " + name);
                 if (callback != null) {
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(callback::onSuccess);
+                    new Handler(Looper.getMainLooper()).post(callback::onSuccess);
                 }
             } catch (Exception e) {
                 if (callback != null) {
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() ->
-                            callback.onError(e.getMessage() != null ? e.getMessage() : "Failed to update buyer status."));
+                    new Handler(Looper.getMainLooper()).post(() -> callback.onError(e.getMessage() != null ? e.getMessage() : "Failed to update buyer status."));
                 }
             }
         });

@@ -28,6 +28,7 @@ public class Category {
 
     @ColumnInfo(name = "updated_at")
     public long updatedAt;
+
     public Category(String categoryName, String description, String icon) {
         this.categoryName = categoryName;
         this.description = description;

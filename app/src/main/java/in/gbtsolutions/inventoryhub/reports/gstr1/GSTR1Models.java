@@ -139,11 +139,9 @@ public class GSTR1Models {
     // Validation Issue
     public static class ValidationIssue {
         public enum Severity {
-            @SerializedName("ERROR")
-            ERROR,
-            @SerializedName("WARNING")
-            WARNING
+            @SerializedName("ERROR") ERROR, @SerializedName("WARNING") WARNING
         }
+
         @SerializedName("severity")
         public Severity severity;
         @SerializedName("invoiceOrRef")
@@ -220,7 +218,8 @@ public class GSTR1Models {
             int count = 0;
             if (validationIssues != null) {
                 for (ValidationIssue issue : validationIssues) {
-                    if (issue != null && issue.severity == ValidationIssue.Severity.WARNING) count++;
+                    if (issue != null && issue.severity == ValidationIssue.Severity.WARNING)
+                        count++;
                 }
             }
             return count;
@@ -338,7 +337,8 @@ public class GSTR1Models {
             }
 
             if (taxDocSummary == null) taxDocSummary = new TaxAndDocSummary();
-            if (taxDocSummary.grossInvoiceValue == null) taxDocSummary.grossInvoiceValue = BigDecimal.ZERO;
+            if (taxDocSummary.grossInvoiceValue == null)
+                taxDocSummary.grossInvoiceValue = BigDecimal.ZERO;
             if (taxDocSummary.taxableValue == null) taxDocSummary.taxableValue = BigDecimal.ZERO;
             if (taxDocSummary.cgst == null) taxDocSummary.cgst = BigDecimal.ZERO;
             if (taxDocSummary.sgst == null) taxDocSummary.sgst = BigDecimal.ZERO;
@@ -348,7 +348,8 @@ public class GSTR1Models {
 
             if (validationIssues == null) validationIssues = new ArrayList<>();
             if (reconciliation == null) reconciliation = new ReconciliationResult();
-            if (reconciliation.expectedTaxable == null) reconciliation.expectedTaxable = BigDecimal.ZERO;
+            if (reconciliation.expectedTaxable == null)
+                reconciliation.expectedTaxable = BigDecimal.ZERO;
             if (reconciliation.hsnTaxable == null) reconciliation.hsnTaxable = BigDecimal.ZERO;
             if (reconciliation.difference == null) reconciliation.difference = BigDecimal.ZERO;
         }

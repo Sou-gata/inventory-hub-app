@@ -82,21 +82,7 @@ public class SaleItem {
     }
 
     @Ignore
-    public SaleItem(
-            int saleId,
-            int productId,
-            double quantity,
-            double unitPrice,
-            double cgstRate,
-            double sgstRate,
-            double igstRate,
-            double cgstAmount,
-            double sgstAmount,
-            double igstAmount,
-            double subtotal,
-            double discountPercent,
-            double discountAmount
-    ) {
+    public SaleItem(int saleId, int productId, double quantity, double unitPrice, double cgstRate, double sgstRate, double igstRate, double cgstAmount, double sgstAmount, double igstAmount, double subtotal, double discountPercent, double discountAmount) {
         this.saleId = saleId;
         this.productId = productId;
         this.quantity = quantity;
@@ -113,23 +99,8 @@ public class SaleItem {
     }
 
     @Ignore
-    public SaleItem(
-            int saleId,
-            int productId,
-            int quantity,
-            double unitPrice,
-            double cgstRate,
-            double sgstRate,
-            double igstRate,
-            double cgstAmount,
-            double sgstAmount,
-            double igstAmount,
-            double subtotal,
-            double discountPercent,
-            double discountAmount
-    ) {
-        this(saleId, productId, (double) quantity, unitPrice, cgstRate, sgstRate, igstRate,
-                cgstAmount, sgstAmount, igstAmount, subtotal, discountPercent, discountAmount);
+    public SaleItem(int saleId, int productId, int quantity, double unitPrice, double cgstRate, double sgstRate, double igstRate, double cgstAmount, double sgstAmount, double igstAmount, double subtotal, double discountPercent, double discountAmount) {
+        this(saleId, productId, (double) quantity, unitPrice, cgstRate, sgstRate, igstRate, cgstAmount, sgstAmount, igstAmount, subtotal, discountPercent, discountAmount);
     }
 
     public int getSaleItemId() {

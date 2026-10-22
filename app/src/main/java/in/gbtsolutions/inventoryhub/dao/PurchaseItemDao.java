@@ -5,6 +5,7 @@ import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
 import androidx.room.Transaction;
+import androidx.room.OnConflictStrategy;
 
 import java.util.List;
 
@@ -47,6 +48,6 @@ public interface PurchaseItemDao {
     @Query("SELECT * FROM purchase_items")
     List<PurchaseItemWithProduct> getAllPurchaseItemsWithProductSync();
 
-    @Insert(onConflict = androidx.room.OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     void upsert(PurchaseItem item);
 }

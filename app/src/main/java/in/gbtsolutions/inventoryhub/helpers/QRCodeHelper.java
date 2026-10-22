@@ -8,6 +8,7 @@ import android.graphics.Bitmap;
 import android.util.Log;
 import android.util.Size;
 import android.widget.Toast;
+import android.graphics.Color;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -71,7 +72,7 @@ public class QRCodeHelper {
 
             for (int x = 0; x < width; x++) {
                 for (int y = 0; y < height; y++) {
-                    bitmap.setPixel(x, y, bitMatrix.get(x, y) ? android.graphics.Color.BLACK : android.graphics.Color.WHITE);
+                    bitmap.setPixel(x, y, bitMatrix.get(x, y) ? Color.BLACK : Color.WHITE);
                 }
             }
 
@@ -126,15 +127,14 @@ public class QRCodeHelper {
         decodeHints.put(DecodeHintType.POSSIBLE_FORMATS, Collections.singletonList(BarcodeFormat.QR_CODE));
         decodeHints.put(DecodeHintType.TRY_HARDER, Boolean.TRUE);
 
-        requestPermissionLauncher = activity.registerForActivityResult(
-                new ActivityResultContracts.RequestPermission(), isGranted -> {
-                    if (isGranted) {
-                        startCamera();
-                    } else {
-                        Toast.makeText(activity, "Camera permission is required to scan.", Toast.LENGTH_SHORT).show();
-                        callback.onScanCancelled();
-                    }
-                });
+        requestPermissionLauncher = activity.registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+            if (isGranted) {
+                startCamera();
+            } else {
+                Toast.makeText(activity, "Camera permission is required to scan.", Toast.LENGTH_SHORT).show();
+                callback.onScanCancelled();
+            }
+        });
     }
 
     public void startScanning() {
@@ -170,32 +170,17 @@ public class QRCodeHelper {
                 preview.setSurfaceProvider(previewView.getSurfaceProvider());
 
                 Size targetResolution = new Size(640, 480);
-                ResolutionStrategy strategy = new ResolutionStrategy(
-                        targetResolution,
-                        ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER
-                );
-                ResolutionSelector resolutionSelector = new ResolutionSelector.Builder()
-                        .setResolutionStrategy(strategy)
-                        .build();
+                ResolutionStrategy strategy = new ResolutionStrategy(targetResolution, ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER);
+                ResolutionSelector resolutionSelector = new ResolutionSelector.Builder().setResolutionStrategy(strategy).build();
 
-                ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
-                        .setResolutionSelector(resolutionSelector)
-                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                        .build();
+                ImageAnalysis imageAnalysis = new ImageAnalysis.Builder().setResolutionSelector(resolutionSelector).setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST).build();
 
                 imageAnalysis.setAnalyzer(cameraExecutor, this::processImageProxy);
 
-                CameraSelector cameraSelector = new CameraSelector.Builder()
-                        .requireLensFacing(CameraSelector.LENS_FACING_BACK)
-                        .build();
+                CameraSelector cameraSelector = new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build();
 
                 cameraProvider.unbindAll();
-                camera = cameraProvider.bindToLifecycle(
-                        activity,
-                        cameraSelector,
-                        preview,
-                        imageAnalysis
-                );
+                camera = cameraProvider.bindToLifecycle(activity, cameraSelector, preview, imageAnalysis);
 
                 if (shouldEnableFlash && camera.getCameraInfo().hasFlashUnit()) {
                     camera.getCameraControl().enableTorch(true);

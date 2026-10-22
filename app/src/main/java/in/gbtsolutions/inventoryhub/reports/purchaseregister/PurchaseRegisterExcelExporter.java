@@ -117,16 +117,7 @@ public class PurchaseRegisterExcelExporter {
         return outputFile;
     }
 
-    private static void buildPurchaseRegisterSheet(
-            XSSFWorkbook wb,
-            PurchaseRegisterModels.ReportData report,
-            CellStyle titleStyle,
-            CellStyle headerStyle,
-            CellStyle normalStyle,
-            CellStyle centerStyle,
-            CellStyle moneyStyle,
-            CellStyle totalStyle,
-            CellStyle totalLabelStyle) {
+    private static void buildPurchaseRegisterSheet(XSSFWorkbook wb, PurchaseRegisterModels.ReportData report, CellStyle titleStyle, CellStyle headerStyle, CellStyle normalStyle, CellStyle centerStyle, CellStyle moneyStyle, CellStyle totalStyle, CellStyle totalLabelStyle) {
 
         Sheet sheet = wb.createSheet("Purchase Register");
         int r = 0;
@@ -146,12 +137,7 @@ public class PurchaseRegisterExcelExporter {
         r++; // Blank row
 
         // Headers
-        String[] headers = {
-                "#", "Invoice / PO #", "Date", "Supplier Name", "Supplier Phone",
-                "Supplier GSTIN", "Type", "Place of Supply", "Taxable Value (₹)",
-                "CGST (₹)", "SGST (₹)", "IGST (₹)", "Cess (₹)", "Total Tax (₹)",
-                "Bill Total (₹)", "Payment", "Status"
-        };
+        String[] headers = {"#", "Invoice / PO #", "Date", "Supplier Name", "Supplier Phone", "Supplier GSTIN", "Type", "Place of Supply", "Taxable Value (₹)", "CGST (₹)", "SGST (₹)", "IGST (₹)", "Cess (₹)", "Total Tax (₹)", "Bill Total (₹)", "Payment", "Status"};
 
         Row headerRow = sheet.createRow(r++);
         for (int i = 0; i < headers.length; i++) {
@@ -243,13 +229,27 @@ public class PurchaseRegisterExcelExporter {
             } else if (i <= 14) {
                 c.setCellStyle(totalStyle);
                 switch (i) {
-                    case 8: c.setCellValue(report.summary.taxableValue.doubleValue()); break;
-                    case 9: c.setCellValue(report.summary.cgst.doubleValue()); break;
-                    case 10: c.setCellValue(report.summary.sgst.doubleValue()); break;
-                    case 11: c.setCellValue(report.summary.igst.doubleValue()); break;
-                    case 12: c.setCellValue(report.summary.cess.doubleValue()); break;
-                    case 13: c.setCellValue(report.summary.totalTax.doubleValue()); break;
-                    case 14: c.setCellValue(report.summary.grossPurchases.doubleValue()); break;
+                    case 8:
+                        c.setCellValue(report.summary.taxableValue.doubleValue());
+                        break;
+                    case 9:
+                        c.setCellValue(report.summary.cgst.doubleValue());
+                        break;
+                    case 10:
+                        c.setCellValue(report.summary.sgst.doubleValue());
+                        break;
+                    case 11:
+                        c.setCellValue(report.summary.igst.doubleValue());
+                        break;
+                    case 12:
+                        c.setCellValue(report.summary.cess.doubleValue());
+                        break;
+                    case 13:
+                        c.setCellValue(report.summary.totalTax.doubleValue());
+                        break;
+                    case 14:
+                        c.setCellValue(report.summary.grossPurchases.doubleValue());
+                        break;
                 }
             } else {
                 c.setCellStyle(totalLabelStyle);
@@ -276,13 +276,7 @@ public class PurchaseRegisterExcelExporter {
         sheet.setColumnWidth(16, 14 * 256);
     }
 
-    private static void buildSummarySheet(
-            XSSFWorkbook wb,
-            PurchaseRegisterModels.ReportData report,
-            CellStyle titleStyle,
-            CellStyle headerStyle,
-            CellStyle normalStyle,
-            CellStyle moneyStyle) {
+    private static void buildSummarySheet(XSSFWorkbook wb, PurchaseRegisterModels.ReportData report, CellStyle titleStyle, CellStyle headerStyle, CellStyle normalStyle, CellStyle moneyStyle) {
 
         Sheet sheet = wb.createSheet("Executive Summary");
         int r = 0;
@@ -307,19 +301,7 @@ public class PurchaseRegisterExcelExporter {
             c.setCellStyle(headerStyle);
         }
 
-        Object[][] summaryData = {
-                {"Gross Purchases (Total Inward Amount)", report.summary.grossPurchases.doubleValue(), true},
-                {"Total Taxable Purchases Turnover", report.summary.taxableValue.doubleValue(), true},
-                {"Central Tax (CGST ITC)", report.summary.cgst.doubleValue(), true},
-                {"State Tax (SGST ITC)", report.summary.sgst.doubleValue(), true},
-                {"Integrated Tax (IGST ITC)", report.summary.igst.doubleValue(), true},
-                {"Compensation Cess", report.summary.cess.doubleValue(), true},
-                {"Total Input Tax Credit (ITC)", report.summary.totalTax.doubleValue(), true},
-                {"Total Purchase Bills", report.summary.totalInvoices, false},
-                {"Registered Supplier (B2B) Bills", report.summary.b2bInvoices, false},
-                {"Unregistered Supplier Bills", report.summary.b2cInvoices, false},
-                {"Cancelled Bills", report.summary.cancelledInvoices, false}
-        };
+        Object[][] summaryData = {{"Gross Purchases (Total Inward Amount)", report.summary.grossPurchases.doubleValue(), true}, {"Total Taxable Purchases Turnover", report.summary.taxableValue.doubleValue(), true}, {"Central Tax (CGST ITC)", report.summary.cgst.doubleValue(), true}, {"State Tax (SGST ITC)", report.summary.sgst.doubleValue(), true}, {"Integrated Tax (IGST ITC)", report.summary.igst.doubleValue(), true}, {"Compensation Cess", report.summary.cess.doubleValue(), true}, {"Total Input Tax Credit (ITC)", report.summary.totalTax.doubleValue(), true}, {"Total Purchase Bills", report.summary.totalInvoices, false}, {"Registered Supplier (B2B) Bills", report.summary.b2bInvoices, false}, {"Unregistered Supplier Bills", report.summary.b2cInvoices, false}, {"Cancelled Bills", report.summary.cancelledInvoices, false}};
 
         for (Object[] rowData : summaryData) {
             Row row = sheet.createRow(r++);

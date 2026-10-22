@@ -8,10 +8,7 @@ public class SaleWithBuyer {
     @Embedded
     public Sale sale;
 
-    @Relation(
-            parentColumn = "buyer_id",
-            entityColumn = "buyer_id"
-    )
+    @Relation(parentColumn = "buyer_id", entityColumn = "buyer_id")
     public Buyer buyer;
 
     public SaleWithBuyer() {

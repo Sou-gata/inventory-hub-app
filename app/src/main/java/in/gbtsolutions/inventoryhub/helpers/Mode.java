@@ -1,16 +1,13 @@
 package in.gbtsolutions.inventoryhub.helpers;
 
 public enum Mode {
-    ONLINE,
-    OFFLINE;
+    ONLINE, OFFLINE;
 
     public enum OnlineTier {
-        SMALL,
-        LARGE
+        SMALL, LARGE
     }
 
     public enum OfflineTier {
-        STANDARD,
-        UNLIMITED
+        STANDARD, UNLIMITED
     }
 }

@@ -8,6 +8,7 @@ import androidx.lifecycle.LifecycleOwner;
 
 import in.gbtsolutions.inventoryhub.helpers.CrashLogger;
 import in.gbtsolutions.inventoryhub.helpers.ThemeManager;
+import in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper;
 
 public class InventoryHubApp extends Application implements DefaultLifecycleObserver {
 
@@ -21,7 +22,7 @@ public class InventoryHubApp extends Application implements DefaultLifecycleObse
         ThemeManager.applyTheme(this);
         GlobalStore.getInstance().loadSettings(this);
         SeedDB.seedDB(this);
-        in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper.pruneOldRecords(this);
+        AuditTrailHelper.pruneOldRecords(this);
     }
 
     public static InventoryHubApp getInstance() {

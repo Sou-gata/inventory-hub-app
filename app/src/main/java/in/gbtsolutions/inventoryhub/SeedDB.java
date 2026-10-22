@@ -48,35 +48,11 @@ public class SeedDB {
 
     private static void seedUsers(Database db) {
         if (db.userDao().count() == 0) {
-            User admin = new User(
-                    "Sougata Talukdar",
-                    "sougata",
-                    HelperMethods.hashPassword("12345678"),
-                    "sougatatalukdar77@gmail.com",
-                    "7797454561",
-                    "admin",
-                    true
-            );
+            User admin = new User("Sougata Talukdar", "sougata", HelperMethods.hashPassword("12345678"), "sougatatalukdar77@gmail.com", "7797454561", "admin", true);
 
-            User staff = new User(
-                    "Sudipto Dutta",
-                    "user",
-                    HelperMethods.hashPassword("12345678"),
-                    "sudiptodutta@gmail.com",
-                    "9876543210",
-                    "user",
-                    true
-            );
+            User staff = new User("Sudipto Dutta", "user", HelperMethods.hashPassword("12345678"), "sudiptodutta@gmail.com", "9876543210", "user", true);
 
-            User staff2 = new User(
-                    "Ananya Roy",
-                    "ananya",
-                    HelperMethods.hashPassword("12345678"),
-                    "ananya.roy@inventoryhub.in",
-                    "9830012345",
-                    "user",
-                    true
-            );
+            User staff2 = new User("Ananya Roy", "ananya", HelperMethods.hashPassword("12345678"), "ananya.roy@inventoryhub.in", "9830012345", "user", true);
 
             db.userDao().insert(admin);
             db.userDao().insert(staff);
@@ -95,31 +71,11 @@ public class SeedDB {
         int catToolsId;
 
         if (db.categoryDao().count() == 0) {
-            catElectronicsId = (int) db.categoryDao().insert(new Category(
-                    "Electronics & IT",
-                    "Computers, peripherals, monitors, and smart office devices",
-                    "electronics"
-            ));
-            catFurnitureId = (int) db.categoryDao().insert(new Category(
-                    "Office Furniture",
-                    "Ergonomic chairs, sit-stand desks, and conference tables",
-                    "furniture"
-            ));
-            catStationeryId = (int) db.categoryDao().insert(new Category(
-                    "Stationery & Paper",
-                    "Multipurpose paper, notebooks, pens, and desk supplies",
-                    "stationery"
-            ));
-            catNetworkingId = (int) db.categoryDao().insert(new Category(
-                    "Networking & Cables",
-                    "Ethernet cables, routers, switches, and high-speed adapters",
-                    "networking"
-            ));
-            catToolsId = (int) db.categoryDao().insert(new Category(
-                    "Industrial Tools",
-                    "Power tools, safety equipment, and precision maintenance hardware",
-                    "hardware"
-            ));
+            catElectronicsId = (int) db.categoryDao().insert(new Category("Electronics & IT", "Computers, peripherals, monitors, and smart office devices", "electronics"));
+            catFurnitureId = (int) db.categoryDao().insert(new Category("Office Furniture", "Ergonomic chairs, sit-stand desks, and conference tables", "furniture"));
+            catStationeryId = (int) db.categoryDao().insert(new Category("Stationery & Paper", "Multipurpose paper, notebooks, pens, and desk supplies", "stationery"));
+            catNetworkingId = (int) db.categoryDao().insert(new Category("Networking & Cables", "Ethernet cables, routers, switches, and high-speed adapters", "networking"));
+            catToolsId = (int) db.categoryDao().insert(new Category("Industrial Tools", "Power tools, safety equipment, and precision maintenance hardware", "hardware"));
             Log.d(TAG, "Seeded initial categories.");
         } else {
             catElectronicsId = 1;
@@ -130,174 +86,14 @@ public class SeedDB {
         }
 
         if (db.productDao().count() == 0) {
-            Product p1 = new Product(
-                    "Logitech MX Master 3S Wireless Mouse",
-                    catElectronicsId,
-                    "ELEC-LOGI-MX3S",
-                    "Quiet-click ergonomic performance wireless mouse with 8K DPI tracking sensor.",
-                    "Logitech",
-                    "Pcs",
-                    5,
-                    15,
-                    "Active",
-                    "84716060",
-                    18.0,
-                    25.0,
-                    now,
-                    now,
-                    7200.0,
-                    8999.0,
-                    24,
-                    false
-            );
-
-            Product p2 = new Product(
-                    "Dell UltraSharp 27 4K USB-C Monitor",
-                    catElectronicsId,
-                    "ELEC-DELL-U2723QE",
-                    "27-inch 4K IPS Black monitor with 90W USB-C hub connectivity and HDR 400.",
-                    "Dell",
-                    "Unit",
-                    3,
-                    10,
-                    "Active",
-                    "85285200",
-                    18.0,
-                    20.0,
-                    now,
-                    now,
-                    32000.0,
-                    38400.0,
-                    12,
-                    false
-            );
-
-            Product p3 = new Product(
-                    "Keychron K2 V2 Wireless Mechanical Keyboard",
-                    catElectronicsId,
-                    "ELEC-KEY-K2V2",
-                    "75% compact Bluetooth mechanical keyboard with hot-swappable Gateron Brown switches.",
-                    "Keychron",
-                    "Pcs",
-                    4,
-                    12,
-                    "Active",
-                    "84716040",
-                    18.0,
-                    22.0,
-                    now,
-                    now,
-                    6500.0,
-                    7999.0,
-                    18,
-                    false
-            );
-
-            Product p4 = new Product(
-                    "Ergonomic High-Back Mesh Desk Chair",
-                    catFurnitureId,
-                    "FURN-ERGO-CH01",
-                    "Breathable mesh ergonomic chair with adjustable lumbar support, 3D arms, and tilt lock.",
-                    "Green Soul",
-                    "Unit",
-                    2,
-                    5,
-                    "Active",
-                    "94013000",
-                    18.0,
-                    30.0,
-                    now,
-                    now,
-                    9500.0,
-                    12350.0,
-                    8,
-                    false
-            );
-
-            Product p5 = new Product(
-                    "Motorized Dual-Motor Height Adjustable Desk",
-                    catFurnitureId,
-                    "FURN-SITSTAND-D01",
-                    "Electric sit-stand desk (140x70cm) with 4-memory digital display and anti-collision sensor.",
-                    "ErgoPlus",
-                    "Unit",
-                    2,
-                    5,
-                    "Active",
-                    "94031090",
-                    18.0,
-                    25.0,
-                    now,
-                    now,
-                    22000.0,
-                    27500.0,
-                    4,
-                    false
-            );
-
-            Product p6 = new Product(
-                    "JK Copier A4 Paper 75 GSM (Carton of 5 Reams)",
-                    catStationeryId,
-                    "STAT-JK-A475",
-                    "Premium multipurpose 75 GSM A4 copy paper carton (2500 sheets total) for sharp prints.",
-                    "JK Paper",
-                    "Box",
-                    10,
-                    50,
-                    "Active",
-                    "48025610",
-                    12.0,
-                    15.0,
-                    now,
-                    now,
-                    1350.0,
-                    1550.0,
-                    40,
-                    false
-            );
-
-            Product p7 = new Product(
-                    "Cat6 UTP Gigabit Patch Cable 10m",
-                    catNetworkingId,
-                    "NET-CAT6-10M",
-                    "High speed snagless RJ45 1000 Mbps molded ethernet patch cord with gold plated pins.",
-                    "D-Link",
-                    "Pcs",
-                    15,
-                    40,
-                    "Active",
-                    "85444299",
-                    18.0,
-                    35.0,
-                    now,
-                    now,
-                    180.0,
-                    249.0,
-                    55,
-                    false
-            );
-
-            Product p8 = new Product(
-                    "Bosch Professional GSB 120-LI Cordless Drill",
-                    catToolsId,
-                    "TOOL-BOSCH-GSB120",
-                    "12V cordless 2-speed impact driver and drill kit with two 2.0Ah lithium-ion battery packs.",
-                    "Bosch",
-                    "Set",
-                    3,
-                    8,
-                    "Active",
-                    "84672100",
-                    18.0,
-                    20.0,
-                    now,
-                    now,
-                    5200.0,
-                    6240.0,
-                    7,
-                    false
-            );
-
+            Product p1 = new Product("Logitech MX Master 3S Wireless Mouse", catElectronicsId, "ELEC-LOGI-MX3S", "Quiet-click ergonomic performance wireless mouse with 8K DPI tracking sensor.", "Logitech", "Pcs", 5, 15, "Active", "84716060", 18.0, 25.0, now, now, 7200.0, 8999.0, 24, false);
+            Product p2 = new Product("Dell UltraSharp 27 4K USB-C Monitor", catElectronicsId, "ELEC-DELL-U2723QE", "27-inch 4K IPS Black monitor with 90W USB-C hub connectivity and HDR 400.", "Dell", "Unit", 3, 10, "Active", "85285200", 18.0, 20.0, now, now, 32000.0, 38400.0, 12, false);
+            Product p3 = new Product("Keychron K2 V2 Wireless Mechanical Keyboard", catElectronicsId, "ELEC-KEY-K2V2", "75% compact Bluetooth mechanical keyboard with hot-swappable Gateron Brown switches.", "Keychron", "Pcs", 4, 12, "Active", "84716040", 18.0, 22.0, now, now, 6500.0, 7999.0, 18, false);
+            Product p4 = new Product("Ergonomic High-Back Mesh Desk Chair", catFurnitureId, "FURN-ERGO-CH01", "Breathable mesh ergonomic chair with adjustable lumbar support, 3D arms, and tilt lock.", "Green Soul", "Unit", 2, 5, "Active", "94013000", 18.0, 30.0, now, now, 9500.0, 12350.0, 8, false);
+            Product p5 = new Product("Motorized Dual-Motor Height Adjustable Desk", catFurnitureId, "FURN-SITSTAND-D01", "Electric sit-stand desk (140x70cm) with 4-memory digital display and anti-collision sensor.", "ErgoPlus", "Unit", 2, 5, "Active", "94031090", 18.0, 25.0, now, now, 22000.0, 27500.0, 4, false);
+            Product p6 = new Product("JK Copier A4 Paper 75 GSM (Carton of 5 Reams)", catStationeryId, "STAT-JK-A475", "Premium multipurpose 75 GSM A4 copy paper carton (2500 sheets total) for sharp prints.", "JK Paper", "Box", 10, 50, "Active", "48025610", 12.0, 15.0, now, now, 1350.0, 1550.0, 40, false);
+            Product p7 = new Product("Cat6 UTP Gigabit Patch Cable 10m", catNetworkingId, "NET-CAT6-10M", "High speed snagless RJ45 1000 Mbps molded ethernet patch cord with gold plated pins.", "D-Link", "Pcs", 15, 40, "Active", "85444299", 18.0, 35.0, now, now, 180.0, 249.0, 55, false);
+            Product p8 = new Product("Bosch Professional GSB 120-LI Cordless Drill", catToolsId, "TOOL-BOSCH-GSB120", "12V cordless 2-speed impact driver and drill kit with two 2.0Ah lithium-ion battery packs.", "Bosch", "Set", 3, 8, "Active", "84672100", 18.0, 20.0, now, now, 5200.0, 6240.0, 7, false);
             db.productDao().insert(p1);
             db.productDao().insert(p2);
             db.productDao().insert(p3);
@@ -312,54 +108,9 @@ public class SeedDB {
 
     private static void seedBuyers(Database db) {
         if (db.buyerDao().count() == 0) {
-            Buyer b1 = new Buyer(
-                    "Apex Technologies Pvt Ltd",
-                    "Rajesh Sharma",
-                    "9820154321",
-                    "purchase@apextech.co.in",
-                    "Plot 42, Sector 18, Electronics City Phase 1",
-                    "Gurugram",
-                    "HR",
-                    "122015",
-                    "India",
-                    "06AAACA1234A1Z5",
-                    "AAACA1234A",
-                    "Key corporate IT client - Net 30 payment terms.",
-                    true
-            );
-
-            Buyer b2 = new Buyer(
-                    "Blue Horizon Logistics",
-                    "Priya Menon",
-                    "9845112233",
-                    "procurement@bluehorizon.in",
-                    "15 Marine Lines, Nariman Point",
-                    "Mumbai",
-                    "MH",
-                    "400021",
-                    "India",
-                    "27BBBPC5678B1Z2",
-                    "BBBPC5678B",
-                    "Supply chain logistics partner - Monthly recurring orders.",
-                    true
-            );
-
-            Buyer b3 = new Buyer(
-                    "Kolkata Workspace Hub",
-                    "Amitava Banerjee",
-                    "9831098765",
-                    "admin@kolkataworkspace.com",
-                    "Block EP & GP, Sector V, Salt Lake",
-                    "Kolkata",
-                    "WB",
-                    "700091",
-                    "India",
-                    "19CCDDE9012C1Z8",
-                    "CCDDE9012C",
-                    "Co-working facilities manager - Bulk furniture & tech buyer.",
-                    true
-            );
-
+            Buyer b1 = new Buyer("Apex Technologies Pvt Ltd", "Rajesh Sharma", "9820154321", "purchase@apextech.co.in", "Plot 42, Sector 18, Electronics City Phase 1", "Gurugram", "HR", "122015", "India", "06AAACA1234A1Z5", "AAACA1234A", "Key corporate IT client - Net 30 payment terms.", true);
+            Buyer b2 = new Buyer("Blue Horizon Logistics", "Priya Menon", "9845112233", "procurement@bluehorizon.in", "15 Marine Lines, Nariman Point", "Mumbai", "MH", "400021", "India", "27BBBPC5678B1Z2", "BBBPC5678B", "Supply chain logistics partner - Monthly recurring orders.", true);
+            Buyer b3 = new Buyer("Kolkata Workspace Hub", "Amitava Banerjee", "9831098765", "admin@kolkataworkspace.com", "Block EP & GP, Sector V, Salt Lake", "Kolkata", "WB", "700091", "India", "19CCDDE9012C1Z8", "CCDDE9012C", "Co-working facilities manager - Bulk furniture & tech buyer.", true);
             db.buyerDao().insert(b1);
             db.buyerDao().insert(b2);
             db.buyerDao().insert(b3);
@@ -369,53 +120,9 @@ public class SeedDB {
 
     private static void seedSuppliers(Database db) {
         if (db.supplierDao().count() == 0) {
-            Suppliers s1 = new Suppliers(
-                    "Zenith Infotech Distributors",
-                    "Vikram Singhania",
-                    "9811223344",
-                    "orders@zenithinfotech.com",
-                    "Shop 104-106, Nehru Place IT Complex",
-                    "New Delhi",
-                    "DL",
-                    "110019",
-                    "India",
-                    "07AAEFZ1122D1Z3",
-                    "AAEFZ1122D",
-                    "Authorized regional distributor for Logitech, Dell & Keychron.",
-                    true
-            );
-
-            Suppliers s2 = new Suppliers(
-                    "Vanguard Ergonomic Solutions",
-                    "Neha Kapoor",
-                    "9871100223",
-                    "sales@vanguardoffice.in",
-                    "Plot 78, Peenya Industrial Area, Phase 2",
-                    "Bengaluru",
-                    "KA",
-                    "560058",
-                    "India",
-                    "29BBDFV3344E1Z7",
-                    "BBDFV3344E",
-                    "Direct OEM manufacturer for office desks and high-back mesh chairs.",
-                    true
-            );
-
-            Suppliers s3 = new Suppliers(
-                    "Metro Industrial Hardware Corp",
-                    "Harish Patel",
-                    "9723344556",
-                    "harish@metrohardware.com",
-                    "GIDC Industrial Estate, Makarpura",
-                    "Vadodara",
-                    "GJ",
-                    "390010",
-                    "India",
-                    "24CCFGH5566F1Z1",
-                    "CCFGH5566F",
-                    "Wholesale distributor for Bosch industrial tools and cables.",
-                    true
-            );
+            Suppliers s1 = new Suppliers("Zenith Infotech Distributors", "Vikram Singhania", "9811223344", "orders@zenithinfotech.com", "Shop 104-106, Nehru Place IT Complex", "New Delhi", "DL", "110019", "India", "07AAEFZ1122D1Z3", "AAEFZ1122D", "Authorized regional distributor for Logitech, Dell & Keychron.", true);
+            Suppliers s2 = new Suppliers("Vanguard Ergonomic Solutions", "Neha Kapoor", "9871100223", "sales@vanguardoffice.in", "Plot 78, Peenya Industrial Area, Phase 2", "Bengaluru", "KA", "560058", "India", "29BBDFV3344E1Z7", "BBDFV3344E", "Direct OEM manufacturer for office desks and high-back mesh chairs.", true);
+            Suppliers s3 = new Suppliers("Metro Industrial Hardware Corp", "Harish Patel", "9723344556", "harish@metrohardware.com", "GIDC Industrial Estate, Makarpura", "Vadodara", "GJ", "390010", "India", "24CCFGH5566F1Z1", "CCFGH5566F", "Wholesale distributor for Bosch industrial tools and cables.", true);
 
             db.supplierDao().insert(s1);
             db.supplierDao().insert(s2);
@@ -446,14 +153,7 @@ public class SeedDB {
     }
 
     public static void seedUnitsOfMeasure(Database db) {
-        String[][] defaultUnits = new String[][]{
-                {"KG", "Kilogram (Standard unit of weight)"},
-                {"Gram", "Gram (Weight measurement)"},
-                {"Liter", "Liter (Liquid volume measurement)"},
-                {"Mililiter", "Milliliter (Liquid volume measurement)"},
-                {"Pics", "Pieces / Count units"},
-                {"Packet", "Packet packaging unit"}
-        };
+        String[][] defaultUnits = new String[][]{{"KG", "Kilogram (Standard unit of weight)"}, {"Gram", "Gram (Weight measurement)"}, {"Liter", "Liter (Liquid volume measurement)"}, {"Mililiter", "Milliliter (Liquid volume measurement)"}, {"Pics", "Pieces / Count units"}, {"Packet", "Packet packaging unit"}};
         for (String[] unit : defaultUnits) {
             UnitOfMeasure existing = db.unitOfMeasureDao().getByName(unit[0]);
             if (existing == null) {

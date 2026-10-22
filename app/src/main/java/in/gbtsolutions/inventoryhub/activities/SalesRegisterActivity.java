@@ -29,6 +29,7 @@ import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.graphics.Color;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -60,6 +61,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.Executors;
+import java.util.HashMap;
 
 import in.gbtsolutions.inventoryhub.Database;
 import in.gbtsolutions.inventoryhub.GlobalStore;
@@ -541,7 +543,7 @@ public class SalesRegisterActivity extends BaseActivity {
         for (String h : headers) {
             TextView tv = new TextView(this);
             tv.setText(h);
-            tv.setTextColor(android.graphics.Color.WHITE);
+            tv.setTextColor(Color.WHITE);
             tv.setTypeface(null, Typeface.BOLD);
             tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f);
             tv.setGravity(Gravity.CENTER);
@@ -553,7 +555,7 @@ public class SalesRegisterActivity extends BaseActivity {
 
     private TableRow createDataRow(int sl, SalesRegisterModels.SalesRegisterRow row) {
         TableRow tr = new TableRow(this);
-        tr.setBackgroundColor(sl % 2 == 0 ? android.graphics.Color.parseColor("#F8F9FD") : android.graphics.Color.WHITE);
+        tr.setBackgroundColor(sl % 2 == 0 ? Color.parseColor("#F8F9FD") : Color.WHITE);
         tr.setClickable(true);
         tr.setFocusable(true);
         tr.setPadding(0, dpToPx(8), 0, dpToPx(8));
@@ -602,7 +604,7 @@ public class SalesRegisterActivity extends BaseActivity {
             BigDecimal sumTotalAmount) {
 
         TableRow tr = new TableRow(this);
-        tr.setBackgroundColor(android.graphics.Color.parseColor("#EEF2F6"));
+        tr.setBackgroundColor(Color.parseColor("#EEF2F6"));
         tr.setPadding(0, dpToPx(10), 0, dpToPx(10));
 
         // 0: #
@@ -746,7 +748,7 @@ public class SalesRegisterActivity extends BaseActivity {
         tableItems.removeAllViews();
         // Item Header
         TableRow itemHeader = new TableRow(this);
-        itemHeader.setBackgroundColor(android.graphics.Color.parseColor("#EEF2F6"));
+        itemHeader.setBackgroundColor(Color.parseColor("#EEF2F6"));
         itemHeader.setPadding(0, dpToPx(4), 0, dpToPx(4));
 
         String[] itemColNames = {"Item", "Qty", "Price", "Tax %", "Total"};
@@ -854,7 +856,7 @@ public class SalesRegisterActivity extends BaseActivity {
 
             List<SaleItemWithProduct> saleItems = db.saleItemDao().getSaleItemsWithProductSync(sale.saleId);
             List<Config> configList = db.configDao().getAllConfigsSync();
-            Map<String, String> configs = new java.util.HashMap<>();
+            Map<String, String> configs = new HashMap<>();
             if (configList != null) {
                 for (Config c : configList) {
                     configs.put(c.getConfigKey(), c.getConfigValue());

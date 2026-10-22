@@ -9,6 +9,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.graphics.Typeface;
+import android.util.TypedValue;
+import android.view.Gravity;
 
 import androidx.core.content.ContextCompat;
 
@@ -1039,24 +1042,24 @@ public class CommonFunctions {
         TextView tvFooter4 = billView.findViewById(R.id.tv_bill_footer_4);
 
         if (tvFooter1 != null) {
-            tvFooter1.setGravity(android.view.Gravity.CENTER);
-            tvFooter1.setTypeface(null, android.graphics.Typeface.BOLD);
-            tvFooter1.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 14f);
+            tvFooter1.setGravity(Gravity.CENTER);
+            tvFooter1.setTypeface(null, Typeface.BOLD);
+            tvFooter1.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f);
         }
         if (tvFooter2 != null) {
-            tvFooter2.setGravity(android.view.Gravity.CENTER);
-            tvFooter2.setTypeface(null, android.graphics.Typeface.BOLD);
-            tvFooter2.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 14f);
+            tvFooter2.setGravity(Gravity.CENTER);
+            tvFooter2.setTypeface(null, Typeface.BOLD);
+            tvFooter2.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f);
         }
         if (tvFooter3 != null) {
-            tvFooter3.setGravity(android.view.Gravity.CENTER);
-            tvFooter3.setTypeface(null, android.graphics.Typeface.NORMAL);
-            tvFooter3.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12f);
+            tvFooter3.setGravity(Gravity.CENTER);
+            tvFooter3.setTypeface(null, Typeface.NORMAL);
+            tvFooter3.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f);
         }
         if (tvFooter4 != null) {
-            tvFooter4.setGravity(android.view.Gravity.CENTER);
-            tvFooter4.setTypeface(null, android.graphics.Typeface.NORMAL);
-            tvFooter4.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12f);
+            tvFooter4.setGravity(Gravity.CENTER);
+            tvFooter4.setTypeface(null, Typeface.NORMAL);
+            tvFooter4.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f);
         }
 
         setupFooterView(tvFooter1, cachedCompanyConfigs != null ? cachedCompanyConfigs.get(Configurations.KEY_FOOTER_1) : null);

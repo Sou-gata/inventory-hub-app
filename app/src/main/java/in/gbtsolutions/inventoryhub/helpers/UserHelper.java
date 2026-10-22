@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.Looper;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -13,6 +14,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
+import java.util.Locale;
+
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import in.gbtsolutions.inventoryhub.Configurations;
 import in.gbtsolutions.inventoryhub.Database;
@@ -135,7 +139,7 @@ public class UserHelper {
             } catch (Exception ignored) {
             }
             final List<User> result = users != null ? users : new ArrayList<>();
-            new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> callback.onUsersLoaded(result));
+            new Handler(Looper.getMainLooper()).post(() -> callback.onUsersLoaded(result));
         });
     }
 
@@ -183,7 +187,7 @@ public class UserHelper {
 
     public static String formatUserRole(@Nullable User user) {
         if (user != null && user.role != null && !user.role.trim().isEmpty()) {
-            return user.role.trim().toUpperCase(java.util.Locale.getDefault());
+            return user.role.trim().toUpperCase(Locale.getDefault());
         }
         return "STAFF";
     }
@@ -192,15 +196,10 @@ public class UserHelper {
         void onUserSelected(@NonNull User selectedUser);
     }
 
-    public static void showUserPickerDialog(
-            @NonNull Context context,
-            @NonNull String title,
-            @Nullable Long currentSelectedUserId,
-            @NonNull OnUserSelectedListener listener
-    ) {
+    public static void showUserPickerDialog(@NonNull Context context, @NonNull String title, @Nullable Long currentSelectedUserId, @NonNull OnUserSelectedListener listener) {
         getAllUsersAsync(context, users -> {
             if (users == null || users.isEmpty()) {
-                android.widget.Toast.makeText(context, "No users found in database.", android.widget.Toast.LENGTH_SHORT).show();
+                Toast.makeText(context, "No users found in database.", Toast.LENGTH_SHORT).show();
                 return;
             }
             String[] displayNames = new String[users.size()];
@@ -212,16 +211,12 @@ public class UserHelper {
                     checkedItem = i;
                 }
             }
-            new com.google.android.material.dialog.MaterialAlertDialogBuilder(context)
-                    .setTitle(title)
-                    .setSingleChoiceItems(displayNames, checkedItem, (dialog, which) -> {
-                        dialog.dismiss();
-                        if (which >= 0 && which < users.size()) {
-                            listener.onUserSelected(users.get(which));
-                        }
-                    })
-                    .setNegativeButton("Cancel", null)
-                    .show();
+            new MaterialAlertDialogBuilder(context).setTitle(title).setSingleChoiceItems(displayNames, checkedItem, (dialog, which) -> {
+                dialog.dismiss();
+                if (which >= 0 && which < users.size()) {
+                    listener.onUserSelected(users.get(which));
+                }
+            }).setNegativeButton("Cancel", null).show();
         });
     }
 }

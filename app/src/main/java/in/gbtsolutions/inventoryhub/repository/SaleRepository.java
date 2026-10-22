@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.HashSet;
+import java.util.Set;
 
 import in.gbtsolutions.inventoryhub.Database;
 import in.gbtsolutions.inventoryhub.dao.ProductBatchDao;
@@ -25,6 +27,12 @@ import in.gbtsolutions.inventoryhub.models.SaleItemWithProduct;
 import in.gbtsolutions.inventoryhub.models.SaleWithBuyer;
 import in.gbtsolutions.inventoryhub.online.config.AppModeManager;
 import in.gbtsolutions.inventoryhub.online.repository.OnlineSaleRepository;
+import in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper;
+import in.gbtsolutions.inventoryhub.helpers.CommonFunctions;
+import in.gbtsolutions.inventoryhub.models.AuditTrail;
+import in.gbtsolutions.inventoryhub.models.Product;
+import in.gbtsolutions.inventoryhub.models.ProductBatch;
+import in.gbtsolutions.inventoryhub.online.paging.EndlessRecyclerScrollListener;
 
 public class SaleRepository {
 
@@ -39,11 +47,13 @@ public class SaleRepository {
 
     public interface SaleInsertCallback {
         void onSuccess(long saleId);
+
         void onError(String message);
     }
 
     public interface SaleActionCallback {
         void onSuccess();
+
         void onError(String message);
     }
 
@@ -119,7 +129,8 @@ public class SaleRepository {
                                     }
                                 }
                             });
-                        } catch (Exception ignored) {}
+                        } catch (Exception ignored) {
+                        }
                     });
                     if (callback != null) {
                         mainHandler.post(() -> callback.onSuccess(sales, currentPage, totalPages, totalRecords, hasMore));
@@ -137,7 +148,7 @@ public class SaleRepository {
     }
 
     public void fetchSalesOnline(String startDate, String endDate, String buyerQuery, OnlineSaleRepository.SaleListCallback callback) {
-        fetchSalesOnline(1, in.gbtsolutions.inventoryhub.online.paging.EndlessRecyclerScrollListener.PAGE_SIZE, startDate, endDate, buyerQuery, callback);
+        fetchSalesOnline(1, EndlessRecyclerScrollListener.PAGE_SIZE, startDate, endDate, buyerQuery, callback);
     }
 
     public void fetchSaleDetailsOnline(int saleId, OnlineSaleRepository.SaleDetailCallback callback) {
@@ -159,7 +170,7 @@ public class SaleRepository {
 
     public void insert(Sale sale, SaleInsertCallback callback) {
         if (sale.createdBy <= 0) {
-            sale.createdBy = in.gbtsolutions.inventoryhub.helpers.UserHelper.getCurrentUserId(application);
+            sale.createdBy = UserHelper.getCurrentUserId(application);
         }
         executorService.execute(() -> {
             try {
@@ -177,10 +188,10 @@ public class SaleRepository {
 
     public void insertSaleWithItems(Sale sale, List<SaleItem> items, SaleInsertCallback callback) {
         if (sale.createdBy <= 0) {
-            sale.createdBy = in.gbtsolutions.inventoryhub.helpers.UserHelper.getCurrentUserId(application);
+            sale.createdBy = UserHelper.getCurrentUserId(application);
         }
         if (appModeManager.isOnlineMode()) {
-            onlineSaleRepository.createSale(sale, items, new in.gbtsolutions.inventoryhub.online.repository.OnlineSaleRepository.SaleCreateCallback() {
+            onlineSaleRepository.createSale(sale, items, new OnlineSaleRepository.SaleCreateCallback() {
                 @Override
                 public void onSuccess(int saleId, String invoiceNo) {
                     sale.saleId = saleId;
@@ -198,7 +209,8 @@ public class SaleRepository {
                                     saleItemDao.insertAll(items);
                                 }
                             });
-                        } catch (Exception ignored) {}
+                        } catch (Exception ignored) {
+                        }
                     });
                     if (callback != null) {
                         callback.onSuccess(saleId);
@@ -223,24 +235,24 @@ public class SaleRepository {
                     generatedSaleId[0] = saleId;
                     sale.setSaleId((int) saleId);
                     if (items != null && !items.isEmpty()) {
-                        java.util.Set<Integer> affectedProductIds = new java.util.HashSet<>();
+                        Set<Integer> affectedProductIds = new HashSet<>();
                         for (SaleItem item : items) {
                             item.setSaleId((int) saleId);
                             affectedProductIds.add(item.productId);
 
                             // If item has a specific batch, deduct from that batch
                             if (item.batchId != null && item.batchId > 0) {
-                                in.gbtsolutions.inventoryhub.models.ProductBatch batch = productBatchDao.getBatchById(item.batchId);
+                                ProductBatch batch = productBatchDao.getBatchById(item.batchId);
                                 if (batch != null) {
-                                    batch.quantity = Math.max(0.0, in.gbtsolutions.inventoryhub.helpers.CommonFunctions.roundTo3Decimals(batch.quantity - item.quantity));
+                                    batch.quantity = Math.max(0.0, CommonFunctions.roundTo3Decimals(batch.quantity - item.quantity));
                                     batch.updatedAt = System.currentTimeMillis();
                                     productBatchDao.update(batch);
                                 }
                             } else {
                                 // Deduct from product quantity directly if no batchId
-                                in.gbtsolutions.inventoryhub.models.Product product = productDao.getProductById(item.productId);
+                                Product product = productDao.getProductById(item.productId);
                                 if (product != null) {
-                                    product.quantity = Math.max(0.0, in.gbtsolutions.inventoryhub.helpers.CommonFunctions.roundTo3Decimals(product.quantity - item.quantity));
+                                    product.quantity = Math.max(0.0, CommonFunctions.roundTo3Decimals(product.quantity - item.quantity));
                                     if (product.quantity <= 0.0001) {
                                         product.status = "Out of Stock";
                                     }
@@ -255,9 +267,9 @@ public class SaleRepository {
                             int batchCount = productBatchDao.getAllBatchesForProductSync(pid).size();
                             if (batchCount > 0) {
                                 double totalQty = productBatchDao.sumQuantityForProduct(pid);
-                                in.gbtsolutions.inventoryhub.models.Product prod = productDao.getProductById(pid);
+                                Product prod = productDao.getProductById(pid);
                                 if (prod != null) {
-                                    prod.quantity = in.gbtsolutions.inventoryhub.helpers.CommonFunctions.roundTo3Decimals(totalQty);
+                                    prod.quantity = CommonFunctions.roundTo3Decimals(totalQty);
                                     if (prod.quantity <= 0.0001) {
                                         prod.status = "Out of Stock";
                                     } else if ("Out of Stock".equalsIgnoreCase(prod.status)) {
@@ -272,10 +284,7 @@ public class SaleRepository {
                         saleItemDao.insertAll(items);
                     }
                 });
-                in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper.logAddition(application,
-                        in.gbtsolutions.inventoryhub.models.AuditTrail.MODULE_SALE,
-                        sale.invoiceId != null ? sale.invoiceId : ("Sale #" + generatedSaleId[0]),
-                        "Created sale " + (sale.invoiceId != null ? sale.invoiceId : "") + " (Total: ₹" + sale.totalAmount + ")");
+                AuditTrailHelper.logAddition(application, AuditTrail.MODULE_SALE, sale.invoiceId != null ? sale.invoiceId : ("Sale #" + generatedSaleId[0]), "Created sale " + (sale.invoiceId != null ? sale.invoiceId : "") + " (Total: ₹" + sale.totalAmount + ")");
                 if (callback != null) {
                     mainHandler.post(() -> callback.onSuccess(generatedSaleId[0]));
                 }
@@ -288,12 +297,12 @@ public class SaleRepository {
     }
 
     public void cancelSale(int saleId, SaleActionCallback callback) {
-        cancelSale(saleId, in.gbtsolutions.inventoryhub.helpers.UserHelper.getCurrentUserId(application), callback);
+        cancelSale(saleId, UserHelper.getCurrentUserId(application), callback);
     }
 
     public void cancelSale(int saleId, long userId, SaleActionCallback callback) {
         if (appModeManager.isOnlineMode()) {
-            onlineSaleRepository.cancelSale(saleId, new in.gbtsolutions.inventoryhub.online.repository.OnlineSaleRepository.SaleActionCallback() {
+            onlineSaleRepository.cancelSale(saleId, new OnlineSaleRepository.SaleActionCallback() {
                 @Override
                 public void onSuccess() {
                     executorService.execute(() -> {
@@ -301,11 +310,12 @@ public class SaleRepository {
                             Sale s = saleDao.getSaleById(saleId);
                             if (s != null) {
                                 s.status = "Cancelled";
-                                s.cancelledBy = userId > 0 ? userId : in.gbtsolutions.inventoryhub.helpers.UserHelper.getCurrentUserId(application);
+                                s.cancelledBy = userId > 0 ? userId : UserHelper.getCurrentUserId(application);
                                 s.updatedAt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
                                 saleDao.update(s);
                             }
-                        } catch (Exception ignored) {}
+                        } catch (Exception ignored) {
+                        }
                     });
                     if (callback != null) {
                         mainHandler.post(callback::onSuccess);
@@ -335,21 +345,21 @@ public class SaleRepository {
 
                     List<SaleItem> items = saleItemDao.getItemsBySaleIdSync(saleId);
                     if (items != null && !items.isEmpty()) {
-                        java.util.Set<Integer> affectedProductIds = new java.util.HashSet<>();
+                        Set<Integer> affectedProductIds = new HashSet<>();
                         for (SaleItem item : items) {
                             affectedProductIds.add(item.productId);
 
                             // Restore batch quantity if item was tied to a batch
                             if (item.batchId != null && item.batchId > 0) {
-                                in.gbtsolutions.inventoryhub.models.ProductBatch batch = productBatchDao.getBatchById(item.batchId);
+                                ProductBatch batch = productBatchDao.getBatchById(item.batchId);
                                 if (batch != null) {
-                                    batch.quantity = in.gbtsolutions.inventoryhub.helpers.CommonFunctions.roundTo3Decimals(batch.quantity + item.quantity);
+                                    batch.quantity = CommonFunctions.roundTo3Decimals(batch.quantity + item.quantity);
                                     batch.updatedAt = System.currentTimeMillis();
                                     productBatchDao.update(batch);
                                 } else {
-                                    in.gbtsolutions.inventoryhub.models.Product product = productDao.getProductById(item.productId);
+                                    Product product = productDao.getProductById(item.productId);
                                     if (product != null) {
-                                        product.quantity = in.gbtsolutions.inventoryhub.helpers.CommonFunctions.roundTo3Decimals(product.quantity + item.quantity);
+                                        product.quantity = CommonFunctions.roundTo3Decimals(product.quantity + item.quantity);
                                         if (product.quantity > 0.0001 && "Out of Stock".equalsIgnoreCase(product.status)) {
                                             product.status = "Active";
                                         }
@@ -359,9 +369,9 @@ public class SaleRepository {
                                 }
                             } else {
                                 // Restore product quantity directly
-                                in.gbtsolutions.inventoryhub.models.Product product = productDao.getProductById(item.productId);
+                                Product product = productDao.getProductById(item.productId);
                                 if (product != null) {
-                                    product.quantity = in.gbtsolutions.inventoryhub.helpers.CommonFunctions.roundTo3Decimals(product.quantity + item.quantity);
+                                    product.quantity = CommonFunctions.roundTo3Decimals(product.quantity + item.quantity);
                                     if (product.quantity > 0.0001 && "Out of Stock".equalsIgnoreCase(product.status)) {
                                         product.status = "Active";
                                     }
@@ -376,9 +386,9 @@ public class SaleRepository {
                             int batchCount = productBatchDao.getAllBatchesForProductSync(pid).size();
                             if (batchCount > 0) {
                                 double totalQty = productBatchDao.sumQuantityForProduct(pid);
-                                in.gbtsolutions.inventoryhub.models.Product prod = productDao.getProductById(pid);
+                                Product prod = productDao.getProductById(pid);
                                 if (prod != null) {
-                                    prod.quantity = in.gbtsolutions.inventoryhub.helpers.CommonFunctions.roundTo3Decimals(totalQty);
+                                    prod.quantity = CommonFunctions.roundTo3Decimals(totalQty);
                                     if (prod.quantity > 0.0001 && "Out of Stock".equalsIgnoreCase(prod.status)) {
                                         prod.status = "Active";
                                     }
@@ -389,17 +399,14 @@ public class SaleRepository {
                         }
                     }
 
-                    long finalUserId = userId > 0 ? userId : in.gbtsolutions.inventoryhub.helpers.UserHelper.getCurrentUserId(application);
+                    long finalUserId = userId > 0 ? userId : UserHelper.getCurrentUserId(application);
                     sale.status = "Cancelled";
                     sale.cancelledBy = finalUserId;
                     sale.updatedAt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
                     saleDao.update(sale);
                 });
 
-                in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper.logEdit(application,
-                        in.gbtsolutions.inventoryhub.models.AuditTrail.MODULE_SALE,
-                        "Sale #" + saleId,
-                        "Cancelled sale #" + saleId + " and restored product stock");
+                AuditTrailHelper.logEdit(application, AuditTrail.MODULE_SALE, "Sale #" + saleId, "Cancelled sale #" + saleId + " and restored product stock");
 
                 if (callback != null) {
                     mainHandler.post(callback::onSuccess);
@@ -435,10 +442,7 @@ public class SaleRepository {
         executorService.execute(() -> {
             saleItemDao.deleteBySaleId(sale.saleId);
             saleDao.delete(sale);
-            in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper.logDeletion(application,
-                    in.gbtsolutions.inventoryhub.models.AuditTrail.MODULE_SALE,
-                    sale.invoiceId != null ? sale.invoiceId : ("Sale #" + sale.saleId),
-                    "Deleted sale " + (sale.invoiceId != null ? sale.invoiceId : ""));
+            AuditTrailHelper.logDeletion(application, AuditTrail.MODULE_SALE, sale.invoiceId != null ? sale.invoiceId : ("Sale #" + sale.saleId), "Deleted sale " + (sale.invoiceId != null ? sale.invoiceId : ""));
         });
     }
 
@@ -447,10 +451,7 @@ public class SaleRepository {
             try {
                 saleItemDao.deleteBySaleId(sale.saleId);
                 saleDao.delete(sale);
-                in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper.logDeletion(application,
-                        in.gbtsolutions.inventoryhub.models.AuditTrail.MODULE_SALE,
-                        sale.invoiceId != null ? sale.invoiceId : ("Sale #" + sale.saleId),
-                        "Deleted sale " + (sale.invoiceId != null ? sale.invoiceId : ""));
+                AuditTrailHelper.logDeletion(application, AuditTrail.MODULE_SALE, sale.invoiceId != null ? sale.invoiceId : ("Sale #" + sale.saleId), "Deleted sale " + (sale.invoiceId != null ? sale.invoiceId : ""));
                 if (callback != null) {
                     mainHandler.post(callback::onSuccess);
                 }

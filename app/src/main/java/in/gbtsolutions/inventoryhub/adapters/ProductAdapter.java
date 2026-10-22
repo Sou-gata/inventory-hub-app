@@ -19,6 +19,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import in.gbtsolutions.inventoryhub.R;
 import in.gbtsolutions.inventoryhub.helpers.CategoryIconHelper;
@@ -364,8 +366,8 @@ public class ProductAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 Long earliestExp = earliestExpiryMap.get(product.productId);
                 if (product.batchEnabled && earliestExp != null && earliestExp > 0) {
                     chipProductExpiry.setVisibility(View.VISIBLE);
-                    java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yy", Locale.getDefault());
-                    chipProductExpiry.setText("Exp: " + sdf.format(new java.util.Date(earliestExp)));
+                    SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yy", Locale.getDefault());
+                    chipProductExpiry.setText("Exp: " + sdf.format(new Date(earliestExp)));
 
                     long now = System.currentTimeMillis();
                     long daysLeft = (earliestExp - now) / (1000L * 60 * 60 * 24);

@@ -14,6 +14,9 @@ import java.util.concurrent.Executors;
 import in.gbtsolutions.inventoryhub.Database;
 import in.gbtsolutions.inventoryhub.dao.ConfigDao;
 import in.gbtsolutions.inventoryhub.models.Config;
+import in.gbtsolutions.inventoryhub.Configurations;
+import in.gbtsolutions.inventoryhub.online.config.AppMode;
+import in.gbtsolutions.inventoryhub.online.config.AppModeManager;
 
 public class ConfigRepository {
 
@@ -29,6 +32,7 @@ public class ConfigRepository {
 
     public interface ConfigActionCallback {
         void onSuccess();
+
         void onError(String message);
     }
 
@@ -51,9 +55,8 @@ public class ConfigRepository {
     public void set(String key, String value) {
         executorService.execute(() -> {
             configDao.insert(new Config(key, value));
-            if (in.gbtsolutions.inventoryhub.Configurations.KEY_MODE.equalsIgnoreCase(key)) {
-                in.gbtsolutions.inventoryhub.online.config.AppModeManager.getInstance(application)
-                        .setAppMode(in.gbtsolutions.inventoryhub.online.config.AppMode.fromKey(value));
+            if (Configurations.KEY_MODE.equalsIgnoreCase(key)) {
+                AppModeManager.getInstance(application).setAppMode(AppMode.fromKey(value));
             }
         });
     }
@@ -68,9 +71,8 @@ public class ConfigRepository {
                 } else {
                     configDao.insert(new Config(key, value));
                 }
-                if (in.gbtsolutions.inventoryhub.Configurations.KEY_MODE.equalsIgnoreCase(key)) {
-                    in.gbtsolutions.inventoryhub.online.config.AppModeManager.getInstance(application)
-                            .setAppMode(in.gbtsolutions.inventoryhub.online.config.AppMode.fromKey(value));
+                if (Configurations.KEY_MODE.equalsIgnoreCase(key)) {
+                    AppModeManager.getInstance(application).setAppMode(AppMode.fromKey(value));
                 }
                 if (callback != null) {
                     mainHandler.post(callback::onSuccess);
@@ -96,10 +98,9 @@ public class ConfigRepository {
                             configDao.insert(new Config(entry.getKey(), entry.getValue()));
                         }
                     }
-                    if (configs.containsKey(in.gbtsolutions.inventoryhub.Configurations.KEY_MODE)) {
-                        String modeVal = configs.get(in.gbtsolutions.inventoryhub.Configurations.KEY_MODE);
-                        in.gbtsolutions.inventoryhub.online.config.AppModeManager.getInstance(application)
-                                .setAppMode(in.gbtsolutions.inventoryhub.online.config.AppMode.fromKey(modeVal));
+                    if (configs.containsKey(Configurations.KEY_MODE)) {
+                        String modeVal = configs.get(Configurations.KEY_MODE);
+                        AppModeManager.getInstance(application).setAppMode(AppMode.fromKey(modeVal));
                     }
                 }
                 if (callback != null) {

@@ -111,9 +111,7 @@ public class GSTR1ReportCalculator {
 
                 totalTaxable = totalTaxable.add(itemTaxable);
 
-                String gstCategory = (itemWrap.product != null && itemWrap.product.gstCategory != null)
-                        ? itemWrap.product.gstCategory.toUpperCase(Locale.US)
-                        : "TAXABLE";
+                String gstCategory = (itemWrap.product != null && itemWrap.product.gstCategory != null) ? itemWrap.product.gstCategory.toUpperCase(Locale.US) : "TAXABLE";
 
                 // Check Nil / Exempt / Non-GST
                 if ("NIL_RATED".equals(gstCategory) || "EXEMPT".equals(gstCategory) || "NON_GST".equals(gstCategory) || rate == 0.0) {
@@ -165,12 +163,8 @@ public class GSTR1ReportCalculator {
                 }
 
                 // Table 6: HSN / SAC Summary
-                String hsn = (itemWrap.saleItem.hsnCode != null && !itemWrap.saleItem.hsnCode.trim().isEmpty())
-                        ? itemWrap.saleItem.hsnCode.trim()
-                        : (itemWrap.product != null && itemWrap.product.hsnCode != null ? itemWrap.product.hsnCode.trim() : "UNCLASSIFIED");
-                String uqc = (itemWrap.saleItem.uqc != null && !itemWrap.saleItem.uqc.trim().isEmpty())
-                        ? itemWrap.saleItem.uqc.trim()
-                        : (itemWrap.product != null && itemWrap.product.uqc != null ? itemWrap.product.uqc.trim() : "PCS");
+                String hsn = (itemWrap.saleItem.hsnCode != null && !itemWrap.saleItem.hsnCode.trim().isEmpty()) ? itemWrap.saleItem.hsnCode.trim() : (itemWrap.product != null && itemWrap.product.hsnCode != null ? itemWrap.product.hsnCode.trim() : "UNCLASSIFIED");
+                String uqc = (itemWrap.saleItem.uqc != null && !itemWrap.saleItem.uqc.trim().isEmpty()) ? itemWrap.saleItem.uqc.trim() : (itemWrap.product != null && itemWrap.product.uqc != null ? itemWrap.product.uqc.trim() : "PCS");
                 String desc = (itemWrap.product != null && itemWrap.product.productName != null) ? itemWrap.product.productName : "Product";
                 String supplyType = isB2B ? "B2B" : "B2C";
                 String hsnKey = hsn + "|" + uqc + "|" + rate + "|" + supplyType;
@@ -200,7 +194,8 @@ public class GSTR1ReportCalculator {
             for (CreditDebitNote note : notes) {
                 if ("Cancelled".equalsIgnoreCase(note.status)) continue;
                 boolean isCredit = "CREDIT".equalsIgnoreCase(note.noteType);
-                if (isCredit) creditNotesCount++; else debitNotesCount++;
+                if (isCredit) creditNotesCount++;
+                else debitNotesCount++;
 
                 GSTR1Models.CreditDebitNoteRow row = new GSTR1Models.CreditDebitNoteRow();
                 row.noteType = isCredit ? "CREDIT" : "DEBIT";

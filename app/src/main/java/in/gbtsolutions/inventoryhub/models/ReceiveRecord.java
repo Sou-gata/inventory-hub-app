@@ -39,21 +39,51 @@ public class ReceiveRecord {
         this.createdAt = createdAt;
     }
 
-    public int getReceiveRecordId() { return receiveRecordId; }
-    public void setReceiveRecordId(int receiveRecordId) { this.receiveRecordId = receiveRecordId; }
+    public int getReceiveRecordId() {
+        return receiveRecordId;
+    }
 
-    public int getPurchaseId() { return purchaseId; }
-    public void setPurchaseId(int purchaseId) { this.purchaseId = purchaseId; }
+    public void setReceiveRecordId(int receiveRecordId) {
+        this.receiveRecordId = receiveRecordId;
+    }
 
-    public String getReceiveDate() { return receiveDate; }
-    public void setReceiveDate(String receiveDate) { this.receiveDate = receiveDate; }
+    public int getPurchaseId() {
+        return purchaseId;
+    }
 
-    public long getReceivedBy() { return receivedBy; }
-    public void setReceivedBy(long receivedBy) { this.receivedBy = receivedBy; }
+    public void setPurchaseId(int purchaseId) {
+        this.purchaseId = purchaseId;
+    }
 
-    public String getNotes() { return notes; }
-    public void setNotes(String notes) { this.notes = notes; }
+    public String getReceiveDate() {
+        return receiveDate;
+    }
 
-    public String getCreatedAt() { return createdAt; }
-    public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
+    public void setReceiveDate(String receiveDate) {
+        this.receiveDate = receiveDate;
+    }
+
+    public long getReceivedBy() {
+        return receivedBy;
+    }
+
+    public void setReceivedBy(long receivedBy) {
+        this.receivedBy = receivedBy;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(String notes) {
+        this.notes = notes;
+    }
+
+    public String getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(String createdAt) {
+        this.createdAt = createdAt;
+    }
 }

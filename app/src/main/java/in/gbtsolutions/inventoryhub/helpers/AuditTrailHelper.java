@@ -42,14 +42,7 @@ public class AuditTrailHelper {
                 String performedBy = resolveCurrentUserName(appContext);
                 long now = System.currentTimeMillis();
 
-                AuditTrail trail = new AuditTrail(
-                        actionType,
-                        module,
-                        recordId != null ? recordId : "",
-                        details != null ? details : "",
-                        performedBy,
-                        now
-                );
+                AuditTrail trail = new AuditTrail(actionType, module, recordId != null ? recordId : "", details != null ? details : "", performedBy, now);
 
                 Database db = Database.getInstance(appContext);
                 db.auditTrailDao().insert(trail);

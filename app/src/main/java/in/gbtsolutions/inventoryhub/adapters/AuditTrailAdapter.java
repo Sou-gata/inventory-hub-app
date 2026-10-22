@@ -126,12 +126,7 @@ public class AuditTrailAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
             public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
                 AuditTrail oldItem = auditList.get(oldItemPosition);
                 AuditTrail newItem = newAuditTrails.get(newItemPosition);
-                return TextUtils.equals(oldItem.actionType, newItem.actionType)
-                        && TextUtils.equals(oldItem.module, newItem.module)
-                        && TextUtils.equals(oldItem.recordId, newItem.recordId)
-                        && TextUtils.equals(oldItem.details, newItem.details)
-                        && TextUtils.equals(oldItem.performedBy, newItem.performedBy)
-                        && oldItem.timestamp == newItem.timestamp;
+                return TextUtils.equals(oldItem.actionType, newItem.actionType) && TextUtils.equals(oldItem.module, newItem.module) && TextUtils.equals(oldItem.recordId, newItem.recordId) && TextUtils.equals(oldItem.details, newItem.details) && TextUtils.equals(oldItem.performedBy, newItem.performedBy) && oldItem.timestamp == newItem.timestamp;
             }
         });
 

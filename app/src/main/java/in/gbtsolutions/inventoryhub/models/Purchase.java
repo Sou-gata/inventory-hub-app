@@ -67,24 +67,7 @@ public class Purchase {
     }
 
     @Ignore
-    public Purchase(
-            int supplierId,
-            String invoiceId,
-            double subtotalAmount,
-            double cgstAmount,
-            double sgstAmount,
-            double igstAmount,
-            double totalGst,
-            double otherCharges,
-            double totalAmount,
-            String status,
-            long createdBy,
-            String billingDate,
-            String createdAt,
-            String updatedAt,
-            double discountAmount,
-            double discountPercent
-    ) {
+    public Purchase(int supplierId, String invoiceId, double subtotalAmount, double cgstAmount, double sgstAmount, double igstAmount, double totalGst, double otherCharges, double totalAmount, String status, long createdBy, String billingDate, String createdAt, String updatedAt, double discountAmount, double discountPercent) {
         this.supplierId = supplierId;
         this.invoiceId = invoiceId;
         this.subtotalAmount = subtotalAmount;
@@ -103,57 +86,147 @@ public class Purchase {
         this.discountPercent = discountPercent;
     }
 
-    public int getPurchaseId() { return purchaseId; }
-    public void setPurchaseId(int purchaseId) { this.purchaseId = purchaseId; }
+    public int getPurchaseId() {
+        return purchaseId;
+    }
 
-    public int getSupplierId() { return supplierId; }
-    public void setSupplierId(int supplierId) { this.supplierId = supplierId; }
+    public void setPurchaseId(int purchaseId) {
+        this.purchaseId = purchaseId;
+    }
 
-    public String getInvoiceId() { return invoiceId; }
-    public void setInvoiceId(String invoiceId) { this.invoiceId = invoiceId; }
+    public int getSupplierId() {
+        return supplierId;
+    }
 
-    public double getSubtotalAmount() { return subtotalAmount; }
-    public void setSubtotalAmount(double subtotalAmount) { this.subtotalAmount = subtotalAmount; }
+    public void setSupplierId(int supplierId) {
+        this.supplierId = supplierId;
+    }
 
-    public double getCgstAmount() { return cgstAmount; }
-    public void setCgstAmount(double cgstAmount) { this.cgstAmount = cgstAmount; }
+    public String getInvoiceId() {
+        return invoiceId;
+    }
 
-    public double getSgstAmount() { return sgstAmount; }
-    public void setSgstAmount(double sgstAmount) { this.sgstAmount = sgstAmount; }
+    public void setInvoiceId(String invoiceId) {
+        this.invoiceId = invoiceId;
+    }
 
-    public double getIgstAmount() { return igstAmount; }
-    public void setIgstAmount(double igstAmount) { this.igstAmount = igstAmount; }
+    public double getSubtotalAmount() {
+        return subtotalAmount;
+    }
 
-    public double getTotalGst() { return totalGst; }
-    public void setTotalGst(double totalGst) { this.totalGst = totalGst; }
+    public void setSubtotalAmount(double subtotalAmount) {
+        this.subtotalAmount = subtotalAmount;
+    }
 
-    public double getOtherCharges() { return otherCharges; }
-    public void setOtherCharges(double otherCharges) { this.otherCharges = otherCharges; }
+    public double getCgstAmount() {
+        return cgstAmount;
+    }
 
-    public double getTotalAmount() { return totalAmount; }
-    public void setTotalAmount(double totalAmount) { this.totalAmount = totalAmount; }
+    public void setCgstAmount(double cgstAmount) {
+        this.cgstAmount = cgstAmount;
+    }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public double getSgstAmount() {
+        return sgstAmount;
+    }
 
-    public long getCreatedBy() { return createdBy; }
-    public void setCreatedBy(long createdBy) { this.createdBy = createdBy; }
+    public void setSgstAmount(double sgstAmount) {
+        this.sgstAmount = sgstAmount;
+    }
 
-    public String getBillingDate() { return billingDate; }
-    public void setBillingDate(String billingDate) { this.billingDate = billingDate; }
+    public double getIgstAmount() {
+        return igstAmount;
+    }
 
-    public String getCreatedAt() { return createdAt; }
-    public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
+    public void setIgstAmount(double igstAmount) {
+        this.igstAmount = igstAmount;
+    }
 
-    public String getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(String updatedAt) { this.updatedAt = updatedAt; }
+    public double getTotalGst() {
+        return totalGst;
+    }
 
-    public double getDiscountAmount() { return discountAmount; }
-    public void setDiscountAmount(double discountAmount) { this.discountAmount = discountAmount; }
+    public void setTotalGst(double totalGst) {
+        this.totalGst = totalGst;
+    }
 
-    public double getDiscountPercent() { return discountPercent; }
-    public void setDiscountPercent(double discountPercent) { this.discountPercent = discountPercent; }
+    public double getOtherCharges() {
+        return otherCharges;
+    }
 
-    public long getCancelledBy() { return cancelledBy; }
-    public void setCancelledBy(long cancelledBy) { this.cancelledBy = cancelledBy; }
+    public void setOtherCharges(double otherCharges) {
+        this.otherCharges = otherCharges;
+    }
+
+    public double getTotalAmount() {
+        return totalAmount;
+    }
+
+    public void setTotalAmount(double totalAmount) {
+        this.totalAmount = totalAmount;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public long getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(long createdBy) {
+        this.createdBy = createdBy;
+    }
+
+    public String getBillingDate() {
+        return billingDate;
+    }
+
+    public void setBillingDate(String billingDate) {
+        this.billingDate = billingDate;
+    }
+
+    public String getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(String createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public String getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(String updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public double getDiscountAmount() {
+        return discountAmount;
+    }
+
+    public void setDiscountAmount(double discountAmount) {
+        this.discountAmount = discountAmount;
+    }
+
+    public double getDiscountPercent() {
+        return discountPercent;
+    }
+
+    public void setDiscountPercent(double discountPercent) {
+        this.discountPercent = discountPercent;
+    }
+
+    public long getCancelledBy() {
+        return cancelledBy;
+    }
+
+    public void setCancelledBy(long cancelledBy) {
+        this.cancelledBy = cancelledBy;
+    }
 }

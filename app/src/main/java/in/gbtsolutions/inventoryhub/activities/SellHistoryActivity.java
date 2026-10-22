@@ -61,6 +61,8 @@ import in.gbtsolutions.inventoryhub.models.SaleWithBuyer;
 import in.gbtsolutions.inventoryhub.online.paging.EndlessRecyclerScrollListener;
 import in.gbtsolutions.inventoryhub.repository.ConfigRepository;
 import in.gbtsolutions.inventoryhub.repository.SaleRepository;
+import in.gbtsolutions.inventoryhub.helpers.UserHelper;
+import in.gbtsolutions.inventoryhub.online.repository.OnlineSaleRepository;
 
 public class SellHistoryActivity extends BaseActivity {
 
@@ -324,7 +326,7 @@ public class SellHistoryActivity extends BaseActivity {
         }
 
         saleRepository.fetchSalesOnline(page, EndlessRecyclerScrollListener.PAGE_SIZE, selectedStartDate, selectedEndDate, query,
-                new in.gbtsolutions.inventoryhub.online.repository.OnlineSaleRepository.SaleListCallback() {
+                new OnlineSaleRepository.SaleListCallback() {
                     @Override
                     public void onSuccess(List<SaleWithBuyer> sales, int currentPage, int totalPages, int totalRecords, boolean hasMore) {
                         runOnUiThread(() -> {
@@ -526,13 +528,13 @@ public class SellHistoryActivity extends BaseActivity {
             textCreatorRole.setText("STAFF");
         }
         if (creatorId > 0) {
-            in.gbtsolutions.inventoryhub.helpers.UserHelper.getUserByIdAsync(this, creatorId, user -> {
+            UserHelper.getUserByIdAsync(this, creatorId, user -> {
                 if (user != null) {
                     if (textCreatorName != null) {
-                        textCreatorName.setText(in.gbtsolutions.inventoryhub.helpers.UserHelper.formatUserNameAndUsername(user, creatorId));
+                        textCreatorName.setText(UserHelper.formatUserNameAndUsername(user, creatorId));
                     }
                     if (textCreatorRole != null) {
-                        textCreatorRole.setText(in.gbtsolutions.inventoryhub.helpers.UserHelper.formatUserRole(user));
+                        textCreatorRole.setText(UserHelper.formatUserRole(user));
                     }
                 }
             });
@@ -558,8 +560,8 @@ public class SellHistoryActivity extends BaseActivity {
                 final String cancelDate = !TextUtils.isEmpty(sale.updatedAt) ? sale.updatedAt : sale.billingDate;
                 final long cancelledById = sale.cancelledBy;
                 if (cancelledById > 0) {
-                    in.gbtsolutions.inventoryhub.helpers.UserHelper.getUserByIdAsync(this, cancelledById, user -> {
-                        String cancelUserName = in.gbtsolutions.inventoryhub.helpers.UserHelper.formatUserNameAndUsername(user, cancelledById);
+                    UserHelper.getUserByIdAsync(this, cancelledById, user -> {
+                        String cancelUserName = UserHelper.formatUserNameAndUsername(user, cancelledById);
                         if (textCancellationDetails != null) {
                             textCancellationDetails.setText(String.format("Cancelled on %s by %s. All items were returned to inventory.",
                                     cancelDate != null ? cancelDate : "", cancelUserName));
@@ -588,7 +590,7 @@ public class SellHistoryActivity extends BaseActivity {
                     btnCancelBill.setEnabled(false);
                     btnCancelBill.setText("Cancelling...");
 
-                    long currentUserId = in.gbtsolutions.inventoryhub.helpers.UserHelper.getCurrentUserId(SellHistoryActivity.this);
+                    long currentUserId = UserHelper.getCurrentUserId(SellHistoryActivity.this);
                     saleRepository.cancelSale(sale.saleId, currentUserId, new SaleRepository.SaleActionCallback() {
                         @Override
                         public void onSuccess() {
@@ -762,7 +764,7 @@ public class SellHistoryActivity extends BaseActivity {
         final List<SaleItemWithProduct> currentSaleItems = new ArrayList<>();
 
         if (saleRepository.isOnlineMode()) {
-            saleRepository.fetchSaleDetailsOnline(sale.saleId, new in.gbtsolutions.inventoryhub.online.repository.OnlineSaleRepository.SaleDetailCallback() {
+            saleRepository.fetchSaleDetailsOnline(sale.saleId, new OnlineSaleRepository.SaleDetailCallback() {
                 @Override
                 public void onSuccess(SaleWithBuyer saleWithBuyer, List<SaleItemWithProduct> saleItems) {
                     runOnUiThread(() -> {

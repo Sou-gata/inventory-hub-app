@@ -51,64 +51,15 @@ public class UserWiseReportCsvExporter {
 
             // Table Data
             writer.writeNext(new String[]{"--- USER-WISE PERFORMANCE & TAX BREAKDOWN ---"});
-            writer.writeNext(new String[]{
-                    "#", "User ID", "User Name", "Username", "Role",
-                    "Sales Count", "Sales Taxable (₹)", "Sales CGST (₹)", "Sales SGST (₹)", "Sales IGST (₹)", "Sales GST (₹)", "Gross Sales (₹)",
-                    "Purchase Count", "Purchase Taxable (₹)", "Purchase CGST (₹)", "Purchase SGST (₹)", "Purchase IGST (₹)", "Purchase GST (₹)", "Gross Purchases (₹)",
-                    "Total GST (₹)", "Net Turnover (₹)"
-            });
+            writer.writeNext(new String[]{"#", "User ID", "User Name", "Username", "Role", "Sales Count", "Sales Taxable (₹)", "Sales CGST (₹)", "Sales SGST (₹)", "Sales IGST (₹)", "Sales GST (₹)", "Gross Sales (₹)", "Purchase Count", "Purchase Taxable (₹)", "Purchase CGST (₹)", "Purchase SGST (₹)", "Purchase IGST (₹)", "Purchase GST (₹)", "Gross Purchases (₹)", "Total GST (₹)", "Net Turnover (₹)"});
 
             int slNo = 1;
             for (UserWiseReportModels.UserWiseReportRow row : report.rows) {
-                writer.writeNext(new String[]{
-                        String.valueOf(slNo++),
-                        String.valueOf(row.userId),
-                        row.userName,
-                        row.username != null ? row.username : "",
-                        row.role,
-                        String.valueOf(row.salesCount),
-                        row.salesTaxable.toPlainString(),
-                        row.salesCgst.toPlainString(),
-                        row.salesSgst.toPlainString(),
-                        row.salesIgst.toPlainString(),
-                        row.salesTotalGst.toPlainString(),
-                        row.salesGrossTotal.toPlainString(),
-                        String.valueOf(row.purchaseCount),
-                        row.purchaseTaxable.toPlainString(),
-                        row.purchaseCgst.toPlainString(),
-                        row.purchaseSgst.toPlainString(),
-                        row.purchaseIgst.toPlainString(),
-                        row.purchaseTotalGst.toPlainString(),
-                        row.purchaseGrossTotal.toPlainString(),
-                        row.totalCombinedGst.toPlainString(),
-                        row.netTurnover.toPlainString()
-                });
+                writer.writeNext(new String[]{String.valueOf(slNo++), String.valueOf(row.userId), row.userName, row.username != null ? row.username : "", row.role, String.valueOf(row.salesCount), row.salesTaxable.toPlainString(), row.salesCgst.toPlainString(), row.salesSgst.toPlainString(), row.salesIgst.toPlainString(), row.salesTotalGst.toPlainString(), row.salesGrossTotal.toPlainString(), String.valueOf(row.purchaseCount), row.purchaseTaxable.toPlainString(), row.purchaseCgst.toPlainString(), row.purchaseSgst.toPlainString(), row.purchaseIgst.toPlainString(), row.purchaseTotalGst.toPlainString(), row.purchaseGrossTotal.toPlainString(), row.totalCombinedGst.toPlainString(), row.netTurnover.toPlainString()});
             }
 
             // Total Row
-            writer.writeNext(new String[]{
-                    "TOTAL",
-                    "",
-                    "",
-                    "",
-                    "",
-                    String.valueOf(report.summary.totalSalesCount),
-                    report.summary.totalSalesTaxable.toPlainString(),
-                    report.summary.totalSalesCgst.toPlainString(),
-                    report.summary.totalSalesSgst.toPlainString(),
-                    report.summary.totalSalesIgst.toPlainString(),
-                    report.summary.totalSalesGst.toPlainString(),
-                    report.summary.totalGrossSales.toPlainString(),
-                    String.valueOf(report.summary.totalPurchaseCount),
-                    report.summary.totalPurchaseTaxable.toPlainString(),
-                    report.summary.totalPurchaseCgst.toPlainString(),
-                    report.summary.totalPurchaseSgst.toPlainString(),
-                    report.summary.totalPurchaseIgst.toPlainString(),
-                    report.summary.totalPurchaseGst.toPlainString(),
-                    report.summary.totalGrossPurchases.toPlainString(),
-                    report.summary.totalCombinedGst.toPlainString(),
-                    report.summary.netTurnover.toPlainString()
-            });
+            writer.writeNext(new String[]{"TOTAL", "", "", "", "", String.valueOf(report.summary.totalSalesCount), report.summary.totalSalesTaxable.toPlainString(), report.summary.totalSalesCgst.toPlainString(), report.summary.totalSalesSgst.toPlainString(), report.summary.totalSalesIgst.toPlainString(), report.summary.totalSalesGst.toPlainString(), report.summary.totalGrossSales.toPlainString(), String.valueOf(report.summary.totalPurchaseCount), report.summary.totalPurchaseTaxable.toPlainString(), report.summary.totalPurchaseCgst.toPlainString(), report.summary.totalPurchaseSgst.toPlainString(), report.summary.totalPurchaseIgst.toPlainString(), report.summary.totalPurchaseGst.toPlainString(), report.summary.totalGrossPurchases.toPlainString(), report.summary.totalCombinedGst.toPlainString(), report.summary.netTurnover.toPlainString()});
         }
 
         return outputFile;

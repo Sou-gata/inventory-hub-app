@@ -27,14 +27,14 @@ public class UserWiseReportExcelExporter {
     public static File exportToExcel(Context context, UserWiseReportModels.ReportData report) throws IOException {
         XSSFWorkbook workbook = new XSSFWorkbook();
 
-        // 1. Title Style
+        //  Title Style
         CellStyle titleStyle = workbook.createCellStyle();
         Font titleFont = workbook.createFont();
         titleFont.setBold(true);
         titleFont.setFontHeightInPoints((short) 14);
         titleStyle.setFont(titleFont);
 
-        // 2. Header Style (Royal Blue with White Bold Text)
+        //  Header Style (Royal Blue with White Bold Text)
         CellStyle headerStyle = workbook.createCellStyle();
         Font headerFont = workbook.createFont();
         headerFont.setBold(true);
@@ -48,7 +48,7 @@ public class UserWiseReportExcelExporter {
         headerStyle.setBorderLeft(BorderStyle.THIN);
         headerStyle.setBorderRight(BorderStyle.THIN);
 
-        // 3. Data Styles
+        //  Data Styles
         DataFormat format = workbook.createDataFormat();
         CellStyle moneyStyle = workbook.createCellStyle();
         moneyStyle.setDataFormat(format.getFormat("₹#,##0.00"));
@@ -71,7 +71,7 @@ public class UserWiseReportExcelExporter {
         centerStyle.setBorderLeft(BorderStyle.THIN);
         centerStyle.setBorderRight(BorderStyle.THIN);
 
-        // 4. Total Row Style
+        //  Total Row Style
         CellStyle totalStyle = workbook.createCellStyle();
         Font totalFont = workbook.createFont();
         totalFont.setBold(true);
@@ -127,17 +127,7 @@ public class UserWiseReportExcelExporter {
         return outputFile;
     }
 
-    private static void buildUserWiseSheet(
-            XSSFWorkbook wb,
-            UserWiseReportModels.ReportData report,
-            CellStyle titleStyle,
-            CellStyle headerStyle,
-            CellStyle normalStyle,
-            CellStyle centerStyle,
-            CellStyle moneyStyle,
-            CellStyle totalStyle,
-            CellStyle totalLabelStyle,
-            CellStyle totalCenterStyle) {
+    private static void buildUserWiseSheet(XSSFWorkbook wb, UserWiseReportModels.ReportData report, CellStyle titleStyle, CellStyle headerStyle, CellStyle normalStyle, CellStyle centerStyle, CellStyle moneyStyle, CellStyle totalStyle, CellStyle totalLabelStyle, CellStyle totalCenterStyle) {
 
         Sheet sheet = wb.createSheet("User Wise Report");
         int r = 0;
@@ -152,18 +142,12 @@ public class UserWiseReportExcelExporter {
         r1.createCell(0).setCellValue("GSTIN: " + (report.companyGst != null && !report.companyGst.isEmpty() ? report.companyGst : "N/A"));
 
         Row r2 = sheet.createRow(r++);
-        String period = "Period: " + (report.startDate != null ? report.startDate : "Start") + " to " + (report.endDate != null ? report.endDate : "End")
-                + "  |  User Filter: " + (report.filterUserName != null ? report.filterUserName : "All Users");
+        String period = "Period: " + (report.startDate != null ? report.startDate : "Start") + " to " + (report.endDate != null ? report.endDate : "End") + "  |  User Filter: " + (report.filterUserName != null ? report.filterUserName : "All Users");
         r2.createCell(0).setCellValue(period);
         r++; // Blank row
 
         // Headers
-        String[] headers = {
-                "#", "User ID", "User Name", "Username", "Role",
-                "Sales Inv", "Sales Taxable (₹)", "Sales GST (₹)", "Gross Sales (₹)",
-                "Purchase Orders", "Purchase Taxable (₹)", "Purchase GST (₹)", "Gross Purchases (₹)",
-                "Total GST (₹)", "Net Turnover (₹)"
-        };
+        String[] headers = {"#", "User ID", "User Name", "Username", "Role", "Sales Inv", "Sales Taxable (₹)", "Sales GST (₹)", "Gross Sales (₹)", "Purchase Orders", "Purchase Taxable (₹)", "Purchase GST (₹)", "Gross Purchases (₹)", "Total GST (₹)", "Net Turnover (₹)"};
 
         Row headerRow = sheet.createRow(r++);
         for (int i = 0; i < headers.length; i++) {
@@ -297,14 +281,7 @@ public class UserWiseReportExcelExporter {
         }
     }
 
-    private static void buildSummarySheet(
-            XSSFWorkbook wb,
-            UserWiseReportModels.ReportData report,
-            CellStyle titleStyle,
-            CellStyle headerStyle,
-            CellStyle normalStyle,
-            CellStyle centerStyle,
-            CellStyle moneyStyle) {
+    private static void buildSummarySheet(XSSFWorkbook wb, UserWiseReportModels.ReportData report, CellStyle titleStyle, CellStyle headerStyle, CellStyle normalStyle, CellStyle centerStyle, CellStyle moneyStyle) {
 
         Sheet sheet = wb.createSheet("Executive Summary");
         int r = 0;
@@ -330,20 +307,7 @@ public class UserWiseReportExcelExporter {
         h1.setCellValue("Value / Count");
         h1.setCellStyle(headerStyle);
 
-        Object[][] metrics = {
-                {"Gross Sales Turnover (₹)", report.summary.totalGrossSales.doubleValue(), true},
-                {"Total Sales Invoices Count", (double) report.summary.totalSalesCount, false},
-                {"Total Output Sales GST (₹)", report.summary.totalSalesGst.doubleValue(), true},
-                {"Gross Purchases Value (₹)", report.summary.totalGrossPurchases.doubleValue(), true},
-                {"Total Purchase Orders Count", (double) report.summary.totalPurchaseCount, false},
-                {"Total Input Purchase GST (₹)", report.summary.totalPurchaseGst.doubleValue(), true},
-                {"Combined Total GST Handled (₹)", report.summary.totalCombinedGst.doubleValue(), true},
-                {"Net GST Liability (Output - Input) (₹)", report.summary.netGstLiability.doubleValue(), true},
-                {"Net Turnover (Sales - Purchases) (₹)", report.summary.netTurnover.doubleValue(), true},
-                {"Total Transactions Count", (double) report.summary.totalTransactions, false},
-                {"Active Users with Transactions", (double) report.summary.activeUsersCount, false},
-                {"Total Registered Users Evaluated", (double) report.summary.totalUsersCount, false}
-        };
+        Object[][] metrics = {{"Gross Sales Turnover (₹)", report.summary.totalGrossSales.doubleValue(), true}, {"Total Sales Invoices Count", (double) report.summary.totalSalesCount, false}, {"Total Output Sales GST (₹)", report.summary.totalSalesGst.doubleValue(), true}, {"Gross Purchases Value (₹)", report.summary.totalGrossPurchases.doubleValue(), true}, {"Total Purchase Orders Count", (double) report.summary.totalPurchaseCount, false}, {"Total Input Purchase GST (₹)", report.summary.totalPurchaseGst.doubleValue(), true}, {"Combined Total GST Handled (₹)", report.summary.totalCombinedGst.doubleValue(), true}, {"Net GST Liability (Output - Input) (₹)", report.summary.netGstLiability.doubleValue(), true}, {"Net Turnover (Sales - Purchases) (₹)", report.summary.netTurnover.doubleValue(), true}, {"Total Transactions Count", (double) report.summary.totalTransactions, false}, {"Active Users with Transactions", (double) report.summary.activeUsersCount, false}, {"Total Registered Users Evaluated", (double) report.summary.totalUsersCount, false}};
 
         for (Object[] m : metrics) {
             Row row = sheet.createRow(r++);

@@ -34,11 +34,13 @@ public class BackupManager {
 
     public interface BackupCallback {
         void onSuccess(@NonNull File backupFile);
+
         void onError(@NonNull String errorMessage);
     }
 
     public interface RestoreCallback {
         void onSuccess();
+
         void onError(@NonNull String errorMessage);
     }
 
@@ -184,8 +186,7 @@ public class BackupManager {
     }
 
     private static byte[] readFileToByteArray(@NonNull File file) throws Exception {
-        try (FileInputStream fis = new FileInputStream(file);
-             ByteArrayOutputStream bos = new ByteArrayOutputStream((int) file.length())) {
+        try (FileInputStream fis = new FileInputStream(file); ByteArrayOutputStream bos = new ByteArrayOutputStream((int) file.length())) {
             byte[] buffer = new byte[8192];
             int read;
             while ((read = fis.read(buffer)) != -1) {

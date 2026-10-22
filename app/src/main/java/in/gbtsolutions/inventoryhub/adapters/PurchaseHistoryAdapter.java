@@ -24,12 +24,20 @@ import in.gbtsolutions.inventoryhub.R;
 import in.gbtsolutions.inventoryhub.models.Purchase;
 import in.gbtsolutions.inventoryhub.models.PurchaseWithSupplier;
 
-public class PurchaseHistoryAdapter extends RecyclerView.Adapter<PurchaseHistoryAdapter.PurchaseViewHolder> {
+public class PurchaseHistoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+
+    public static final int VIEW_TYPE_ITEM = 0;
+    public static final int VIEW_TYPE_FOOTER = 1;
 
     private final List<PurchaseWithSupplier> purchaseList = new ArrayList<>();
     private final SimpleDateFormat isoDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
     private final SimpleDateFormat displayDateFormat = new SimpleDateFormat("dd MMM yyyy", Locale.getDefault());
     private OnPurchaseClickListener clickListener;
+
+    private boolean isFooterAdded = false;
+    private boolean isRetryActive = false;
+    private String retryMessage = null;
+    private Runnable retryAction = null;
 
     public PurchaseHistoryAdapter() {
     }
@@ -38,7 +46,83 @@ public class PurchaseHistoryAdapter extends RecyclerView.Adapter<PurchaseHistory
         this.clickListener = listener;
     }
 
+    public List<PurchaseWithSupplier> getPurchases() {
+        return new ArrayList<>(purchaseList);
+    }
+
+    public void clearPurchases() {
+        int count = getItemCount();
+        purchaseList.clear();
+        isFooterAdded = false;
+        isRetryActive = false;
+        if (count > 0) {
+            notifyItemRangeRemoved(0, count);
+        }
+    }
+
+    public void addPurchases(@NonNull List<PurchaseWithSupplier> newBatch) {
+        if (newBatch.isEmpty()) return;
+        List<PurchaseWithSupplier> toAdd = new ArrayList<>();
+        java.util.HashSet<Integer> existingIds = new java.util.HashSet<>();
+        for (PurchaseWithSupplier item : purchaseList) {
+            if (item.purchase != null) {
+                existingIds.add(item.purchase.purchaseId);
+            }
+        }
+        for (PurchaseWithSupplier item : newBatch) {
+            if (item.purchase == null || !existingIds.contains(item.purchase.purchaseId)) {
+                toAdd.add(item);
+                if (item.purchase != null) {
+                    existingIds.add(item.purchase.purchaseId);
+                }
+            }
+        }
+        if (toAdd.isEmpty()) return;
+        int insertPos = purchaseList.size();
+        purchaseList.addAll(toAdd);
+        notifyItemRangeInserted(insertPos, toAdd.size());
+    }
+
+    public void showLoadingFooter() {
+        if (!isFooterAdded) {
+            isFooterAdded = true;
+            isRetryActive = false;
+            notifyItemInserted(purchaseList.size());
+        } else if (isRetryActive) {
+            isRetryActive = false;
+            notifyItemChanged(purchaseList.size());
+        }
+    }
+
+    public void showRetryFooter(String message, Runnable retry) {
+        this.retryMessage = message;
+        this.retryAction = retry;
+        this.isRetryActive = true;
+        if (!isFooterAdded) {
+            isFooterAdded = true;
+            notifyItemInserted(purchaseList.size());
+        } else {
+            notifyItemChanged(purchaseList.size());
+        }
+    }
+
+    public void removeFooter() {
+        if (isFooterAdded) {
+            isFooterAdded = false;
+            isRetryActive = false;
+            retryMessage = null;
+            retryAction = null;
+            notifyItemRemoved(purchaseList.size());
+        }
+    }
+
+    public boolean isFooterAdded() {
+        return isFooterAdded;
+    }
+
     public void setPurchases(@NonNull List<PurchaseWithSupplier> newPurchases) {
+        isFooterAdded = false;
+        isRetryActive = false;
         DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new DiffUtil.Callback() {
             @Override
             public int getOldListSize() {
@@ -76,21 +160,38 @@ public class PurchaseHistoryAdapter extends RecyclerView.Adapter<PurchaseHistory
         diffResult.dispatchUpdatesTo(this);
     }
 
+    @Override
+    public int getItemViewType(int position) {
+        if (isFooterAdded && position == purchaseList.size()) {
+            return VIEW_TYPE_FOOTER;
+        }
+        return VIEW_TYPE_ITEM;
+    }
+
     @NonNull
     @Override
-    public PurchaseViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        if (viewType == VIEW_TYPE_FOOTER) {
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_loading_footer, parent, false);
+            return new FooterViewHolder(view);
+        }
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_purchase_history, parent, false);
         return new PurchaseViewHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull PurchaseViewHolder holder, int position) {
-        holder.bind(purchaseList.get(position));
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+        if (holder instanceof PurchaseViewHolder) {
+            holder.setIsRecyclable(true);
+            ((PurchaseViewHolder) holder).bind(purchaseList.get(position));
+        } else if (holder instanceof FooterViewHolder) {
+            ((FooterViewHolder) holder).bind(isRetryActive, retryMessage, retryAction);
+        }
     }
 
     @Override
     public int getItemCount() {
-        return purchaseList.size();
+        return isFooterAdded ? purchaseList.size() + 1 : purchaseList.size();
     }
 
     public interface OnPurchaseClickListener {
@@ -121,7 +222,7 @@ public class PurchaseHistoryAdapter extends RecyclerView.Adapter<PurchaseHistory
 
             itemView.setOnClickListener(v -> {
                 int pos = getBindingAdapterPosition();
-                if (pos != RecyclerView.NO_ID && clickListener != null) {
+                if (pos != RecyclerView.NO_POSITION && pos < purchaseList.size() && clickListener != null) {
                     clickListener.onPurchaseClick(purchaseList.get(pos));
                 }
             });
@@ -196,6 +297,50 @@ public class PurchaseHistoryAdapter extends RecyclerView.Adapter<PurchaseHistory
 
             // Total Amount
             textTotalAmount.setText(String.format(Locale.getDefault(), "₹ %,.2f", purchase.totalAmount));
+        }
+    }
+
+    public static class FooterViewHolder extends RecyclerView.ViewHolder {
+        private final View containerLoading;
+        private final View containerRetry;
+        private final TextView textLoadingMore;
+        private final TextView textRetryMessage;
+        private final TextView btnRetryLoad;
+
+        public FooterViewHolder(@NonNull View itemView) {
+            super(itemView);
+            containerLoading = itemView.findViewById(R.id.container_loading);
+            containerRetry = itemView.findViewById(R.id.container_retry);
+            textLoadingMore = itemView.findViewById(R.id.text_loading_more);
+            textRetryMessage = itemView.findViewById(R.id.text_retry_message);
+            btnRetryLoad = itemView.findViewById(R.id.btn_retry_load);
+        }
+
+        public void bind(boolean isRetry, String message, Runnable retryAction) {
+            if (isRetry) {
+                if (containerLoading != null) containerLoading.setVisibility(View.GONE);
+                if (containerRetry != null) {
+                    containerRetry.setVisibility(View.VISIBLE);
+                    if (textRetryMessage != null && message != null) {
+                        textRetryMessage.setText(message);
+                    }
+                    if (btnRetryLoad != null) {
+                        btnRetryLoad.setOnClickListener(v -> {
+                            if (retryAction != null) {
+                                retryAction.run();
+                            }
+                        });
+                    }
+                }
+            } else {
+                if (containerRetry != null) containerRetry.setVisibility(View.GONE);
+                if (containerLoading != null) {
+                    containerLoading.setVisibility(View.VISIBLE);
+                    if (textLoadingMore != null) {
+                        textLoadingMore.setText("Loading more purchases...");
+                    }
+                }
+            }
         }
     }
 }

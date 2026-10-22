@@ -13,6 +13,8 @@ import android.provider.MediaStore;
 import android.util.TypedValue;
 import android.view.View;
 import android.widget.Toast;
+import android.media.MediaScannerConnection;
+import android.os.Build;
 
 import androidx.core.content.FileProvider;
 
@@ -59,7 +61,7 @@ public class BitmapHelper {
             Bitmap.CompressFormat format = isPng ? Bitmap.CompressFormat.PNG : Bitmap.CompressFormat.JPEG;
             int quality = isPng ? 100 : 95;
 
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 ContentValues contentValues = new ContentValues();
                 contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
                 contentValues.put(MediaStore.MediaColumns.MIME_TYPE, mimeType);
@@ -75,29 +77,28 @@ public class BitmapHelper {
                     }
                 }
             } else {
-                java.io.File picturesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
-                java.io.File appDir = new java.io.File(picturesDir, "InventoryHub");
+                File picturesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+                File appDir = new File(picturesDir, "InventoryHub");
                 if (!appDir.exists()) {
                     appDir.mkdirs();
                 }
-                java.io.File imageFile = new java.io.File(appDir, fileName);
-                try (java.io.FileOutputStream fos = new java.io.FileOutputStream(imageFile)) {
+                File imageFile = new File(appDir, fileName);
+                try (FileOutputStream fos = new FileOutputStream(imageFile)) {
                     if (!bitmap.compress(format, quality, fos)) {
                         throw new IOException("Failed to save bitmap.");
                     }
                 }
                 imageUri = Uri.fromFile(imageFile);
-                android.media.MediaScannerConnection.scanFile(context,
-                        new String[]{imageFile.getAbsolutePath()},
-                        new String[]{mimeType}, null);
+                MediaScannerConnection.scanFile(context, new String[]{imageFile.getAbsolutePath()}, new String[]{mimeType}, null);
             }
             Toast.makeText(context, "Bill saved to gallery", Toast.LENGTH_SHORT).show();
             return imageUri;
         } catch (Exception e) {
-            if (imageUri != null && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            if (imageUri != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 try {
                     resolver.delete(imageUri, null, null);
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
             }
             e.printStackTrace();
             Toast.makeText(context, "Failed to save bill to gallery", Toast.LENGTH_SHORT).show();
@@ -133,7 +134,7 @@ public class BitmapHelper {
         Uri fileUri = null;
 
         try {
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 ContentValues contentValues = new ContentValues();
                 contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
                 contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/png");
@@ -149,12 +150,12 @@ public class BitmapHelper {
                     }
                 }
             } else {
-                java.io.File downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                File downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
                 if (!downloadDir.exists()) {
                     downloadDir.mkdirs();
                 }
-                java.io.File file = new java.io.File(downloadDir, fileName);
-                try (java.io.FileOutputStream fos = new java.io.FileOutputStream(file)) {
+                File file = new File(downloadDir, fileName);
+                try (FileOutputStream fos = new FileOutputStream(file)) {
                     if (!bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos)) {
                         throw new IOException("Failed to compress bitmap to file.");
                     }
@@ -163,10 +164,11 @@ public class BitmapHelper {
             }
             return fileUri;
         } catch (Exception e) {
-            if (fileUri != null && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            if (fileUri != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 try {
                     resolver.delete(fileUri, null, null);
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
             }
             e.printStackTrace();
             return null;
@@ -208,7 +210,7 @@ public class BitmapHelper {
     }
 
     public static int convertDpToPx(Context context, float dp) {
-        return (int)TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, context.getResources().getDisplayMetrics());
+        return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, context.getResources().getDisplayMetrics());
     }
 
     public static void shareBitmap(Context context, Bitmap bitmap, String title, String subject) {

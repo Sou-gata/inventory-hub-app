@@ -47,6 +47,7 @@ import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.graphics.drawable.Drawable;
+import android.graphics.Color;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.navigation.NavigationView;
 
@@ -66,6 +67,7 @@ import in.gbtsolutions.inventoryhub.helpers.ThemeManager;
 import in.gbtsolutions.inventoryhub.models.User;
 import in.gbtsolutions.inventoryhub.online.config.AppMode;
 import in.gbtsolutions.inventoryhub.online.config.AppModeManager;
+import in.gbtsolutions.inventoryhub.helpers.UserHelper;
 
 public abstract class BaseActivity extends AppCompatActivity {
 
@@ -238,7 +240,7 @@ public abstract class BaseActivity extends AppCompatActivity {
         // On Android 15+ (API 35+), EdgeToEdge handles status bar transparency automatically
         if (Build.VERSION.SDK_INT < 35) {
             if (isEdgeToEdgeEnabled()) {
-                getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
+                getWindow().setStatusBarColor(Color.TRANSPARENT);
             } else {
                 getWindow().setStatusBarColor(ContextCompat.getColor(this, getHeaderColorRes()));
             }
@@ -1192,7 +1194,7 @@ public abstract class BaseActivity extends AppCompatActivity {
         editor.remove(Configurations.KEY_AUTH_TOKEN);
         editor.apply();
         AppModeManager.getInstance(this).clearAuthToken();
-        in.gbtsolutions.inventoryhub.helpers.UserHelper.clearLoggedInUser(this);
+        UserHelper.clearLoggedInUser(this);
 
         Intent intent = new Intent(this, LoginActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -1262,7 +1264,7 @@ public abstract class BaseActivity extends AppCompatActivity {
         TextView initialsView = headerView.findViewById(R.id.nav_header_avatar_text);
         ImageView iconView = headerView.findViewById(R.id.nav_header_icon);
 
-        User user = in.gbtsolutions.inventoryhub.helpers.UserHelper.getCurrentUser(this);
+        User user = UserHelper.getCurrentUser(this);
         if (user != null) {
             bindUserDetails(nameView, emailView, roleView, initialsView, iconView, user);
             if (activeNavView != null) {
@@ -1273,7 +1275,7 @@ public abstract class BaseActivity extends AppCompatActivity {
         }
 
         // Fallback: load asynchronously from database using resolved user ID
-        long userId = in.gbtsolutions.inventoryhub.helpers.UserHelper.getCurrentUserId(this);
+        long userId = UserHelper.getCurrentUserId(this);
         if (userId <= 0) return;
         Executors.newSingleThreadExecutor().execute(() -> {
             try {

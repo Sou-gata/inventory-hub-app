@@ -17,6 +17,8 @@ import in.gbtsolutions.inventoryhub.online.models.ApiResponse;
 import in.gbtsolutions.inventoryhub.online.models.OnlineProductDto;
 import in.gbtsolutions.inventoryhub.online.models.PagedData;
 import in.gbtsolutions.inventoryhub.online.models.ProductMapper;
+import in.gbtsolutions.inventoryhub.models.ProductBatch;
+import in.gbtsolutions.inventoryhub.online.models.OnlineQrLookupRequest;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -36,7 +38,7 @@ public class OnlineProductRepository {
     }
 
     public interface BatchesCallback {
-        void onSuccess(List<in.gbtsolutions.inventoryhub.models.ProductBatch> batches);
+        void onSuccess(List<ProductBatch> batches);
 
         void onError(String errorMessage);
     }
@@ -255,7 +257,7 @@ public class OnlineProductRepository {
     /**
      * Looks up a product on the remote server using decrypted QR code data.
      */
-    public void lookupProductByQr(in.gbtsolutions.inventoryhub.online.models.OnlineQrLookupRequest request, ProductActionCallback callback) {
+    public void lookupProductByQr(OnlineQrLookupRequest request, ProductActionCallback callback) {
         getApi().lookupProductByQr(request).enqueue(new Callback<ApiResponse<OnlineProductDto>>() {
             @Override
             public void onResponse(Call<ApiResponse<OnlineProductDto>> call, Response<ApiResponse<OnlineProductDto>> response) {
@@ -290,7 +292,7 @@ public class OnlineProductRepository {
         });
     }
 
-    public void createBatchForProduct(int productId, in.gbtsolutions.inventoryhub.models.ProductBatch batch, ProductActionCallback callback) {
+    public void createBatchForProduct(int productId, ProductBatch batch, ProductActionCallback callback) {
         OnlineProductDto.OnlineBatchDto batchDto = new OnlineProductDto.OnlineBatchDto(null, productId, batch.batchNo, batch.quantity, batch.purchasePrice, batch.sellingPrice, batch.expiryDate > 0 ? batch.expiryDate : null);
         getApi().createBatchForProduct(productId, batchDto).enqueue(new Callback<ApiResponse<OnlineProductDto.OnlineBatchDto>>() {
             @Override
@@ -322,10 +324,10 @@ public class OnlineProductRepository {
                 if (response.isSuccessful() && response.body() != null) {
                     ApiResponse<List<OnlineProductDto.OnlineBatchDto>> body = response.body();
                     if (body.isSuccess() && body.getData() != null) {
-                        List<in.gbtsolutions.inventoryhub.models.ProductBatch> domainBatches = new ArrayList<>();
+                        List<ProductBatch> domainBatches = new ArrayList<>();
                         for (OnlineProductDto.OnlineBatchDto bDto : body.getData()) {
                             if (bDto == null) continue;
-                            in.gbtsolutions.inventoryhub.models.ProductBatch b = new in.gbtsolutions.inventoryhub.models.ProductBatch();
+                            ProductBatch b = new ProductBatch();
                             b.batchId = bDto.batchId != null ? bDto.batchId : 0;
                             b.productId = bDto.productId != null ? bDto.productId : productId;
                             b.batchNo = bDto.batchNo != null ? bDto.batchNo : ("BATCH-" + b.batchId);

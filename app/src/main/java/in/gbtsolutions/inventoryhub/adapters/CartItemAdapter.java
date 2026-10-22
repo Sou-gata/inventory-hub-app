@@ -12,6 +12,7 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
@@ -21,6 +22,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 import in.gbtsolutions.inventoryhub.GlobalStore;
 import in.gbtsolutions.inventoryhub.R;
@@ -62,14 +64,14 @@ public class CartItemAdapter extends RecyclerView.Adapter<CartItemAdapter.CartIt
                 CartItem oldI = cartItems.get(oldItemPosition);
                 CartItem newI = newItems.get(newItemPosition);
                 if (oldI.product == null || newI.product == null) return false;
-                return oldI.product.productId == newI.product.productId && java.util.Objects.equals(oldI.batchId, newI.batchId);
+                return oldI.product.productId == newI.product.productId && Objects.equals(oldI.batchId, newI.batchId);
             }
 
             @Override
             public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
                 CartItem oldI = cartItems.get(oldItemPosition);
                 CartItem newI = newItems.get(newItemPosition);
-                return oldI.quantity == newI.quantity && Double.compare(oldI.sellingPrice, newI.sellingPrice) == 0 && Double.compare(oldI.discountValue, newI.discountValue) == 0 && oldI.discountType == newI.discountType && java.util.Objects.equals(oldI.batchNo, newI.batchNo);
+                return oldI.quantity == newI.quantity && Double.compare(oldI.sellingPrice, newI.sellingPrice) == 0 && Double.compare(oldI.discountValue, newI.discountValue) == 0 && oldI.discountType == newI.discountType && Objects.equals(oldI.batchNo, newI.batchNo);
             }
         });
 
@@ -225,7 +227,7 @@ public class CartItemAdapter extends RecyclerView.Adapter<CartItemAdapter.CartIt
                         updateListener.onCartItemUpdated();
                     }
                 } else {
-                    android.widget.Toast.makeText(itemView.getContext(), "Maximum available is " + CommonFunctions.formatQuantity(maxAllowed), android.widget.Toast.LENGTH_SHORT).show();
+                    Toast.makeText(itemView.getContext(), "Maximum available is " + CommonFunctions.formatQuantity(maxAllowed), Toast.LENGTH_SHORT).show();
                 }
             });
 
@@ -242,7 +244,7 @@ public class CartItemAdapter extends RecyclerView.Adapter<CartItemAdapter.CartIt
                             q = CommonFunctions.roundTo3Decimals(q);
                             if (q > maxAllowed) {
                                 q = maxAllowed;
-                                android.widget.Toast.makeText(itemView.getContext(), "Maximum available is " + CommonFunctions.formatQuantity(maxAllowed), android.widget.Toast.LENGTH_SHORT).show();
+                                Toast.makeText(itemView.getContext(), "Maximum available is " + CommonFunctions.formatQuantity(maxAllowed), Toast.LENGTH_SHORT).show();
                                 editQuantity.setText(CommonFunctions.formatQuantity(q));
                                 editQuantity.setSelection(editQuantity.getText().length());
                             }

@@ -66,6 +66,8 @@ import in.gbtsolutions.inventoryhub.models.Suppliers;
 import in.gbtsolutions.inventoryhub.repository.ConfigRepository;
 import in.gbtsolutions.inventoryhub.repository.PurchaseRepository;
 import in.gbtsolutions.inventoryhub.repository.SupplierRepository;
+import in.gbtsolutions.inventoryhub.helpers.UserHelper;
+import in.gbtsolutions.inventoryhub.online.repository.OnlineSupplierRepository;
 
 public class PurchaseDetailsFragment extends Fragment {
 
@@ -112,33 +114,30 @@ public class PurchaseDetailsFragment extends Fragment {
     private final List<Suppliers> supplierList = new ArrayList<>();
     private SearchableDropdownAdapter<Suppliers> supplierAdapter;
 
-    private final ActivityResultLauncher<Intent> qrCodeLauncher = registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(),
-            result -> {
-                if (result.getResultCode() == Activity.RESULT_OK) {
-                    Intent data = result.getData();
-                    if (data != null) {
-                        String scanResult = data.getStringExtra(ScannerActivity.SCAN_RESULT);
-                        Product product = ProductQRHelper.parseScannedQR(scanResult);
-                        if (product != null) {
-                            // For purchases, always add directly — no batch dialog, no stock check
-                            PurchaseCartManager.getInstance().addProduct(product);
-                            if (getContext() != null) {
-                                Toast.makeText(getContext(), product.productName + " added to cart", Toast.LENGTH_SHORT).show();
-                            }
-                        } else {
-                            if (getContext() != null) {
-                                Toast.makeText(getContext(), "Product not found or invalid QR code", Toast.LENGTH_SHORT).show();
-                            }
-                        }
-                    }
-                } else if (result.getResultCode() == Activity.RESULT_CANCELED) {
+    private final ActivityResultLauncher<Intent> qrCodeLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+        if (result.getResultCode() == Activity.RESULT_OK) {
+            Intent data = result.getData();
+            if (data != null) {
+                String scanResult = data.getStringExtra(ScannerActivity.SCAN_RESULT);
+                Product product = ProductQRHelper.parseScannedQR(scanResult);
+                if (product != null) {
+                    // For purchases, always add directly — no batch dialog, no stock check
+                    PurchaseCartManager.getInstance().addProduct(product);
                     if (getContext() != null) {
-                        Toast.makeText(getContext(), "Scan cancelled", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getContext(), product.productName + " added to cart", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    if (getContext() != null) {
+                        Toast.makeText(getContext(), "Product not found or invalid QR code", Toast.LENGTH_SHORT).show();
                     }
                 }
             }
-    );
+        } else if (result.getResultCode() == Activity.RESULT_CANCELED) {
+            if (getContext() != null) {
+                Toast.makeText(getContext(), "Scan cancelled", Toast.LENGTH_SHORT).show();
+            }
+        }
+    });
 
     private final PurchaseCartManager.OnCartChangedListener cartListener = this::updateCartDisplay;
 
@@ -221,9 +220,7 @@ public class PurchaseDetailsFragment extends Fragment {
         adapter.setOnRemoveCartItemListener(item -> {
             PurchaseCartManager.getInstance().removeCartItem(item);
             if (getContext() != null) {
-                String name = (item.product != null && !TextUtils.isEmpty(item.product.productName))
-                        ? item.product.productName.trim()
-                        : "Product";
+                String name = (item.product != null && !TextUtils.isEmpty(item.product.productName)) ? item.product.productName.trim() : "Product";
                 Toast.makeText(getContext(), name + " removed from cart", Toast.LENGTH_SHORT).show();
             }
         });
@@ -239,11 +236,16 @@ public class PurchaseDetailsFragment extends Fragment {
             @Override
             public boolean matches(Suppliers s, String query) {
                 if (s == null) return false;
-                if (s.supplierName != null && s.supplierName.toLowerCase(Locale.getDefault()).contains(query)) return true;
-                if (s.phone != null && s.phone.toLowerCase(Locale.getDefault()).contains(query)) return true;
-                if (s.contactPerson != null && s.contactPerson.toLowerCase(Locale.getDefault()).contains(query)) return true;
-                if (s.city != null && s.city.toLowerCase(Locale.getDefault()).contains(query)) return true;
-                if (s.gst != null && s.gst.toLowerCase(Locale.getDefault()).contains(query)) return true;
+                if (s.supplierName != null && s.supplierName.toLowerCase(Locale.getDefault()).contains(query))
+                    return true;
+                if (s.phone != null && s.phone.toLowerCase(Locale.getDefault()).contains(query))
+                    return true;
+                if (s.contactPerson != null && s.contactPerson.toLowerCase(Locale.getDefault()).contains(query))
+                    return true;
+                if (s.city != null && s.city.toLowerCase(Locale.getDefault()).contains(query))
+                    return true;
+                if (s.gst != null && s.gst.toLowerCase(Locale.getDefault()).contains(query))
+                    return true;
                 return false;
             }
 
@@ -304,7 +306,8 @@ public class PurchaseDetailsFragment extends Fragment {
 
         dropdownCustomer.addTextChangedListener(new TextWatcher() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
@@ -318,7 +321,8 @@ public class PurchaseDetailsFragment extends Fragment {
             }
 
             @Override
-            public void afterTextChanged(Editable s) {}
+            public void afterTextChanged(Editable s) {
+            }
         });
 
         dropdownCustomer.setOnItemClickListener((parent, view, position, id) -> {
@@ -335,7 +339,7 @@ public class PurchaseDetailsFragment extends Fragment {
         if (getActivity() != null) {
             SupplierRepository supplierRepository = new SupplierRepository(getActivity().getApplication());
             if (supplierRepository.isOnlineMode()) {
-                supplierRepository.fetchSuppliersOnline(new in.gbtsolutions.inventoryhub.online.repository.OnlineSupplierRepository.SupplierListCallback() {
+                supplierRepository.fetchSuppliersOnline(new OnlineSupplierRepository.SupplierListCallback() {
                     @Override
                     public void onSuccess(List<Suppliers> suppliers) {
                         if (getActivity() != null && isAdded()) {
@@ -375,10 +379,7 @@ public class PurchaseDetailsFragment extends Fragment {
         inputSaleDate.setText(sdf.format(new Date(selectedDateMillis)));
 
         View.OnClickListener openDatePicker = v -> {
-            MaterialDatePicker<Long> datePicker = MaterialDatePicker.Builder.datePicker()
-                    .setTitleText("Select Purchase Date")
-                    .setSelection(selectedDateMillis)
-                    .build();
+            MaterialDatePicker<Long> datePicker = MaterialDatePicker.Builder.datePicker().setTitleText("Select Purchase Date").setSelection(selectedDateMillis).build();
 
             datePicker.addOnPositiveButtonClickListener(selection -> {
                 if (selection != null) {
@@ -404,9 +405,18 @@ public class PurchaseDetailsFragment extends Fragment {
 
     private void setupCalculationListeners() {
         TextWatcher recalculateWatcher = new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            @Override public void onTextChanged(CharSequence s, int start, int before, int count) { recalculateSummary(); }
-            @Override public void afterTextChanged(Editable s) {}
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                recalculateSummary();
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+            }
         };
         inputOtherCharges.addTextChangedListener(recalculateWatcher);
     }
@@ -453,13 +463,20 @@ public class PurchaseDetailsFragment extends Fragment {
         double otherCharges = parseDoubleSafe(inputOtherCharges.getText().toString().trim());
         double grandTotal = Math.max(0.0, taxableSubtotal + totalGst + otherCharges);
 
-        if (textCartSubtotal != null) textCartSubtotal.setText(String.format(Locale.getDefault(), "₹ %,.2f", grossSubtotal));
-        if (textTotalDiscount != null) textTotalDiscount.setText(String.format(Locale.getDefault(), "-₹ %,.2f", totalDiscount));
-        if (textTotalGst != null) textTotalGst.setText(String.format(Locale.getDefault(), "₹ %,.2f", totalGst));
-        if (textCgstAmount != null) textCgstAmount.setText(String.format(Locale.getDefault(), "₹ %,.2f", cgst));
-        if (textSgstAmount != null) textSgstAmount.setText(String.format(Locale.getDefault(), "₹ %,.2f", sgst));
-        if (textIgstAmount != null) textIgstAmount.setText(String.format(Locale.getDefault(), "₹ %,.2f", igst));
-        if (textGrandTotal != null) textGrandTotal.setText(String.format(Locale.getDefault(), "₹ %,.2f", grandTotal));
+        if (textCartSubtotal != null)
+            textCartSubtotal.setText(String.format(Locale.getDefault(), "₹ %,.2f", grossSubtotal));
+        if (textTotalDiscount != null)
+            textTotalDiscount.setText(String.format(Locale.getDefault(), "-₹ %,.2f", totalDiscount));
+        if (textTotalGst != null)
+            textTotalGst.setText(String.format(Locale.getDefault(), "₹ %,.2f", totalGst));
+        if (textCgstAmount != null)
+            textCgstAmount.setText(String.format(Locale.getDefault(), "₹ %,.2f", cgst));
+        if (textSgstAmount != null)
+            textSgstAmount.setText(String.format(Locale.getDefault(), "₹ %,.2f", sgst));
+        if (textIgstAmount != null)
+            textIgstAmount.setText(String.format(Locale.getDefault(), "₹ %,.2f", igst));
+        if (textGrandTotal != null)
+            textGrandTotal.setText(String.format(Locale.getDefault(), "₹ %,.2f", grandTotal));
     }
 
     private void setupConfigObserver() {
@@ -517,16 +534,14 @@ public class PurchaseDetailsFragment extends Fragment {
             try {
                 SimpleDateFormat displayFormat = new SimpleDateFormat("dd MMM yyyy", Locale.getDefault());
                 Date parsedDate = displayFormat.parse(inputSaleDate.getText().toString().trim());
-                billingDate = parsedDate != null
-                        ? new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(parsedDate)
-                        : new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date(selectedDateMillis));
+                billingDate = parsedDate != null ? new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(parsedDate) : new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date(selectedDateMillis));
             } catch (Exception e) {
                 billingDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date(selectedDateMillis));
             }
 
             String now = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
 
-            long createdBy = in.gbtsolutions.inventoryhub.helpers.UserHelper.getCurrentUserId(getContext());
+            long createdBy = UserHelper.getCurrentUserId(getContext());
 
             double grossSubtotal = PurchaseCartManager.getInstance().getGrossSubtotal();
             double totalDiscount = PurchaseCartManager.getInstance().getTotalDiscount();
@@ -544,24 +559,7 @@ public class PurchaseDetailsFragment extends Fragment {
             boolean isPending = switchSaveAsPending != null && switchSaveAsPending.isChecked();
             String status = isPending ? "Pending" : "Completed";
 
-            Purchase purchase = new Purchase(
-                    selectedSupplier.supplierId,
-                    invoiceId,
-                    grossSubtotal,
-                    cgst,
-                    sgst,
-                    igst,
-                    totalGst,
-                    otherCharges,
-                    grandTotal,
-                    status,
-                    createdBy,
-                    billingDate,
-                    now,
-                    now,
-                    totalDiscount,
-                    discountPercent
-            );
+            Purchase purchase = new Purchase(selectedSupplier.supplierId, invoiceId, grossSubtotal, cgst, sgst, igst, totalGst, otherCharges, grandTotal, status, createdBy, billingDate, now, now, totalDiscount, discountPercent);
 
             List<PurchaseItem> purchaseItems = new ArrayList<>();
             for (CartItem item : items) {
@@ -577,21 +575,8 @@ public class PurchaseDetailsFragment extends Fragment {
                 double itemSgstAmount = sameState ? itemGstAmt / 2.0 : 0.0;
                 double itemIgstAmount = sameState ? 0.0 : itemGstAmt;
 
-                PurchaseItem purchaseItem = new PurchaseItem(
-                        0,
-                        item.product.productId,
-                        item.quantity,
-                        item.sellingPrice,    // Cost price stored here
-                        itemCgstRate,
-                        itemSgstRate,
-                        itemIgstRate,
-                        itemCgstAmount,
-                        itemSgstAmount,
-                        itemIgstAmount,
-                        itemTaxable,
-                        item.getDiscountPercent(),
-                        item.getDiscountAmount()
-                );
+                PurchaseItem purchaseItem = new PurchaseItem(0, item.product.productId, item.quantity, item.sellingPrice,    // Cost price stored here
+                        itemCgstRate, itemSgstRate, itemIgstRate, itemCgstAmount, itemSgstAmount, itemIgstAmount, itemTaxable, item.getDiscountPercent(), item.getDiscountAmount());
                 purchaseItems.add(purchaseItem);
             }
 
@@ -616,13 +601,7 @@ public class PurchaseDetailsFragment extends Fragment {
                         boolean printBill = GlobalStore.getInstance().isPrintBill();
 
                         if (getContext() != null) {
-                            Bitmap billBitmap = CommonFunctions.createPurchaseBillBitmap(
-                                    getContext(),
-                                    purchase,
-                                    selectedSupplier,
-                                    cartItemsForBill,
-                                    cachedCompanyConfigs
-                            );
+                            Bitmap billBitmap = CommonFunctions.createPurchaseBillBitmap(getContext(), purchase, selectedSupplier, cartItemsForBill, cachedCompanyConfigs);
                             if (billBitmap != null) {
                                 String fileName = "PO_" + finalInvoiceId + "_" + System.currentTimeMillis() + ".png";
                                 String title = "Purchase Order #" + finalInvoiceId;
@@ -630,9 +609,7 @@ public class PurchaseDetailsFragment extends Fragment {
                             }
                         }
 
-                        String message = isPending
-                                ? "Purchase order saved as Pending! (PO: " + finalInvoiceId + ")"
-                                : "Purchase recorded! (PO: " + finalInvoiceId + ")";
+                        String message = isPending ? "Purchase order saved as Pending! (PO: " + finalInvoiceId + ")" : "Purchase recorded! (PO: " + finalInvoiceId + ")";
                         Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
 
                         // Clear cart and reset UI

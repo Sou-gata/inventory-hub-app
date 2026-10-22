@@ -5,6 +5,7 @@ import androidx.annotation.Nullable;
 
 import com.opencsv.CSVReaderHeaderAware;
 import com.opencsv.exceptions.CsvValidationException;
+import com.opencsv.CSVReader;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,28 +40,7 @@ import java.util.Set;
  * matches a DIFFERENT existing product -> ERROR, row skipped
  */
 public class ProductCsvParser {
-    public static final List<String> EXPECTED_HEADERS = Collections.unmodifiableList(Arrays.asList(
-            "product_name",
-            "sku",
-            "category_name",
-            "brand",
-            "description",
-            "unit_of_measure",
-            "unit_price",
-            "selling_price",
-            "quantity",
-            "reorder_level",
-            "reorder_quantity",
-            "hsn_code",
-            "gst_percent",
-            "default_markup_percent",
-            "status",
-            "batch_no",
-            "batch_quantity",
-            "batch_purchase_price",
-            "batch_selling_price",
-            "batch_expiry_date"
-    ));
+    public static final List<String> EXPECTED_HEADERS = List.of("product_name", "sku", "category_name", "brand", "description", "unit_of_measure", "unit_price", "selling_price", "quantity", "reorder_level", "reorder_quantity", "hsn_code", "gst_percent", "default_markup_percent", "status", "batch_no", "batch_quantity", "batch_purchase_price", "batch_selling_price", "batch_expiry_date");
 
     public interface CategoryResolver {
         int getOrCreateCategoryId(String categoryName) throws Exception;
@@ -72,10 +52,7 @@ public class ProductCsvParser {
         public final List<String> detectedHeaders;
         public final String errorMessage;
 
-        public HeaderValidationResult(boolean isValid,
-                                      List<String> missingHeaders,
-                                      List<String> detectedHeaders,
-                                      String errorMessage) {
+        public HeaderValidationResult(boolean isValid, List<String> missingHeaders, List<String> detectedHeaders, String errorMessage) {
             this.isValid = isValid;
             this.missingHeaders = missingHeaders != null ? missingHeaders : Collections.emptyList();
             this.detectedHeaders = detectedHeaders != null ? detectedHeaders : Collections.emptyList();
@@ -122,7 +99,7 @@ public class ProductCsvParser {
     }
 
     public static HeaderValidationResult validateHeaders(@NonNull InputStream inputStream) throws IOException {
-        try (com.opencsv.CSVReader reader = new com.opencsv.CSVReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+        try (CSVReader reader = new CSVReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
             String[] headerRow = reader.readNext();
             if (headerRow == null || headerRow.length == 0) {
                 return new HeaderValidationResult(false, EXPECTED_HEADERS, Collections.emptyList(), "CSV file is empty or missing a header row.");
@@ -193,7 +170,7 @@ public class ProductCsvParser {
     public ParseResult parse(@NonNull InputStream inputStream) throws IOException, CsvValidationException {
         ParseResult result = new ParseResult();
 
-        try (com.opencsv.CSVReader reader = new com.opencsv.CSVReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+        try (CSVReader reader = new CSVReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
             String[] headers = reader.readNext();
             if (headers == null || headers.length == 0) return result;
 

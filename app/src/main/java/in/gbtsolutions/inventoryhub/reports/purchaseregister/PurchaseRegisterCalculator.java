@@ -121,8 +121,7 @@ public class PurchaseRegisterCalculator {
                 for (PurchaseItemWithProduct piw : itemWraps) {
                     if (piw.purchaseItem == null) continue;
                     PurchaseRegisterModels.ItemDetail itemDetail = new PurchaseRegisterModels.ItemDetail();
-                    itemDetail.productName = piw.product != null && !TextUtils.isEmpty(piw.product.productName)
-                            ? piw.product.productName : "Product #" + piw.purchaseItem.productId;
+                    itemDetail.productName = piw.product != null && !TextUtils.isEmpty(piw.product.productName) ? piw.product.productName : "Product #" + piw.purchaseItem.productId;
                     itemDetail.sku = piw.product != null && piw.product.sku != null ? piw.product.sku : "";
                     itemDetail.hsnCode = piw.product != null && piw.product.hsnCode != null ? piw.product.hsnCode : "";
                     itemDetail.unitOfMeasure = piw.product != null && piw.product.unitOfMeasure != null ? piw.product.unitOfMeasure : "";
@@ -175,7 +174,8 @@ public class PurchaseRegisterCalculator {
             if (d != null) {
                 return DISPLAY_DATE_FORMAT.format(d);
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         return dateStr;
     }
 }

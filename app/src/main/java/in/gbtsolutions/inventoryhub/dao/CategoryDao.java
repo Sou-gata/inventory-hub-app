@@ -6,6 +6,7 @@ import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.Query;
 import androidx.room.Update;
+import androidx.room.OnConflictStrategy;
 
 import java.util.List;
 
@@ -43,6 +44,6 @@ public interface CategoryDao {
     @Query("SELECT * FROM categories")
     List<Category> getAllCategoriesSync();
 
-    @Insert(onConflict = androidx.room.OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     void upsert(Category category);
 }

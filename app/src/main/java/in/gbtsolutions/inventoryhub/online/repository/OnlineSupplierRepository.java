@@ -19,7 +19,15 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import in.gbtsolutions.inventoryhub.online.models.PagedData;
+
 public class OnlineSupplierRepository {
+
+    public interface PagedSupplierCallback {
+        void onSuccess(List<Suppliers> suppliers, int currentPage, int totalPages, int totalRecords, boolean hasMore);
+
+        void onError(String errorMessage);
+    }
 
     public interface SupplierListCallback {
         void onSuccess(List<Suppliers> suppliers);
@@ -42,6 +50,7 @@ public class OnlineSupplierRepository {
     private final Context context;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final Gson gson = new Gson();
+    private Call<ApiResponse<PagedData<OnlineSupplierDto>>> currentSuppliersCall;
 
     public OnlineSupplierRepository(Context context) {
         this.context = context.getApplicationContext();
@@ -51,32 +60,69 @@ public class OnlineSupplierRepository {
         return OnlineApiClient.getInstance().getApiService(context);
     }
 
+    public void fetchSuppliers(SupplierListCallback callback) {
+        fetchSuppliers(null, callback);
+    }
+
     public void fetchSuppliers(String search, SupplierListCallback callback) {
-        getApi().getSuppliers(search).enqueue(new Callback<ApiResponse<List<OnlineSupplierDto>>>() {
+        fetchSuppliersPaged(1, 100, search, null, new PagedSupplierCallback() {
             @Override
-            public void onResponse(Call<ApiResponse<List<OnlineSupplierDto>>> call, Response<ApiResponse<List<OnlineSupplierDto>>> response) {
+            public void onSuccess(List<Suppliers> suppliers, int currentPage, int totalPages, int totalRecords, boolean hasMore) {
+                if (callback != null) {
+                    callback.onSuccess(suppliers);
+                }
+            }
+
+            @Override
+            public void onError(String errorMessage) {
+                if (callback != null) {
+                    callback.onError(errorMessage);
+                }
+            }
+        });
+    }
+
+    public synchronized void fetchSuppliersPaged(int page, int limit, String search, String status, PagedSupplierCallback callback) {
+        if (currentSuppliersCall != null && !currentSuppliersCall.isCanceled()) {
+            currentSuppliersCall.cancel();
+        }
+
+        String query = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
+        String statusParam = (status != null && !status.trim().isEmpty()) ? status.trim() : null;
+
+        currentSuppliersCall = getApi().getSuppliers(page, limit, query, statusParam);
+        currentSuppliersCall.enqueue(new Callback<ApiResponse<PagedData<OnlineSupplierDto>>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<PagedData<OnlineSupplierDto>>> call, Response<ApiResponse<PagedData<OnlineSupplierDto>>> response) {
+                if (call.isCanceled()) return;
+
                 if (response.isSuccessful() && response.body() != null) {
-                    ApiResponse<List<OnlineSupplierDto>> body = response.body();
+                    ApiResponse<PagedData<OnlineSupplierDto>> body = response.body();
                     if (body.isSuccess() && body.getData() != null) {
-                        List<Suppliers> domainSuppliers = SupplierMapper.toDomainList(body.getData());
+                        PagedData<OnlineSupplierDto> pagedData = body.getData();
+                        List<Suppliers> domainSuppliers = SupplierMapper.toDomainList(pagedData.getItems());
                         mainHandler.post(() -> {
-                            if (callback != null) callback.onSuccess(domainSuppliers);
+                            if (callback != null) {
+                                callback.onSuccess(domainSuppliers, pagedData.getPage(), pagedData.getTotalPages(), pagedData.getTotalRecords(), pagedData.hasMore());
+                            }
                         });
                         return;
                     } else {
                         String msg = body.getMessage();
                         mainHandler.post(() -> {
-                            if (callback != null)
-                                callback.onError(!msg.isEmpty() ? msg : "Failed to load suppliers");
+                            if (callback != null) {
+                                callback.onError(msg != null && !msg.isEmpty() ? msg : "Failed to load suppliers");
+                            }
                         });
                         return;
                     }
                 }
-                handleError(response, callback, "Failed to load suppliers from server");
+                handlePagedError(response, callback, "Failed to load suppliers from server");
             }
 
             @Override
-            public void onFailure(Call<ApiResponse<List<OnlineSupplierDto>>> call, Throwable t) {
+            public void onFailure(Call<ApiResponse<PagedData<OnlineSupplierDto>>> call, Throwable t) {
+                if (call.isCanceled()) return;
                 mainHandler.post(() -> {
                     if (callback != null) {
                         callback.onError(NetworkErrorHelper.getErrorMessage(t));
@@ -187,6 +233,23 @@ public class OnlineSupplierRepository {
                         callback.onError(NetworkErrorHelper.getErrorMessage(t));
                 });
             }
+        });
+    }
+
+    private void handlePagedError(Response<?> response, PagedSupplierCallback callback, String defaultMsg) {
+        String msg = defaultMsg + " (" + response.code() + ")";
+        try {
+            if (response.errorBody() != null) {
+                ApiResponse<?> err = gson.fromJson(response.errorBody().string(), ApiResponse.class);
+                if (err != null && err.getMessage() != null && !err.getMessage().isEmpty()) {
+                    msg = err.getMessage();
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        final String finalMsg = msg;
+        mainHandler.post(() -> {
+            if (callback != null) callback.onError(finalMsg);
         });
     }
 

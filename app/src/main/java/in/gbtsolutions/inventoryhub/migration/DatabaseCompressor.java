@@ -1,12 +1,15 @@
 package in.gbtsolutions.inventoryhub.migration;
 
 import android.content.Context;
+
 import androidx.sqlite.db.SupportSQLiteDatabase;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.zip.GZIPOutputStream;
+
 import in.gbtsolutions.inventoryhub.Database;
 
 public class DatabaseCompressor {
@@ -34,9 +37,7 @@ public class DatabaseCompressor {
         }
 
         // 2. Stream compress using GZIP with fixed 8KB buffer (constant O(1) memory)
-        try (FileInputStream fis = new FileInputStream(dbFile);
-             FileOutputStream fos = new FileOutputStream(outputFile);
-             GZIPOutputStream gzos = new GZIPOutputStream(fos)) {
+        try (FileInputStream fis = new FileInputStream(dbFile); FileOutputStream fos = new FileOutputStream(outputFile); GZIPOutputStream gzos = new GZIPOutputStream(fos)) {
 
             byte[] buffer = new byte[8192];
             int read;

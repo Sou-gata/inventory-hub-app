@@ -91,23 +91,7 @@ public class Sale {
     }
 
     @Ignore
-    public Sale(
-            int buyerId,
-            String invoiceId,
-            double subtotalAmount,
-            double cgstAmount,
-            double sgstAmount,
-            double igstAmount,
-            double totalGst,
-            double totalAmount,
-            String status,
-            long createdBy,
-            String billingDate,
-            String createdAt,
-            String updatedAt,
-            double discountAmount,
-            double discountPercent
-    ) {
+    public Sale(int buyerId, String invoiceId, double subtotalAmount, double cgstAmount, double sgstAmount, double igstAmount, double totalGst, double totalAmount, String status, long createdBy, String billingDate, String createdAt, String updatedAt, double discountAmount, double discountPercent) {
         this.buyerId = buyerId;
         this.invoiceId = invoiceId;
         this.subtotalAmount = subtotalAmount;
@@ -127,48 +111,13 @@ public class Sale {
     }
 
     @Ignore
-    public Sale(
-            int buyerId,
-            String invoiceId,
-            double subtotalAmount,
-            double cgstAmount,
-            double sgstAmount,
-            double igstAmount,
-            double totalGst,
-            double otherCharges,
-            double totalAmount,
-            String status,
-            long createdBy,
-            String billingDate,
-            String createdAt,
-            String updatedAt,
-            double discountAmount,
-            double discountPercent
-    ) {
+    public Sale(int buyerId, String invoiceId, double subtotalAmount, double cgstAmount, double sgstAmount, double igstAmount, double totalGst, double otherCharges, double totalAmount, String status, long createdBy, String billingDate, String createdAt, String updatedAt, double discountAmount, double discountPercent) {
         this(buyerId, invoiceId, subtotalAmount, cgstAmount, sgstAmount, igstAmount, totalGst, totalAmount, status, createdBy, billingDate, createdAt, updatedAt, discountAmount, discountPercent);
         this.otherCharges = otherCharges;
     }
 
     @Ignore
-    public Sale(
-            int buyerId,
-            String invoiceId,
-            double subtotalAmount,
-            double cgstAmount,
-            double sgstAmount,
-            double igstAmount,
-            double totalGst,
-            double otherCharges,
-            double totalAmount,
-            String status,
-            long createdBy,
-            String billingDate,
-            String createdAt,
-            String updatedAt,
-            double discountAmount,
-            double discountPercent,
-            String paymentMethod
-    ) {
+    public Sale(int buyerId, String invoiceId, double subtotalAmount, double cgstAmount, double sgstAmount, double igstAmount, double totalGst, double otherCharges, double totalAmount, String status, long createdBy, String billingDate, String createdAt, String updatedAt, double discountAmount, double discountPercent, String paymentMethod) {
         this(buyerId, invoiceId, subtotalAmount, cgstAmount, sgstAmount, igstAmount, totalGst, otherCharges, totalAmount, status, createdBy, billingDate, createdAt, updatedAt, discountAmount, discountPercent);
         this.paymentMethod = paymentMethod;
     }

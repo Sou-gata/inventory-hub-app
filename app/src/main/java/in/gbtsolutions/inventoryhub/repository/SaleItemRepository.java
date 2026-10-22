@@ -22,6 +22,7 @@ public class SaleItemRepository {
 
     public interface SaleItemCallback {
         void onSuccess();
+
         void onError(String message);
     }
 

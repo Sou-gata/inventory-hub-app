@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.HashSet;
 
 import in.gbtsolutions.inventoryhub.R;
 import in.gbtsolutions.inventoryhub.models.Sale;
@@ -63,7 +64,7 @@ public class SellHistoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
     public void addSales(@NonNull List<SaleWithBuyer> newBatch) {
         if (newBatch.isEmpty()) return;
         List<SaleWithBuyer> toAdd = new ArrayList<>();
-        java.util.HashSet<Integer> existingIds = new java.util.HashSet<>();
+        HashSet<Integer> existingIds = new HashSet<>();
         for (SaleWithBuyer item : salesList) {
             if (item.sale != null) {
                 existingIds.add(item.sale.saleId);

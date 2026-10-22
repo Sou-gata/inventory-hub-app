@@ -12,10 +12,7 @@ public class PurchaseWithSupplier {
     @Embedded
     public Purchase purchase;
 
-    @Relation(
-            parentColumn = "supplier_id",
-            entityColumn = "supplier_id"
-    )
+    @Relation(parentColumn = "supplier_id", entityColumn = "supplier_id")
     public Suppliers supplier;
 
     @ColumnInfo(name = "created_by_name")

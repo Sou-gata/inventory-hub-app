@@ -8,16 +8,10 @@ public class SaleItemWithProduct {
     @Embedded
     public SaleItem saleItem;
 
-    @Relation(
-            parentColumn = "product_id",
-            entityColumn = "product_id"
-    )
+    @Relation(parentColumn = "product_id", entityColumn = "product_id")
     public Product product;
 
-    @Relation(
-            parentColumn = "batch_id",
-            entityColumn = "batch_id"
-    )
+    @Relation(parentColumn = "batch_id", entityColumn = "batch_id")
     public ProductBatch batch;
 
     public SaleItemWithProduct() {

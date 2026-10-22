@@ -77,8 +77,7 @@ public class AuditTrailPdfExporter {
         y += 14;
         paint.setTextSize(9);
         paint.setColor(COLOR_MUTED);
-        String metaLine = "GSTIN: " + (!TextUtils.isEmpty(report.companyGst) ? report.companyGst : "N/A")
-                + "  |  Period: " + (!TextUtils.isEmpty(report.startDate) ? report.startDate : "Start") + " to " + (!TextUtils.isEmpty(report.endDate) ? report.endDate : "End");
+        String metaLine = "GSTIN: " + (!TextUtils.isEmpty(report.companyGst) ? report.companyGst : "N/A") + "  |  Period: " + (!TextUtils.isEmpty(report.startDate) ? report.startDate : "Start") + " to " + (!TextUtils.isEmpty(report.endDate) ? report.endDate : "End");
         canvas.drawText(metaLine, MARGIN, y, paint);
 
         y += 14;
@@ -94,14 +93,7 @@ public class AuditTrailPdfExporter {
 
         int kpiColW = CONTENT_W / 6;
         AuditTrailReportModels.AuditTrailSummary s = report.summary;
-        String[][] kpis = {
-                {"TOTAL EVENTS", String.valueOf(s.totalEvents), String.valueOf(COLOR_DARK)},
-                {"CREATE", String.valueOf(s.creates), String.valueOf(COLOR_CREATE)},
-                {"UPDATE", String.valueOf(s.updates), String.valueOf(COLOR_UPDATE)},
-                {"DELETE", String.valueOf(s.deletes), String.valueOf(COLOR_DELETE)},
-                {"RECEIVE", String.valueOf(s.receives), String.valueOf(COLOR_RECEIVE)},
-                {"CANCEL", String.valueOf(s.cancels), String.valueOf(COLOR_CANCEL)}
-        };
+        String[][] kpis = {{"TOTAL EVENTS", String.valueOf(s.totalEvents), String.valueOf(COLOR_DARK)}, {"CREATE", String.valueOf(s.creates), String.valueOf(COLOR_CREATE)}, {"UPDATE", String.valueOf(s.updates), String.valueOf(COLOR_UPDATE)}, {"DELETE", String.valueOf(s.deletes), String.valueOf(COLOR_DELETE)}, {"RECEIVE", String.valueOf(s.receives), String.valueOf(COLOR_RECEIVE)}, {"CANCEL", String.valueOf(s.cancels), String.valueOf(COLOR_CANCEL)}};
 
         for (int i = 0; i < kpis.length; i++) {
             int kx = MARGIN + kpiColW * i + 8;
@@ -282,15 +274,7 @@ public class AuditTrailPdfExporter {
 
                 paint.setTextSize(8);
                 paint.setColor(COLOR_DARK);
-                String[] mbVals = {
-                        m.module,
-                        String.valueOf(m.count),
-                        String.valueOf(m.creates),
-                        String.valueOf(m.updates),
-                        String.valueOf(m.deletes),
-                        String.valueOf(m.receives),
-                        String.valueOf(m.cancels)
-                };
+                String[] mbVals = {m.module, String.valueOf(m.count), String.valueOf(m.creates), String.valueOf(m.updates), String.valueOf(m.deletes), String.valueOf(m.receives), String.valueOf(m.cancels)};
 
                 for (int i = 0; i < 7; i++) {
                     canvas.drawText(mbVals[i], mbX[i] + 4, y, paint);

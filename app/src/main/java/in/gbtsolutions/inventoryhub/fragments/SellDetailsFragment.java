@@ -21,6 +21,8 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.graphics.Color;
+import android.graphics.Typeface;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -74,108 +76,106 @@ import in.gbtsolutions.inventoryhub.repository.BuyerRepository;
 import in.gbtsolutions.inventoryhub.repository.ConfigRepository;
 import in.gbtsolutions.inventoryhub.repository.SaleRepository;
 import in.gbtsolutions.inventoryhub.views.BatchSelectDialog;
+import in.gbtsolutions.inventoryhub.helpers.UserHelper;
+import in.gbtsolutions.inventoryhub.online.repository.OnlineBuyerRepository;
+import in.gbtsolutions.inventoryhub.views.InstantAutoCompleteTextView;
 
 public class SellDetailsFragment extends Fragment {
 
     private final Map<String, String> cachedCompanyConfigs = new HashMap<>();
     private final List<Buyer> buyerList = new ArrayList<>();
-    private final ActivityResultLauncher<Intent> qrCodeLauncher = registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(),
-            result -> {
-                if (result.getResultCode() == Activity.RESULT_OK) {
-                    Intent data = result.getData();
-                    if (data != null) {
-                        String scanResult = data.getStringExtra(ScannerActivity.SCAN_RESULT);
-                        Product product = ProductQRHelper.parseScannedQR(scanResult);
-                        if (product != null) {
-                            boolean isBatchEnabled = product.batchEnabled;
-                            ProductBatch batch = product.getBatch();
+    private final ActivityResultLauncher<Intent> qrCodeLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+        if (result.getResultCode() == Activity.RESULT_OK) {
+            Intent data = result.getData();
+            if (data != null) {
+                String scanResult = data.getStringExtra(ScannerActivity.SCAN_RESULT);
+                Product product = ProductQRHelper.parseScannedQR(scanResult);
+                if (product != null) {
+                    boolean isBatchEnabled = product.batchEnabled;
+                    ProductBatch batch = product.getBatch();
 
-                            if (isBatchEnabled) {
-                                if (batch != null) {
-                                    if (batch.quantity <= 0) {
-                                        if (getContext() != null) {
-                                            Toast.makeText(getContext(), "Product is out of stock", Toast.LENGTH_SHORT).show();
-                                        }
-                                        return;
-                                    }
-                                    CartItem existing = SellCartManager.getInstance().getCartItem(product.productId, batch.batchId);
-                                    double currentInCart = (existing != null) ? existing.quantity : 0.0;
-                                    if (!GlobalStore.getInstance().isAllowOutOfStockSell() && currentInCart + 1 > batch.quantity) {
-                                        if (getContext() != null) {
-                                            Toast.makeText(getContext(), "Insufficient stock", Toast.LENGTH_SHORT).show();
-                                        }
-                                        return;
-                                    }
+                    if (isBatchEnabled) {
+                        if (batch != null) {
+                            if (batch.quantity <= 0) {
+                                if (getContext() != null) {
+                                    Toast.makeText(getContext(), "Product is out of stock", Toast.LENGTH_SHORT).show();
+                                }
+                                return;
+                            }
+                            CartItem existing = SellCartManager.getInstance().getCartItem(product.productId, batch.batchId);
+                            double currentInCart = (existing != null) ? existing.quantity : 0.0;
+                            if (!GlobalStore.getInstance().isAllowOutOfStockSell() && currentInCart + 1 > batch.quantity) {
+                                if (getContext() != null) {
+                                    Toast.makeText(getContext(), "Insufficient stock", Toast.LENGTH_SHORT).show();
+                                }
+                                return;
+                            }
 
-                                    if (product.sellingPrice > 0) {
-                                        batch.sellingPrice = product.sellingPrice;
-                                    }
-                                    boolean added = SellCartManager.getInstance().addBatchItem(product, batch, 1);
-                                    if (added && getContext() != null) {
-                                        Toast.makeText(getContext(), product.productName + " added to cart", Toast.LENGTH_SHORT).show();
-                                    }
-                                } else {
-                                    if (product.quantity <= 0) {
-                                        if (getContext() != null) {
-                                            Toast.makeText(getContext(), "Product is out of stock", Toast.LENGTH_SHORT).show();
-                                        }
-                                        return;
-                                    }
-                                    // Batch is enabled from settings and no batch is present in QR -> Open batch selection dialog
-                                    BatchSelectDialog dialog = BatchSelectDialog.newInstance(product);
-                                    dialog.setOnBatchesSelectedListener((prod, selections) -> {
-                                        if (selections != null) {
-                                            for (BatchSelectDialog.BatchSelection sel : selections) {
-                                                if (sel != null && sel.batch != null && sel.quantity > 0 && sel.batch.quantity > 0) {
-                                                    SellCartManager.getInstance().addBatchItem(prod, sel.batch, sel.quantity);
-                                                }
-                                            }
-                                        }
-                                        if (selections != null && !selections.isEmpty() && getContext() != null) {
-                                            String name = (prod != null && prod.productName != null && !prod.productName.trim().isEmpty())
-                                                    ? prod.productName.trim()
-                                                    : "Product";
-                                            Toast.makeText(getContext(), name + " added to cart", Toast.LENGTH_SHORT).show();
-                                        }
-                                    });
-                                    dialog.show(getParentFragmentManager(), "BatchSelectDialog");
-                                }
-                            } else {
-                                // Batch is disabled from settings (even if batch info is present in QR) -> No dialog, add directly
-                                if (product.quantity <= 0) {
-                                    if (getContext() != null) {
-                                        Toast.makeText(getContext(), "Product is out of stock", Toast.LENGTH_SHORT).show();
-                                    }
-                                    return;
-                                }
-                                CartItem existing = SellCartManager.getInstance().getCartItem(product.productId, null);
-                                double currentInCart = (existing != null) ? existing.quantity : 0.0;
-                                if (!GlobalStore.getInstance().isAllowOutOfStockSell() && currentInCart + 1 > product.quantity) {
-                                    if (getContext() != null) {
-                                        Toast.makeText(getContext(), "Insufficient stock", Toast.LENGTH_SHORT).show();
-                                    }
-                                    return;
-                                }
-
-                                boolean added = SellCartManager.getInstance().addProduct(product);
-                                if (added && getContext() != null) {
-                                    Toast.makeText(getContext(), product.productName + " added to cart", Toast.LENGTH_SHORT).show();
-                                }
+                            if (product.sellingPrice > 0) {
+                                batch.sellingPrice = product.sellingPrice;
+                            }
+                            boolean added = SellCartManager.getInstance().addBatchItem(product, batch, 1);
+                            if (added && getContext() != null) {
+                                Toast.makeText(getContext(), product.productName + " added to cart", Toast.LENGTH_SHORT).show();
                             }
                         } else {
-                            if (getContext() != null) {
-                                Toast.makeText(getContext(), "Product not found or invalid QR code", Toast.LENGTH_SHORT).show();
+                            if (product.quantity <= 0) {
+                                if (getContext() != null) {
+                                    Toast.makeText(getContext(), "Product is out of stock", Toast.LENGTH_SHORT).show();
+                                }
+                                return;
                             }
+                            // Batch is enabled from settings and no batch is present in QR -> Open batch selection dialog
+                            BatchSelectDialog dialog = BatchSelectDialog.newInstance(product);
+                            dialog.setOnBatchesSelectedListener((prod, selections) -> {
+                                if (selections != null) {
+                                    for (BatchSelectDialog.BatchSelection sel : selections) {
+                                        if (sel != null && sel.batch != null && sel.quantity > 0 && sel.batch.quantity > 0) {
+                                            SellCartManager.getInstance().addBatchItem(prod, sel.batch, sel.quantity);
+                                        }
+                                    }
+                                }
+                                if (selections != null && !selections.isEmpty() && getContext() != null) {
+                                    String name = (prod != null && prod.productName != null && !prod.productName.trim().isEmpty()) ? prod.productName.trim() : "Product";
+                                    Toast.makeText(getContext(), name + " added to cart", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                            dialog.show(getParentFragmentManager(), "BatchSelectDialog");
+                        }
+                    } else {
+                        // Batch is disabled from settings (even if batch info is present in QR) -> No dialog, add directly
+                        if (product.quantity <= 0) {
+                            if (getContext() != null) {
+                                Toast.makeText(getContext(), "Product is out of stock", Toast.LENGTH_SHORT).show();
+                            }
+                            return;
+                        }
+                        CartItem existing = SellCartManager.getInstance().getCartItem(product.productId, null);
+                        double currentInCart = (existing != null) ? existing.quantity : 0.0;
+                        if (!GlobalStore.getInstance().isAllowOutOfStockSell() && currentInCart + 1 > product.quantity) {
+                            if (getContext() != null) {
+                                Toast.makeText(getContext(), "Insufficient stock", Toast.LENGTH_SHORT).show();
+                            }
+                            return;
+                        }
+
+                        boolean added = SellCartManager.getInstance().addProduct(product);
+                        if (added && getContext() != null) {
+                            Toast.makeText(getContext(), product.productName + " added to cart", Toast.LENGTH_SHORT).show();
                         }
                     }
-                } else if (result.getResultCode() == Activity.RESULT_CANCELED) {
+                } else {
                     if (getContext() != null) {
-                        Toast.makeText(getContext(), "Scan cancelled", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getContext(), "Product not found or invalid QR code", Toast.LENGTH_SHORT).show();
                     }
                 }
             }
-    );
+        } else if (result.getResultCode() == Activity.RESULT_CANCELED) {
+            if (getContext() != null) {
+                Toast.makeText(getContext(), "Scan cancelled", Toast.LENGTH_SHORT).show();
+            }
+        }
+    });
     // UI elements
     private RecyclerView recyclerView;
     private LinearLayout layoutEmptyState;
@@ -189,9 +189,9 @@ public class SellDetailsFragment extends Fragment {
     private EditText inputWalkinName;
     private EditText inputWalkinPhone;
     private EditText inputWalkinGstin;
-    private in.gbtsolutions.inventoryhub.views.InstantAutoCompleteTextView dropdownWalkinPos;
+    private InstantAutoCompleteTextView dropdownWalkinPos;
     private boolean isWalkInCustomer = true;
-    private in.gbtsolutions.inventoryhub.helpers.IndianStates.StateItem selectedPosState = null;
+    private IndianStates.StateItem selectedPosState = null;
     private LinearLayout containerCustomerDropdown;
     private AutoCompleteTextView dropdownCustomer;
     private ImageView btnClearCustomer;
@@ -315,9 +315,7 @@ public class SellDetailsFragment extends Fragment {
         adapter.setOnRemoveCartItemListener(item -> {
             SellCartManager.getInstance().removeCartItem(item);
             if (getContext() != null) {
-                String name = (item.product != null && !TextUtils.isEmpty(item.product.productName))
-                        ? item.product.productName.trim()
-                        : "Product";
+                String name = (item.product != null && !TextUtils.isEmpty(item.product.productName)) ? item.product.productName.trim() : "Product";
                 Toast.makeText(getContext(), name + " removed from cart", Toast.LENGTH_SHORT).show();
             }
         });
@@ -435,7 +433,7 @@ public class SellDetailsFragment extends Fragment {
         if (getActivity() != null) {
             BuyerRepository buyerRepository = new BuyerRepository(getActivity().getApplication());
             if (buyerRepository.isOnlineMode()) {
-                buyerRepository.fetchBuyersOnline(new in.gbtsolutions.inventoryhub.online.repository.OnlineBuyerRepository.BuyerListCallback() {
+                buyerRepository.fetchBuyersOnline(new OnlineBuyerRepository.BuyerListCallback() {
                     @Override
                     public void onSuccess(List<Buyer> buyers) {
                         if (getActivity() != null && isAdded()) {
@@ -476,10 +474,7 @@ public class SellDetailsFragment extends Fragment {
         inputSaleDate.setText(sdf.format(new Date(selectedDateMillis)));
 
         View.OnClickListener openDatePicker = v -> {
-            MaterialDatePicker<Long> datePicker = MaterialDatePicker.Builder.datePicker()
-                    .setTitleText("Select Sale Date")
-                    .setSelection(selectedDateMillis)
-                    .build();
+            MaterialDatePicker<Long> datePicker = MaterialDatePicker.Builder.datePicker().setTitleText("Select Sale Date").setSelection(selectedDateMillis).build();
 
             datePicker.addOnPositiveButtonClickListener(selection -> {
                 if (selection != null) {
@@ -629,11 +624,11 @@ public class SellDetailsFragment extends Fragment {
         if (walkin) {
             tabCustomerWalkin.setBackgroundResource(R.drawable.bg_card);
             tabCustomerWalkin.setTextColor(ContextCompat.getColor(requireContext(), R.color.material_blue));
-            tabCustomerWalkin.setTypeface(null, android.graphics.Typeface.BOLD);
+            tabCustomerWalkin.setTypeface(null, Typeface.BOLD);
 
-            tabCustomerRegistered.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+            tabCustomerRegistered.setBackgroundColor(Color.TRANSPARENT);
             tabCustomerRegistered.setTextColor(ContextCompat.getColor(requireContext(), R.color.fg_muted));
-            tabCustomerRegistered.setTypeface(null, android.graphics.Typeface.NORMAL);
+            tabCustomerRegistered.setTypeface(null, Typeface.NORMAL);
 
             if (layoutContainerWalkin != null) layoutContainerWalkin.setVisibility(View.VISIBLE);
             if (layoutContainerRegistered != null)
@@ -641,11 +636,11 @@ public class SellDetailsFragment extends Fragment {
         } else {
             tabCustomerRegistered.setBackgroundResource(R.drawable.bg_card);
             tabCustomerRegistered.setTextColor(ContextCompat.getColor(requireContext(), R.color.material_blue));
-            tabCustomerRegistered.setTypeface(null, android.graphics.Typeface.BOLD);
+            tabCustomerRegistered.setTypeface(null, Typeface.BOLD);
 
-            tabCustomerWalkin.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+            tabCustomerWalkin.setBackgroundColor(Color.TRANSPARENT);
             tabCustomerWalkin.setTextColor(ContextCompat.getColor(requireContext(), R.color.fg_muted));
-            tabCustomerWalkin.setTypeface(null, android.graphics.Typeface.NORMAL);
+            tabCustomerWalkin.setTypeface(null, Typeface.NORMAL);
 
             if (layoutContainerRegistered != null)
                 layoutContainerRegistered.setVisibility(View.VISIBLE);
@@ -656,10 +651,8 @@ public class SellDetailsFragment extends Fragment {
 
     private void setupWalkinFields() {
         if (dropdownWalkinPos == null || getContext() == null) return;
-        List<in.gbtsolutions.inventoryhub.helpers.IndianStates.StateItem> states =
-                in.gbtsolutions.inventoryhub.helpers.IndianStates.getAllStates();
-        ArrayAdapter<in.gbtsolutions.inventoryhub.helpers.IndianStates.StateItem> stateAdapter =
-                new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, states);
+        List<IndianStates.StateItem> states = IndianStates.getAllStates();
+        ArrayAdapter<IndianStates.StateItem> stateAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, states);
         dropdownWalkinPos.setAdapter(stateAdapter);
         dropdownWalkinPos.setDropDownBackgroundResource(R.drawable.bg_card);
 
@@ -682,10 +675,9 @@ public class SellDetailsFragment extends Fragment {
                 @Override
                 public void onTextChanged(CharSequence s, int start, int before, int count) {
                     if (s != null && s.length() >= 2) {
-                        String code = in.gbtsolutions.inventoryhub.helpers.IndianStates.getStateCodeFromGstin(s.toString().trim());
+                        String code = IndianStates.getStateCodeFromGstin(s.toString().trim());
                         if (code != null) {
-                            in.gbtsolutions.inventoryhub.helpers.IndianStates.StateItem item =
-                                    in.gbtsolutions.inventoryhub.helpers.IndianStates.findByCode(code);
+                            IndianStates.StateItem item = IndianStates.findByCode(code);
                             if (item != null && (selectedPosState == null || !selectedPosState.code.equals(code))) {
                                 selectedPosState = item;
                                 dropdownWalkinPos.setText(item.getDisplayName(), false);
@@ -707,11 +699,11 @@ public class SellDetailsFragment extends Fragment {
         String stateCode = "19"; // Default West Bengal
         if (!TextUtils.isEmpty(userGst) && userGst.length() >= 2) {
             String derived = userGst.substring(0, 2);
-            if (in.gbtsolutions.inventoryhub.helpers.IndianStates.findByCode(derived) != null) {
+            if (IndianStates.findByCode(derived) != null) {
                 stateCode = derived;
             }
         }
-        selectedPosState = in.gbtsolutions.inventoryhub.helpers.IndianStates.findByCode(stateCode);
+        selectedPosState = IndianStates.findByCode(stateCode);
         if (selectedPosState != null && dropdownWalkinPos != null) {
             dropdownWalkinPos.setText(selectedPosState.getDisplayName(), false);
         }
@@ -779,17 +771,11 @@ public class SellDetailsFragment extends Fragment {
                 for (CartItem item : items) {
                     if (item.batchId != null) {
                         if (item.quantity > item.batchAvailableQty) {
-                            Toast.makeText(getContext(),
-                                    "Insufficient stock for batch " + (item.batchNo != null ? item.batchNo : "") +
-                                            " (Available: " + item.batchAvailableQty + ", Requested: " + item.quantity + ")",
-                                    Toast.LENGTH_LONG).show();
+                            Toast.makeText(getContext(), "Insufficient stock for batch " + (item.batchNo != null ? item.batchNo : "") + " (Available: " + item.batchAvailableQty + ", Requested: " + item.quantity + ")", Toast.LENGTH_LONG).show();
                             return;
                         }
                     } else if (item.product != null && item.quantity > item.product.quantity) {
-                        Toast.makeText(getContext(),
-                                "Insufficient stock for " + item.product.productName +
-                                        " (Available: " + item.product.quantity + ", Requested: " + item.quantity + ")",
-                                Toast.LENGTH_LONG).show();
+                        Toast.makeText(getContext(), "Insufficient stock for " + item.product.productName + " (Available: " + item.product.quantity + ", Requested: " + item.quantity + ")", Toast.LENGTH_LONG).show();
                         return;
                     }
                 }
@@ -808,12 +794,7 @@ public class SellDetailsFragment extends Fragment {
         RadioButton radioCash = view.findViewById(R.id.radio_cash);
         radioCash.setChecked(true);
 
-        MaterialAlertDialogBuilder builder =
-                new MaterialAlertDialogBuilder(getContext())
-                        .setTitle("Select Payment Method")
-                        .setView(view)
-                        .setNegativeButton("Cancel", null)
-                        .setPositiveButton("Proceed", null);
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(getContext()).setTitle("Select Payment Method").setView(view).setNegativeButton("Cancel", null).setPositiveButton("Proceed", null);
         AlertDialog dialog = builder.create();
         dialog.setOnShowListener(dialogInterface -> {
             Button proceedButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
@@ -914,7 +895,7 @@ public class SellDetailsFragment extends Fragment {
         }
         String now = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
 
-        long createdBy = in.gbtsolutions.inventoryhub.helpers.UserHelper.getCurrentUserId(getContext());
+        long createdBy = UserHelper.getCurrentUserId(getContext());
 
         double grossSubtotal = SellCartManager.getInstance().getGrossSubtotal();
         double totalDiscount = SellCartManager.getInstance().getTotalDiscount();
@@ -931,24 +912,7 @@ public class SellDetailsFragment extends Fragment {
 
         int buyerIdToStore = (!isWalkInCustomer && selectedBuyer != null) ? selectedBuyer.buyerId : 0;
 
-        Sale sale = new Sale(
-                buyerIdToStore,
-                invoiceId,
-                grossSubtotal,
-                cgst,
-                sgst,
-                igst,
-                totalGst,
-                otherCharges,
-                grandTotal,
-                "Completed",
-                createdBy,
-                billingDate,
-                now,
-                now,
-                totalDiscount,
-                discountPercent
-        );
+        Sale sale = new Sale(buyerIdToStore, invoiceId, grossSubtotal, cgst, sgst, igst, totalGst, otherCharges, grandTotal, "Completed", createdBy, billingDate, now, now, totalDiscount, discountPercent);
 
         if (GlobalStore.getInstance().isShowPaymentMethodDialog() && !TextUtils.isEmpty(paymentMethod)) {
             sale.paymentMethod = paymentMethod;
@@ -1008,21 +972,7 @@ public class SellDetailsFragment extends Fragment {
             double itemSgstAmount = sameState ? itemGstAmt / 2.0 : 0.0;
             double itemIgstAmount = sameState ? 0.0 : itemGstAmt;
 
-            SaleItem saleItem = new SaleItem(
-                    0,
-                    item.product.productId,
-                    item.quantity,
-                    item.sellingPrice,
-                    itemCgstRate,
-                    itemSgstRate,
-                    itemIgstRate,
-                    itemCgstAmount,
-                    itemSgstAmount,
-                    itemIgstAmount,
-                    itemTaxable,
-                    item.getDiscountPercent(),
-                    item.getDiscountAmount()
-            );
+            SaleItem saleItem = new SaleItem(0, item.product.productId, item.quantity, item.sellingPrice, itemCgstRate, itemSgstRate, itemIgstRate, itemCgstAmount, itemSgstAmount, itemIgstAmount, itemTaxable, item.getDiscountPercent(), item.getDiscountAmount());
             saleItem.batchId = item.batchId;
 
             // Snapshot GST and HSN fields for GSTR-1

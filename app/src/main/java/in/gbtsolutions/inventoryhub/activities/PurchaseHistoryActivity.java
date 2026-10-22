@@ -6,6 +6,8 @@ import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
@@ -62,6 +64,9 @@ import in.gbtsolutions.inventoryhub.models.ReceiveRecordWithItems;
 import in.gbtsolutions.inventoryhub.models.Suppliers;
 import in.gbtsolutions.inventoryhub.repository.ConfigRepository;
 import in.gbtsolutions.inventoryhub.repository.PurchaseRepository;
+import in.gbtsolutions.inventoryhub.helpers.UserHelper;
+import in.gbtsolutions.inventoryhub.online.paging.EndlessRecyclerScrollListener;
+import in.gbtsolutions.inventoryhub.online.repository.OnlinePurchaseRepository;
 
 public class PurchaseHistoryActivity extends BaseActivity {
 
@@ -96,6 +101,13 @@ public class PurchaseHistoryActivity extends BaseActivity {
     private PurchaseHistoryAdapter adapter;
     private PurchaseRepository purchaseRepository;
     private LiveData<List<PurchaseWithSupplier>> currentLiveData;
+    private EndlessRecyclerScrollListener endlessScrollListener;
+    private int onlineCurrentPage = 1;
+    private boolean onlineHasMore = true;
+    private boolean onlineIsLoading = false;
+    private int onlineTotalRecords = 0;
+    private final Handler searchHandler = new Handler(Looper.getMainLooper());
+    private Runnable searchRunnable;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -172,6 +184,7 @@ public class PurchaseHistoryActivity extends BaseActivity {
                     textStartDate.setTextColor(ContextCompat.getColor(this, R.color.fg));
                     btnClearStartDate.setVisibility(View.VISIBLE);
                     updateResetButtonVisibility();
+                    applyFilters();
                 }
             });
 
@@ -184,6 +197,7 @@ public class PurchaseHistoryActivity extends BaseActivity {
             textStartDate.setTextColor(ContextCompat.getColor(this, R.color.fg_dim));
             btnClearStartDate.setVisibility(View.GONE);
             updateResetButtonVisibility();
+            applyFilters();
         });
 
         boxEndDate.setOnClickListener(v -> {
@@ -205,6 +219,7 @@ public class PurchaseHistoryActivity extends BaseActivity {
                     textEndDate.setTextColor(ContextCompat.getColor(this, R.color.fg));
                     btnClearEndDate.setVisibility(View.VISIBLE);
                     updateResetButtonVisibility();
+                    applyFilters();
                 }
             });
 
@@ -217,6 +232,7 @@ public class PurchaseHistoryActivity extends BaseActivity {
             textEndDate.setTextColor(ContextCompat.getColor(this, R.color.fg_dim));
             btnClearEndDate.setVisibility(View.GONE);
             updateResetButtonVisibility();
+            applyFilters();
         });
     }
 
@@ -230,6 +246,13 @@ public class PurchaseHistoryActivity extends BaseActivity {
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 btnClearSearch.setVisibility(s != null && s.length() > 0 ? View.VISIBLE : View.GONE);
                 updateResetButtonVisibility();
+                if (purchaseRepository != null && purchaseRepository.isOnlineMode()) {
+                    if (searchRunnable != null) {
+                        searchHandler.removeCallbacks(searchRunnable);
+                    }
+                    searchRunnable = () -> applyFilters();
+                    searchHandler.postDelayed(searchRunnable, 300);
+                }
             }
 
             @Override
@@ -238,6 +261,9 @@ public class PurchaseHistoryActivity extends BaseActivity {
         });
 
         btnClearSearch.setOnClickListener(v -> {
+            if (searchRunnable != null) {
+                searchHandler.removeCallbacks(searchRunnable);
+            }
             editSearchBuyer.setText("");
             updateResetButtonVisibility();
             applyFilters();
@@ -245,6 +271,9 @@ public class PurchaseHistoryActivity extends BaseActivity {
 
         editSearchBuyer.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                if (searchRunnable != null) {
+                    searchHandler.removeCallbacks(searchRunnable);
+                }
                 hideKeyboard();
                 applyFilters();
                 return true;
@@ -253,6 +282,9 @@ public class PurchaseHistoryActivity extends BaseActivity {
         });
 
         btnSearchSales.setOnClickListener(v -> {
+            if (searchRunnable != null) {
+                searchHandler.removeCallbacks(searchRunnable);
+            }
             hideKeyboard();
             applyFilters();
         });
@@ -263,16 +295,25 @@ public class PurchaseHistoryActivity extends BaseActivity {
 
     private void setupRecyclerView() {
         adapter = new PurchaseHistoryAdapter();
-        recyclerHistory.setLayoutManager(new LinearLayoutManager(this));
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        recyclerHistory.setLayoutManager(layoutManager);
         recyclerHistory.setAdapter(adapter);
         adapter.setOnPurchaseClickListener(this::showPurchaseDetailsSheet);
+
+        endlessScrollListener = new EndlessRecyclerScrollListener(layoutManager) {
+            @Override
+            public void onLoadMore(int page, int totalItemsCount, RecyclerView view) {
+                if (purchaseRepository != null && purchaseRepository.isOnlineMode() && onlineHasMore && !onlineIsLoading) {
+                    loadOnlinePurchases(page, false);
+                }
+            }
+        };
+        recyclerHistory.addOnScrollListener(endlessScrollListener);
     }
 
     private void applyFilters() {
-        String query = editSearchBuyer.getText() != null ? editSearchBuyer.getText().toString().trim() : "";
-
         if (purchaseRepository.isOnlineMode()) {
-            loadOnlinePurchases(selectedStartDate, selectedEndDate, query);
+            loadOnlinePurchases(1, true);
             updateResetButtonVisibility();
             return;
         }
@@ -281,29 +322,78 @@ public class PurchaseHistoryActivity extends BaseActivity {
             currentLiveData.removeObserver(purchasesObserver);
         }
 
+        String query = editSearchBuyer.getText() != null ? editSearchBuyer.getText().toString().trim() : "";
         currentLiveData = purchaseRepository.getFilteredPurchases(selectedStartDate, selectedEndDate, query);
         currentLiveData.observe(this, purchasesObserver);
         updateResetButtonVisibility();
     }
 
-    private void loadOnlinePurchases(String startDate, String endDate, String query) {
+    private void loadOnlinePurchases(int page, boolean isNewSearch) {
         if (currentLiveData != null) {
             currentLiveData.removeObserver(purchasesObserver);
             currentLiveData = null;
         }
-        purchaseRepository.fetchPurchasesOnline(startDate, endDate, query, new in.gbtsolutions.inventoryhub.online.repository.OnlinePurchaseRepository.PurchaseListCallback() {
+
+        if (onlineIsLoading && !isNewSearch) return;
+        onlineIsLoading = true;
+
+        if (isNewSearch) {
+            onlineCurrentPage = 1;
+            onlineHasMore = true;
+            onlineTotalRecords = 0;
+            if (endlessScrollListener != null) {
+                endlessScrollListener.resetState();
+            }
+            textSalesCount.setText("Loading purchases...");
+        } else {
+            adapter.showLoadingFooter();
+        }
+
+        String query = editSearchBuyer.getText() != null ? editSearchBuyer.getText().toString().trim() : "";
+        String searchParam = TextUtils.isEmpty(query) ? null : query;
+
+        purchaseRepository.fetchPurchasesPaged(page, EndlessRecyclerScrollListener.PAGE_SIZE, selectedStartDate, selectedEndDate, searchParam, null, new OnlinePurchaseRepository.PagedPurchaseCallback() {
             @Override
-            public void onSuccess(List<PurchaseWithSupplier> purchases) {
+            public void onSuccess(List<PurchaseWithSupplier> purchases, int currentPage, int totalPages, int totalRecords, boolean hasMore) {
                 runOnUiThread(() -> {
-                    updatePurchaseList(purchases);
+                    onlineIsLoading = false;
+                    onlineCurrentPage = currentPage;
+                    onlineHasMore = hasMore;
+                    onlineTotalRecords = totalRecords;
+
+                    if (endlessScrollListener != null) {
+                        endlessScrollListener.setHasMore(hasMore);
+                        endlessScrollListener.setLoading(false);
+                    }
+
+                    adapter.removeFooter();
+
+                    if (isNewSearch) {
+                        adapter.setPurchases(purchases != null ? purchases : new ArrayList<>());
+                    } else {
+                        if (purchases != null && !purchases.isEmpty()) {
+                            adapter.addPurchases(purchases);
+                        }
+                    }
+
+                    updatePurchaseSummary(adapter.getPurchases(), totalRecords);
                 });
             }
 
             @Override
             public void onError(String errorMessage) {
                 runOnUiThread(() -> {
-                    Toast.makeText(PurchaseHistoryActivity.this, errorMessage, Toast.LENGTH_SHORT).show();
-                    updatePurchaseList(new ArrayList<>());
+                    onlineIsLoading = false;
+                    if (endlessScrollListener != null) {
+                        endlessScrollListener.setLoading(false);
+                    }
+                    if (isNewSearch) {
+                        adapter.removeFooter();
+                        Toast.makeText(PurchaseHistoryActivity.this, "Failed to load purchases: " + errorMessage, Toast.LENGTH_SHORT).show();
+                        updatePurchaseSummary(new ArrayList<>(), 0);
+                    } else {
+                        adapter.showRetryFooter("Failed to load more. Tap to retry", () -> loadOnlinePurchases(page, false));
+                    }
                 });
             }
         });
@@ -318,6 +408,9 @@ public class PurchaseHistoryActivity extends BaseActivity {
     }
 
     private void resetAllFilters() {
+        if (searchRunnable != null) {
+            searchHandler.removeCallbacks(searchRunnable);
+        }
         selectedStartDate = null;
         textStartDate.setText("Start Date");
         textStartDate.setTextColor(ContextCompat.getColor(this, R.color.fg_dim));
@@ -343,18 +436,25 @@ public class PurchaseHistoryActivity extends BaseActivity {
     }
 
     private void updatePurchaseList(@Nullable List<PurchaseWithSupplier> purchases) {
+        adapter.setPurchases(purchases != null ? purchases : new ArrayList<>());
+        updatePurchaseSummary(adapter.getPurchases(), purchases != null ? purchases.size() : 0);
+    }
+
+    private void updatePurchaseSummary(@Nullable List<PurchaseWithSupplier> purchases, int totalRecords) {
         if (purchases == null || purchases.isEmpty()) {
-            adapter.setPurchases(new ArrayList<>());
             recyclerHistory.setVisibility(View.GONE);
             layoutEmptyState.setVisibility(View.VISIBLE);
             textSalesCount.setText("No purchases found");
             textSalesTotalSum.setText("Total: ₹ 0.00");
         } else {
-            adapter.setPurchases(purchases);
             recyclerHistory.setVisibility(View.VISIBLE);
             layoutEmptyState.setVisibility(View.GONE);
 
-            textSalesCount.setText(String.format(Locale.getDefault(), "Showing %d purchases", purchases.size()));
+            if (totalRecords > purchases.size()) {
+                textSalesCount.setText(String.format(Locale.getDefault(), "Showing %d of %d purchases", purchases.size(), totalRecords));
+            } else {
+                textSalesCount.setText(String.format(Locale.getDefault(), "Showing %d purchases", purchases.size()));
+            }
 
             double totalSum = 0.0;
             for (PurchaseWithSupplier item : purchases) {
@@ -446,13 +546,13 @@ public class PurchaseHistoryActivity extends BaseActivity {
             }
         }
         if (creatorId > 0 && TextUtils.isEmpty(item.createdByName)) {
-            in.gbtsolutions.inventoryhub.helpers.UserHelper.getUserByIdAsync(this, creatorId, user -> {
+            UserHelper.getUserByIdAsync(this, creatorId, user -> {
                 if (user != null) {
                     if (textCreatorName != null) {
-                        textCreatorName.setText(in.gbtsolutions.inventoryhub.helpers.UserHelper.formatUserNameAndUsername(user, creatorId));
+                        textCreatorName.setText(UserHelper.formatUserNameAndUsername(user, creatorId));
                     }
                     if (textCreatorRole != null) {
-                        textCreatorRole.setText(in.gbtsolutions.inventoryhub.helpers.UserHelper.formatUserRole(user));
+                        textCreatorRole.setText(UserHelper.formatUserRole(user));
                     }
                 }
             });
@@ -494,8 +594,8 @@ public class PurchaseHistoryActivity extends BaseActivity {
             textCancellationTitle.setText("ORDER PARTIALLY CANCELLED");
             final String cancelDate = !TextUtils.isEmpty(purchase.updatedAt) ? purchase.updatedAt : purchase.billingDate;
             if (cancelledById > 0) {
-                in.gbtsolutions.inventoryhub.helpers.UserHelper.getUserByIdAsync(this, cancelledById, user -> {
-                    String cancelUserName = in.gbtsolutions.inventoryhub.helpers.UserHelper.formatUserNameAndUsername(user, cancelledById);
+                UserHelper.getUserByIdAsync(this, cancelledById, user -> {
+                    String cancelUserName = UserHelper.formatUserNameAndUsername(user, cancelledById);
                     if (textCancellationDetails != null) {
                         textCancellationDetails.setText(String.format("Cancelled on %s by %s. Remaining unreceived units were cancelled.",
                                 cancelDate != null ? cancelDate : "", cancelUserName));
@@ -509,8 +609,8 @@ public class PurchaseHistoryActivity extends BaseActivity {
             textCancellationTitle.setText("ORDER CANCELLED");
             final String cancelDate = !TextUtils.isEmpty(purchase.updatedAt) ? purchase.updatedAt : purchase.billingDate;
             if (cancelledById > 0) {
-                in.gbtsolutions.inventoryhub.helpers.UserHelper.getUserByIdAsync(this, cancelledById, user -> {
-                    String cancelUserName = in.gbtsolutions.inventoryhub.helpers.UserHelper.formatUserNameAndUsername(user, cancelledById);
+                UserHelper.getUserByIdAsync(this, cancelledById, user -> {
+                    String cancelUserName = UserHelper.formatUserNameAndUsername(user, cancelledById);
                     if (textCancellationDetails != null) {
                         textCancellationDetails.setText(String.format("This purchase order was cancelled on %s by %s. 0 units received.",
                                 cancelDate != null ? cancelDate : "", cancelUserName));
@@ -875,13 +975,13 @@ public class PurchaseHistoryActivity extends BaseActivity {
                 textStageReceivedByRole.setText("STAFF");
             }
             if (sUid > 0) {
-                in.gbtsolutions.inventoryhub.helpers.UserHelper.getUserByIdAsync(PurchaseHistoryActivity.this, sUid, user -> {
+                UserHelper.getUserByIdAsync(PurchaseHistoryActivity.this, sUid, user -> {
                     if (user != null) {
                         if (textStageReceivedByUser != null) {
-                            textStageReceivedByUser.setText(in.gbtsolutions.inventoryhub.helpers.UserHelper.formatUserNameAndUsername(user, sUid));
+                            textStageReceivedByUser.setText(UserHelper.formatUserNameAndUsername(user, sUid));
                         }
                         if (textStageReceivedByRole != null) {
-                            textStageReceivedByRole.setText(in.gbtsolutions.inventoryhub.helpers.UserHelper.formatUserRole(user));
+                            textStageReceivedByRole.setText(UserHelper.formatUserRole(user));
                         }
                     }
                 });
@@ -996,6 +1096,14 @@ public class PurchaseHistoryActivity extends BaseActivity {
         if (view != null) {
             InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
             if (imm != null) imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (searchRunnable != null) {
+            searchHandler.removeCallbacks(searchRunnable);
         }
     }
 }

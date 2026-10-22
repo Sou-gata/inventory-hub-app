@@ -10,13 +10,6 @@ import java.util.Map;
 import in.gbtsolutions.inventoryhub.models.CartItem;
 import in.gbtsolutions.inventoryhub.models.Product;
 
-/**
- * Standalone cart manager for the Purchase flow.
- * Key differences vs SellCartManager:
- *   - No stock availability checks (you can purchase any quantity)
- *   - No batch dialog support (batch/expiry not tracked during purchase)
- *   - Uses cost price (stored in CartItem.sellingPrice field, displayed as "Cost Price")
- */
 public class PurchaseCartManager {
 
     public interface OnCartChangedListener {

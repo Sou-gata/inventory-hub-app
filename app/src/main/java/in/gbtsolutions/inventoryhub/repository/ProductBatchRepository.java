@@ -16,6 +16,7 @@ import in.gbtsolutions.inventoryhub.dao.ProductBatchDao;
 import in.gbtsolutions.inventoryhub.dao.ProductDao;
 import in.gbtsolutions.inventoryhub.models.Product;
 import in.gbtsolutions.inventoryhub.models.ProductBatch;
+import in.gbtsolutions.inventoryhub.helpers.CommonFunctions;
 
 public class ProductBatchRepository {
 
@@ -27,11 +28,13 @@ public class ProductBatchRepository {
 
     public interface BatchActionCallback {
         void onSuccess();
+
         void onError(String message);
     }
 
     public interface BatchInsertCallback {
         void onSuccess(long batchId);
+
         void onError(String message);
     }
 
@@ -157,7 +160,7 @@ public class ProductBatchRepository {
         double totalQty = productBatchDao.sumQuantityForProduct(productId);
         Product product = productDao.getProductById(productId);
         if (product != null) {
-            product.quantity = in.gbtsolutions.inventoryhub.helpers.CommonFunctions.roundTo3Decimals(totalQty);
+            product.quantity = CommonFunctions.roundTo3Decimals(totalQty);
             if (product.quantity <= 0.0001) {
                 product.status = "Out of Stock";
             } else if ("Out of Stock".equalsIgnoreCase(product.status)) {

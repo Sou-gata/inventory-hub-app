@@ -2,6 +2,8 @@ package in.gbtsolutions.inventoryhub.helpers;
 
 import android.content.Context;
 import android.net.Uri;
+import android.database.Cursor;
+import android.provider.OpenableColumns;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -123,8 +125,7 @@ public class APIHelper {
         // context.getExternalFilesDir(null) -> /storage/emulated/0/Android/data/<package>/files
         File outFile = new File(context.getExternalFilesDir(null), fileName);
 
-        try (InputStream is = conn.getInputStream();
-             FileOutputStream fos = new FileOutputStream(outFile)) {
+        try (InputStream is = conn.getInputStream(); FileOutputStream fos = new FileOutputStream(outFile)) {
             byte[] buffer = new byte[4096];
             int bytesRead;
             while ((bytesRead = is.read(buffer)) != -1) {
@@ -164,9 +165,9 @@ public class APIHelper {
     private static String getFileName(Context context, Uri uri) {
         String result = null;
         if ("content".equals(uri.getScheme())) {
-            try (android.database.Cursor cursor = context.getContentResolver().query(uri, null, null, null, null)) {
+            try (Cursor cursor = context.getContentResolver().query(uri, null, null, null, null)) {
                 if (cursor != null && cursor.moveToFirst()) {
-                    int idx = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME);
+                    int idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
                     if (idx != -1) result = cursor.getString(idx);
                 }
             }

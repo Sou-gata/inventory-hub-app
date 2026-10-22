@@ -1,4 +1,5 @@
 package in.gbtsolutions.inventoryhub.online.models;
+import java.util.List;
 
 import com.google.gson.annotations.SerializedName;
 
@@ -89,7 +90,7 @@ public class OnlineProductDto {
     public Long expiryDate;
 
     @SerializedName(value = "batches", alternate = {"batchList", "productBatches", "batch_list"})
-    public java.util.List<OnlineBatchDto> batches;
+    public List<OnlineBatchDto> batches;
 
     public static class OnlineBatchDto {
         @SerializedName(value = "batchId", alternate = {"batch_id", "id"})

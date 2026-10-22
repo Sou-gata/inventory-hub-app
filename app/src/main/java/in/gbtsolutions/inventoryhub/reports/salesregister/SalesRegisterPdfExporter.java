@@ -55,8 +55,7 @@ public class SalesRegisterPdfExporter {
         y += 14;
         paint.setTextSize(9);
         paint.setColor(Color.parseColor("#4A5278"));
-        String gstinPeriod = "GSTIN: " + (report.companyGst != null && !report.companyGst.isEmpty() ? report.companyGst : "N/A")
-                + "  |  Period: " + (report.startDate != null ? report.startDate : "Start") + " to " + (report.endDate != null ? report.endDate : "End");
+        String gstinPeriod = "GSTIN: " + (report.companyGst != null && !report.companyGst.isEmpty() ? report.companyGst : "N/A") + "  |  Period: " + (report.startDate != null ? report.startDate : "Start") + " to " + (report.endDate != null ? report.endDate : "End");
         canvas.drawText(gstinPeriod, MARGIN, y, paint);
 
         y += 14;
@@ -106,8 +105,7 @@ public class SalesRegisterPdfExporter {
         y += 54;
 
         // 3. Table Column Layout
-        int[] colX = {
-                MARGIN,             // 0: #
+        int[] colX = {MARGIN,             // 0: #
                 MARGIN + 24,        // 1: Invoice #
                 MARGIN + 105,       // 2: Date
                 MARGIN + 175,       // 3: Customer

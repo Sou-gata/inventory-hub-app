@@ -29,6 +29,7 @@ import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.graphics.Color;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -528,7 +529,7 @@ public class PurchaseRegisterActivity extends BaseActivity {
         for (String h : headers) {
             TextView tv = new TextView(this);
             tv.setText(h);
-            tv.setTextColor(android.graphics.Color.WHITE);
+            tv.setTextColor(Color.WHITE);
             tv.setTypeface(null, Typeface.BOLD);
             tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f);
             tv.setGravity(Gravity.CENTER);
@@ -540,7 +541,7 @@ public class PurchaseRegisterActivity extends BaseActivity {
 
     private TableRow createDataRow(int sl, PurchaseRegisterModels.PurchaseRegisterRow row) {
         TableRow tr = new TableRow(this);
-        tr.setBackgroundColor(sl % 2 == 0 ? android.graphics.Color.parseColor("#F8F9FD") : android.graphics.Color.WHITE);
+        tr.setBackgroundColor(sl % 2 == 0 ? Color.parseColor("#F8F9FD") : Color.WHITE);
         tr.setClickable(true);
         tr.setFocusable(true);
         tr.setPadding(0, dpToPx(8), 0, dpToPx(8));
@@ -582,7 +583,7 @@ public class PurchaseRegisterActivity extends BaseActivity {
     private TableRow createTotalRow(int count, BigDecimal sumTaxable, BigDecimal sumCgst, BigDecimal sumSgst, BigDecimal sumIgst, BigDecimal sumTotalTax, BigDecimal sumTotalAmount) {
 
         TableRow tr = new TableRow(this);
-        tr.setBackgroundColor(android.graphics.Color.parseColor("#EEF2F6"));
+        tr.setBackgroundColor(Color.parseColor("#EEF2F6"));
         tr.setPadding(0, dpToPx(10), 0, dpToPx(10));
 
         // 0: #
@@ -666,7 +667,7 @@ public class PurchaseRegisterActivity extends BaseActivity {
         if ("Cancelled".equalsIgnoreCase(status)) {
             tv.setTextColor(ContextCompat.getColor(this, R.color.error_red));
         } else if ("Pending".equalsIgnoreCase(status)) {
-            tv.setTextColor(android.graphics.Color.parseColor("#E65100"));
+            tv.setTextColor(Color.parseColor("#E65100"));
         } else {
             tv.setTextColor(ContextCompat.getColor(this, R.color.status_green));
         }
@@ -727,7 +728,7 @@ public class PurchaseRegisterActivity extends BaseActivity {
         tableItems.removeAllViews();
         // Item Header
         TableRow itemHeader = new TableRow(this);
-        itemHeader.setBackgroundColor(android.graphics.Color.parseColor("#EEF2F6"));
+        itemHeader.setBackgroundColor(Color.parseColor("#EEF2F6"));
         itemHeader.setPadding(0, dpToPx(4), 0, dpToPx(4));
 
         String[] itemColNames = {"Item", "Qty", "Price", "Tax %", "Total"};

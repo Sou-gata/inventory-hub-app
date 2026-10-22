@@ -24,6 +24,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.graphics.drawable.GradientDrawable;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -39,6 +40,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.tabs.TabLayout;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -770,7 +772,7 @@ public class InventoryActivity extends BaseActivity {
 
         // Batch Inventory Section in Bottom Sheet
         View containerDetailBatches = view.findViewById(R.id.container_detail_batches);
-        com.google.android.material.tabs.TabLayout tabLayoutBatches = view.findViewById(R.id.tab_layout_batches);
+        TabLayout tabLayoutBatches = view.findViewById(R.id.tab_layout_batches);
         RecyclerView recyclerDetailBatches = view.findViewById(R.id.recycler_detail_batches);
         TextView tvDetailBatchesEmpty = view.findViewById(R.id.tv_detail_batches_empty);
 
@@ -876,9 +878,9 @@ public class InventoryActivity extends BaseActivity {
                 });
             }
 
-            tabLayoutBatches.addOnTabSelectedListener(new com.google.android.material.tabs.TabLayout.OnTabSelectedListener() {
+            tabLayoutBatches.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
                 @Override
-                public void onTabSelected(com.google.android.material.tabs.TabLayout.Tab tab) {
+                public void onTabSelected(TabLayout.Tab tab) {
                     int pos = tab.getPosition();
                     List<ProductBatch> currentDisplay = (pos == 1) ? allBatchesList : activeBatchesList;
                     detailBatchAdapter.setBatches(currentDisplay);
@@ -891,11 +893,11 @@ public class InventoryActivity extends BaseActivity {
                 }
 
                 @Override
-                public void onTabUnselected(com.google.android.material.tabs.TabLayout.Tab tab) {
+                public void onTabUnselected(TabLayout.Tab tab) {
                 }
 
                 @Override
-                public void onTabReselected(com.google.android.material.tabs.TabLayout.Tab tab) {
+                public void onTabReselected(TabLayout.Tab tab) {
                 }
             });
         } else if (containerDetailBatches != null) {
@@ -1250,8 +1252,8 @@ public class InventoryActivity extends BaseActivity {
     }
 
     private void tintCircle(View view, int color) {
-        android.graphics.drawable.GradientDrawable circle = new android.graphics.drawable.GradientDrawable();
-        circle.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+        GradientDrawable circle = new GradientDrawable();
+        circle.setShape(GradientDrawable.OVAL);
         circle.setColor(color);
         view.setBackground(circle);
     }

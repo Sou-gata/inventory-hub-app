@@ -8,9 +8,6 @@ public class PurchaseItemWithProduct {
     @Embedded
     public PurchaseItem purchaseItem;
 
-    @Relation(
-            parentColumn = "product_id",
-            entityColumn = "product_id"
-    )
+    @Relation(parentColumn = "product_id", entityColumn = "product_id")
     public Product product;
 }

@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.ArrayList;
+import java.util.List;
 
 public class GSTR1ExcelExporter {
 
@@ -155,7 +157,7 @@ public class GSTR1ExcelExporter {
         autoSizeCols(sheet, headers.length);
     }
 
-    private static void buildB2CSheet(XSSFWorkbook wb, String sheetName, java.util.List<GSTR1Models.B2CRow> list, CellStyle headerStyle) {
+    private static void buildB2CSheet(XSSFWorkbook wb, String sheetName, List<GSTR1Models.B2CRow> list, CellStyle headerStyle) {
         Sheet sheet = wb.createSheet(sheetName);
         String[] headers = {"Supply Category", "Place of Supply", "Rate (%)", "Invoices", "Taxable Value", "CGST", "SGST", "IGST", "CESS", "Total Tax", "Invoice Value"};
         createHeaderRow(sheet, headers, headerStyle);
@@ -207,7 +209,7 @@ public class GSTR1ExcelExporter {
         createHeaderRow(sheet, headers, headerStyle);
 
         int r = 1;
-        java.util.List<GSTR1Models.CreditDebitNoteRow> allNotes = new java.util.ArrayList<>();
+        List<GSTR1Models.CreditDebitNoteRow> allNotes = new ArrayList<>();
         allNotes.addAll(report.creditNotesList);
         allNotes.addAll(report.debitNotesList);
 
@@ -251,7 +253,7 @@ public class GSTR1ExcelExporter {
         createHeaderRow(sheet, headers, headerStyle);
 
         int r = 1;
-        java.util.List<GSTR1Models.HsnRow> allHsn = new java.util.ArrayList<>();
+        List<GSTR1Models.HsnRow> allHsn = new ArrayList<>();
         allHsn.addAll(report.hsnB2bList);
         allHsn.addAll(report.hsnB2cList);
 

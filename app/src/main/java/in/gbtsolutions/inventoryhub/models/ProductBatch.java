@@ -5,20 +5,9 @@ import androidx.room.Entity;
 import androidx.room.ForeignKey;
 import androidx.room.Index;
 import androidx.room.PrimaryKey;
+import androidx.room.Ignore;
 
-@Entity(
-        tableName = "product_batches",
-        foreignKeys = @ForeignKey(
-                entity = Product.class,
-                parentColumns = "product_id",
-                childColumns = "product_id",
-                onDelete = ForeignKey.CASCADE
-        ),
-        indices = {
-                @Index(value = "product_id"),
-                @Index(value = {"product_id", "batch_no"})
-        }
-)
+@Entity(tableName = "product_batches", foreignKeys = @ForeignKey(entity = Product.class, parentColumns = "product_id", childColumns = "product_id", onDelete = ForeignKey.CASCADE), indices = {@Index(value = "product_id"), @Index(value = {"product_id", "batch_no"})})
 public class ProductBatch {
 
     @PrimaryKey(autoGenerate = true)
@@ -52,10 +41,8 @@ public class ProductBatch {
     public ProductBatch() {
     }
 
-    @androidx.room.Ignore
-    public ProductBatch(int productId, String batchNo, double quantity,
-                        double purchasePrice, double sellingPrice,
-                        long expiryDate, long createdAt, long updatedAt) {
+    @Ignore
+    public ProductBatch(int productId, String batchNo, double quantity, double purchasePrice, double sellingPrice, long expiryDate, long createdAt, long updatedAt) {
         this.productId = productId;
         this.batchNo = batchNo;
         this.quantity = quantity;
@@ -66,12 +53,9 @@ public class ProductBatch {
         this.updatedAt = updatedAt;
     }
 
-    @androidx.room.Ignore
-    public ProductBatch(int productId, String batchNo, int quantity,
-                        double purchasePrice, double sellingPrice,
-                        long expiryDate, long createdAt, long updatedAt) {
-        this(productId, batchNo, (double) quantity, purchasePrice, sellingPrice,
-                expiryDate, createdAt, updatedAt);
+    @Ignore
+    public ProductBatch(int productId, String batchNo, int quantity, double purchasePrice, double sellingPrice, long expiryDate, long createdAt, long updatedAt) {
+        this(productId, batchNo, (double) quantity, purchasePrice, sellingPrice, expiryDate, createdAt, updatedAt);
     }
 
     public boolean isExpired() {

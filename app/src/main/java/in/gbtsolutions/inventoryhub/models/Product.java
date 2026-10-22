@@ -6,6 +6,10 @@ import androidx.room.Ignore;
 import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
+
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity(tableName = "products", indices = {@Index(value = "sku", unique = true)})
 public class Product {
     @PrimaryKey(autoGenerate = true)
@@ -79,39 +83,23 @@ public class Product {
     public ProductBatch batch = null;
 
     @Ignore
-    public java.util.List<ProductBatch> batches = new java.util.ArrayList<>();
+    public List<ProductBatch> batches = new ArrayList<>();
 
     @Ignore
     public Product() {
     }
 
     @Ignore
-    public Product(String productName, int categoryId, String sku, String description,
-                   String brand, String unitOfMeasure, int reorderLevel, int reorderQuantity,
-                   String status, String hsnCode, double gstPercent, double defaultMarkupPercent,
-                   long createdAt, long updatedAt, double unitPrice, double sellingPrice,
-                   double quantity) {
-        this(productName, categoryId, sku, description, brand, unitOfMeasure, reorderLevel,
-                reorderQuantity, status, hsnCode, gstPercent, defaultMarkupPercent, createdAt,
-                updatedAt, unitPrice, sellingPrice, quantity, false);
+    public Product(String productName, int categoryId, String sku, String description, String brand, String unitOfMeasure, int reorderLevel, int reorderQuantity, String status, String hsnCode, double gstPercent, double defaultMarkupPercent, long createdAt, long updatedAt, double unitPrice, double sellingPrice, double quantity) {
+        this(productName, categoryId, sku, description, brand, unitOfMeasure, reorderLevel, reorderQuantity, status, hsnCode, gstPercent, defaultMarkupPercent, createdAt, updatedAt, unitPrice, sellingPrice, quantity, false);
     }
 
     @Ignore
-    public Product(String productName, int categoryId, String sku, String description,
-                   String brand, String unitOfMeasure, int reorderLevel, int reorderQuantity,
-                   String status, String hsnCode, double gstPercent, double defaultMarkupPercent,
-                   long createdAt, long updatedAt, double unitPrice, double sellingPrice,
-                   int quantity) {
-        this(productName, categoryId, sku, description, brand, unitOfMeasure, reorderLevel,
-                reorderQuantity, status, hsnCode, gstPercent, defaultMarkupPercent, createdAt,
-                updatedAt, unitPrice, sellingPrice, (double) quantity, false);
+    public Product(String productName, int categoryId, String sku, String description, String brand, String unitOfMeasure, int reorderLevel, int reorderQuantity, String status, String hsnCode, double gstPercent, double defaultMarkupPercent, long createdAt, long updatedAt, double unitPrice, double sellingPrice, int quantity) {
+        this(productName, categoryId, sku, description, brand, unitOfMeasure, reorderLevel, reorderQuantity, status, hsnCode, gstPercent, defaultMarkupPercent, createdAt, updatedAt, unitPrice, sellingPrice, (double) quantity, false);
     }
 
-    public Product(String productName, int categoryId, String sku, String description,
-                   String brand, String unitOfMeasure, int reorderLevel, int reorderQuantity,
-                   String status, String hsnCode, double gstPercent, double defaultMarkupPercent,
-                   long createdAt, long updatedAt, double unitPrice, double sellingPrice,
-                   double quantity, boolean batchEnabled) {
+    public Product(String productName, int categoryId, String sku, String description, String brand, String unitOfMeasure, int reorderLevel, int reorderQuantity, String status, String hsnCode, double gstPercent, double defaultMarkupPercent, long createdAt, long updatedAt, double unitPrice, double sellingPrice, double quantity, boolean batchEnabled) {
         this.productName = productName;
         this.categoryId = categoryId;
         this.sku = sku;
@@ -133,14 +121,8 @@ public class Product {
     }
 
     @Ignore
-    public Product(String productName, int categoryId, String sku, String description,
-                   String brand, String unitOfMeasure, int reorderLevel, int reorderQuantity,
-                   String status, String hsnCode, double gstPercent, double defaultMarkupPercent,
-                   long createdAt, long updatedAt, double unitPrice, double sellingPrice,
-                   int quantity, boolean batchEnabled) {
-        this(productName, categoryId, sku, description, brand, unitOfMeasure, reorderLevel,
-                reorderQuantity, status, hsnCode, gstPercent, defaultMarkupPercent,
-                createdAt, updatedAt, unitPrice, sellingPrice, (double) quantity, batchEnabled);
+    public Product(String productName, int categoryId, String sku, String description, String brand, String unitOfMeasure, int reorderLevel, int reorderQuantity, String status, String hsnCode, double gstPercent, double defaultMarkupPercent, long createdAt, long updatedAt, double unitPrice, double sellingPrice, int quantity, boolean batchEnabled) {
+        this(productName, categoryId, sku, description, brand, unitOfMeasure, reorderLevel, reorderQuantity, status, hsnCode, gstPercent, defaultMarkupPercent, createdAt, updatedAt, unitPrice, sellingPrice, (double) quantity, batchEnabled);
     }
 
     public ProductBatch getBatch() {
@@ -151,7 +133,7 @@ public class Product {
         this.batch = batch;
         if (batch != null) {
             if (this.batches == null) {
-                this.batches = new java.util.ArrayList<>();
+                this.batches = new ArrayList<>();
             }
             boolean found = false;
             for (ProductBatch b : this.batches) {
@@ -166,15 +148,15 @@ public class Product {
         }
     }
 
-    public java.util.List<ProductBatch> getBatches() {
+    public List<ProductBatch> getBatches() {
         if (batches == null) {
-            batches = new java.util.ArrayList<>();
+            batches = new ArrayList<>();
         }
         return batches;
     }
 
-    public void setBatches(java.util.List<ProductBatch> batches) {
-        this.batches = batches != null ? batches : new java.util.ArrayList<>();
+    public void setBatches(List<ProductBatch> batches) {
+        this.batches = batches != null ? batches : new ArrayList<>();
         if ((this.batch == null || this.batch.batchId == 0) && !this.batches.isEmpty()) {
             this.batch = this.batches.get(0);
         }

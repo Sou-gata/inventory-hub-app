@@ -61,21 +61,7 @@ public class PurchaseItem {
     }
 
     @Ignore
-    public PurchaseItem(
-            int purchaseId,
-            int productId,
-            double quantity,
-            double unitPrice,
-            double cgstRate,
-            double sgstRate,
-            double igstRate,
-            double cgstAmount,
-            double sgstAmount,
-            double igstAmount,
-            double subtotal,
-            double discountPercent,
-            double discountAmount
-    ) {
+    public PurchaseItem(int purchaseId, int productId, double quantity, double unitPrice, double cgstRate, double sgstRate, double igstRate, double cgstAmount, double sgstAmount, double igstAmount, double subtotal, double discountPercent, double discountAmount) {
         this.purchaseId = purchaseId;
         this.productId = productId;
         this.quantity = quantity;
@@ -92,69 +78,135 @@ public class PurchaseItem {
     }
 
     @Ignore
-    public PurchaseItem(
-            int purchaseId,
-            int productId,
-            int quantity,
-            double unitPrice,
-            double cgstRate,
-            double sgstRate,
-            double igstRate,
-            double cgstAmount,
-            double sgstAmount,
-            double igstAmount,
-            double subtotal,
-            double discountPercent,
-            double discountAmount
-    ) {
-        this(purchaseId, productId, (double) quantity, unitPrice, cgstRate, sgstRate, igstRate,
-                cgstAmount, sgstAmount, igstAmount, subtotal, discountPercent, discountAmount);
+    public PurchaseItem(int purchaseId, int productId, int quantity, double unitPrice, double cgstRate, double sgstRate, double igstRate, double cgstAmount, double sgstAmount, double igstAmount, double subtotal, double discountPercent, double discountAmount) {
+        this(purchaseId, productId, (double) quantity, unitPrice, cgstRate, sgstRate, igstRate, cgstAmount, sgstAmount, igstAmount, subtotal, discountPercent, discountAmount);
     }
 
-    public int getPurchaseItemId() { return purchaseItemId; }
-    public void setPurchaseItemId(int purchaseItemId) { this.purchaseItemId = purchaseItemId; }
+    public int getPurchaseItemId() {
+        return purchaseItemId;
+    }
 
-    public int getPurchaseId() { return purchaseId; }
-    public void setPurchaseId(int purchaseId) { this.purchaseId = purchaseId; }
+    public void setPurchaseItemId(int purchaseItemId) {
+        this.purchaseItemId = purchaseItemId;
+    }
 
-    public int getProductId() { return productId; }
-    public void setProductId(int productId) { this.productId = productId; }
+    public int getPurchaseId() {
+        return purchaseId;
+    }
 
-    public double getQuantity() { return quantity; }
-    public void setQuantity(double quantity) { this.quantity = quantity; }
-    public void setQuantity(int quantity) { this.quantity = (double) quantity; }
+    public void setPurchaseId(int purchaseId) {
+        this.purchaseId = purchaseId;
+    }
 
-    public double getUnitPrice() { return unitPrice; }
-    public void setUnitPrice(double unitPrice) { this.unitPrice = unitPrice; }
+    public int getProductId() {
+        return productId;
+    }
 
-    public double getCgstRate() { return cgstRate; }
-    public void setCgstRate(double cgstRate) { this.cgstRate = cgstRate; }
+    public void setProductId(int productId) {
+        this.productId = productId;
+    }
 
-    public double getSgstRate() { return sgstRate; }
-    public void setSgstRate(double sgstRate) { this.sgstRate = sgstRate; }
+    public double getQuantity() {
+        return quantity;
+    }
 
-    public double getIgstRate() { return igstRate; }
-    public void setIgstRate(double igstRate) { this.igstRate = igstRate; }
+    public void setQuantity(double quantity) {
+        this.quantity = quantity;
+    }
 
-    public double getCgstAmount() { return cgstAmount; }
-    public void setCgstAmount(double cgstAmount) { this.cgstAmount = cgstAmount; }
+    public void setQuantity(int quantity) {
+        this.quantity = (double) quantity;
+    }
 
-    public double getSgstAmount() { return sgstAmount; }
-    public void setSgstAmount(double sgstAmount) { this.sgstAmount = sgstAmount; }
+    public double getUnitPrice() {
+        return unitPrice;
+    }
 
-    public double getIgstAmount() { return igstAmount; }
-    public void setIgstAmount(double igstAmount) { this.igstAmount = igstAmount; }
+    public void setUnitPrice(double unitPrice) {
+        this.unitPrice = unitPrice;
+    }
 
-    public double getSubtotal() { return subtotal; }
-    public void setSubtotal(double subtotal) { this.subtotal = subtotal; }
+    public double getCgstRate() {
+        return cgstRate;
+    }
 
-    public double getDiscountPercent() { return discountPercent; }
-    public void setDiscountPercent(double discountPercent) { this.discountPercent = discountPercent; }
+    public void setCgstRate(double cgstRate) {
+        this.cgstRate = cgstRate;
+    }
 
-    public double getDiscountAmount() { return discountAmount; }
-    public void setDiscountAmount(double discountAmount) { this.discountAmount = discountAmount; }
+    public double getSgstRate() {
+        return sgstRate;
+    }
 
-    public double getReceivedQuantity() { return receivedQuantity; }
-    public void setReceivedQuantity(double receivedQuantity) { this.receivedQuantity = receivedQuantity; }
-    public void setReceivedQuantity(int receivedQuantity) { this.receivedQuantity = (double) receivedQuantity; }
+    public void setSgstRate(double sgstRate) {
+        this.sgstRate = sgstRate;
+    }
+
+    public double getIgstRate() {
+        return igstRate;
+    }
+
+    public void setIgstRate(double igstRate) {
+        this.igstRate = igstRate;
+    }
+
+    public double getCgstAmount() {
+        return cgstAmount;
+    }
+
+    public void setCgstAmount(double cgstAmount) {
+        this.cgstAmount = cgstAmount;
+    }
+
+    public double getSgstAmount() {
+        return sgstAmount;
+    }
+
+    public void setSgstAmount(double sgstAmount) {
+        this.sgstAmount = sgstAmount;
+    }
+
+    public double getIgstAmount() {
+        return igstAmount;
+    }
+
+    public void setIgstAmount(double igstAmount) {
+        this.igstAmount = igstAmount;
+    }
+
+    public double getSubtotal() {
+        return subtotal;
+    }
+
+    public void setSubtotal(double subtotal) {
+        this.subtotal = subtotal;
+    }
+
+    public double getDiscountPercent() {
+        return discountPercent;
+    }
+
+    public void setDiscountPercent(double discountPercent) {
+        this.discountPercent = discountPercent;
+    }
+
+    public double getDiscountAmount() {
+        return discountAmount;
+    }
+
+    public void setDiscountAmount(double discountAmount) {
+        this.discountAmount = discountAmount;
+    }
+
+    public double getReceivedQuantity() {
+        return receivedQuantity;
+    }
+
+    public void setReceivedQuantity(double receivedQuantity) {
+        this.receivedQuantity = receivedQuantity;
+    }
+
+    public void setReceivedQuantity(int receivedQuantity) {
+        this.receivedQuantity = (double) receivedQuantity;
+    }
 }

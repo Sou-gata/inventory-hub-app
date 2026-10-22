@@ -109,7 +109,8 @@ public class UserWiseReportModels {
             if (summary.totalSalesGst == null) summary.totalSalesGst = BigDecimal.ZERO;
 
             if (summary.totalGrossPurchases == null) summary.totalGrossPurchases = BigDecimal.ZERO;
-            if (summary.totalPurchaseTaxable == null) summary.totalPurchaseTaxable = BigDecimal.ZERO;
+            if (summary.totalPurchaseTaxable == null)
+                summary.totalPurchaseTaxable = BigDecimal.ZERO;
             if (summary.totalPurchaseCgst == null) summary.totalPurchaseCgst = BigDecimal.ZERO;
             if (summary.totalPurchaseSgst == null) summary.totalPurchaseSgst = BigDecimal.ZERO;
             if (summary.totalPurchaseIgst == null) summary.totalPurchaseIgst = BigDecimal.ZERO;

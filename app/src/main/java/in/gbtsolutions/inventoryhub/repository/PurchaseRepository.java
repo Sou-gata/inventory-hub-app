@@ -31,6 +31,12 @@ import in.gbtsolutions.inventoryhub.models.PurchaseWithSupplier;
 import in.gbtsolutions.inventoryhub.models.ReceiveItem;
 import in.gbtsolutions.inventoryhub.models.ReceiveRecord;
 import in.gbtsolutions.inventoryhub.models.ReceiveRecordWithItems;
+import in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper;
+import in.gbtsolutions.inventoryhub.helpers.CommonFunctions;
+import in.gbtsolutions.inventoryhub.helpers.UserHelper;
+import in.gbtsolutions.inventoryhub.models.AuditTrail;
+import in.gbtsolutions.inventoryhub.online.config.AppModeManager;
+import in.gbtsolutions.inventoryhub.online.repository.OnlinePurchaseRepository;
 
 public class PurchaseRepository {
 
@@ -44,8 +50,8 @@ public class PurchaseRepository {
     private final ExecutorService executorService;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final Application application;
-    private final in.gbtsolutions.inventoryhub.online.repository.OnlinePurchaseRepository onlinePurchaseRepository;
-    private final in.gbtsolutions.inventoryhub.online.config.AppModeManager appModeManager;
+    private final OnlinePurchaseRepository onlinePurchaseRepository;
+    private final AppModeManager appModeManager;
 
     public PurchaseRepository(Application application) {
         this.application = application;
@@ -57,15 +63,15 @@ public class PurchaseRepository {
         this.receiveRecordDao = db.receiveRecordDao();
         this.receiveItemDao = db.receiveItemDao();
         this.executorService = Executors.newFixedThreadPool(4);
-        this.onlinePurchaseRepository = new in.gbtsolutions.inventoryhub.online.repository.OnlinePurchaseRepository(application);
-        this.appModeManager = in.gbtsolutions.inventoryhub.online.config.AppModeManager.getInstance(application);
+        this.onlinePurchaseRepository = new OnlinePurchaseRepository(application);
+        this.appModeManager = AppModeManager.getInstance(application);
     }
 
     public boolean isOnlineMode() {
         return appModeManager.isOnlineMode();
     }
 
-    public in.gbtsolutions.inventoryhub.online.repository.OnlinePurchaseRepository getOnlineRepository() {
+    public OnlinePurchaseRepository getOnlineRepository() {
         return onlinePurchaseRepository;
     }
 
@@ -73,10 +79,9 @@ public class PurchaseRepository {
         return purchaseDao.getFilteredPurchases(startDate, endDate, supplierQuery);
     }
 
-    public void fetchPurchasesOnline(String startDate, String endDate, String supplierQuery,
-                                     in.gbtsolutions.inventoryhub.online.repository.OnlinePurchaseRepository.PurchaseListCallback callback) {
+    public void fetchPurchasesOnline(String startDate, String endDate, String supplierQuery, OnlinePurchaseRepository.PurchaseListCallback callback) {
         if (onlinePurchaseRepository != null) {
-            onlinePurchaseRepository.fetchPurchases(startDate, endDate, supplierQuery, new in.gbtsolutions.inventoryhub.online.repository.OnlinePurchaseRepository.PurchaseListCallback() {
+            onlinePurchaseRepository.fetchPurchases(startDate, endDate, supplierQuery, new OnlinePurchaseRepository.PurchaseListCallback() {
                 @Override
                 public void onSuccess(List<PurchaseWithSupplier> purchases) {
                     executorService.execute(() -> {
@@ -88,19 +93,65 @@ public class PurchaseRepository {
                                             if (pws.purchase != null) {
                                                 purchaseDao.insert(pws.purchase);
                                             }
-                                        } catch (Exception ignored) {}
+                                        } catch (Exception ignored) {
+                                        }
                                         try {
                                             if (pws.supplier != null && pws.supplier.supplierId > 0) {
                                                 db.supplierDao().insert(pws.supplier);
                                             }
-                                        } catch (Exception ignored) {}
+                                        } catch (Exception ignored) {
+                                        }
                                     }
                                 }
                             });
-                        } catch (Exception ignored) {}
+                        } catch (Exception ignored) {
+                        }
                     });
                     if (callback != null) {
                         mainHandler.post(() -> callback.onSuccess(purchases));
+                    }
+                }
+
+                @Override
+                public void onError(String errorMessage) {
+                    if (callback != null) {
+                        mainHandler.post(() -> callback.onError(errorMessage));
+                    }
+                }
+            });
+        }
+    }
+
+    public void fetchPurchasesPaged(int page, int limit, String startDate, String endDate, String supplierQuery, String status, OnlinePurchaseRepository.PagedPurchaseCallback callback) {
+        if (onlinePurchaseRepository != null && isOnlineMode()) {
+            onlinePurchaseRepository.fetchPurchasesPaged(page, limit, startDate, endDate, supplierQuery, status, new OnlinePurchaseRepository.PagedPurchaseCallback() {
+                @Override
+                public void onSuccess(List<PurchaseWithSupplier> purchases, int currentPage, int totalPages, int totalRecords, boolean hasMore) {
+                    executorService.execute(() -> {
+                        try {
+                            db.runInTransaction(() -> {
+                                if (purchases != null) {
+                                    for (PurchaseWithSupplier pws : purchases) {
+                                        try {
+                                            if (pws.purchase != null) {
+                                                purchaseDao.insert(pws.purchase);
+                                            }
+                                        } catch (Exception ignored) {
+                                        }
+                                        try {
+                                            if (pws.supplier != null && pws.supplier.supplierId > 0) {
+                                                db.supplierDao().insert(pws.supplier);
+                                            }
+                                        } catch (Exception ignored) {
+                                        }
+                                    }
+                                }
+                            });
+                        } catch (Exception ignored) {
+                        }
+                    });
+                    if (callback != null) {
+                        mainHandler.post(() -> callback.onSuccess(purchases, currentPage, totalPages, totalRecords, hasMore));
                     }
                 }
 
@@ -132,7 +183,7 @@ public class PurchaseRepository {
 
     public void insertPurchaseWithItems(Purchase purchase, List<PurchaseItem> items, PurchaseInsertCallback callback) {
         if (appModeManager.isOnlineMode()) {
-            onlinePurchaseRepository.createPurchase(purchase, items, new in.gbtsolutions.inventoryhub.online.repository.OnlinePurchaseRepository.PurchaseCreateCallback() {
+            onlinePurchaseRepository.createPurchase(purchase, items, new OnlinePurchaseRepository.PurchaseCreateCallback() {
                 @Override
                 public void onSuccess(int purchaseId) {
                     purchase.setPurchaseId(purchaseId);
@@ -154,7 +205,7 @@ public class PurchaseRepository {
         executorService.execute(() -> {
             try {
                 if (purchase.createdBy <= 0) {
-                    purchase.createdBy = in.gbtsolutions.inventoryhub.helpers.UserHelper.getCurrentUserId(application);
+                    purchase.createdBy = UserHelper.getCurrentUserId(application);
                 }
                 final long[] generatedPurchaseId = new long[1];
                 db.runInTransaction(() -> {
@@ -172,7 +223,7 @@ public class PurchaseRepository {
                         if ("Completed".equalsIgnoreCase(purchase.status)) {
                             String now = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
                             String dateStr = !TextUtils.isEmpty(purchase.billingDate) ? purchase.billingDate : new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
-                            long receiveUserId = purchase.createdBy > 0 ? purchase.createdBy : in.gbtsolutions.inventoryhub.helpers.UserHelper.getCurrentUserId(application);
+                            long receiveUserId = purchase.createdBy > 0 ? purchase.createdBy : UserHelper.getCurrentUserId(application);
                             ReceiveRecord record = new ReceiveRecord((int) purchaseId, dateStr, receiveUserId, "Initial purchase receipt", now);
                             long recId = receiveRecordDao.insert(record);
 
@@ -194,10 +245,7 @@ public class PurchaseRepository {
                         }
                     }
                 });
-                in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper.logAddition(application,
-                        in.gbtsolutions.inventoryhub.models.AuditTrail.MODULE_PURCHASE,
-                        purchase.invoiceId != null ? purchase.invoiceId : ("PO #" + generatedPurchaseId[0]),
-                        "Created purchase order " + (purchase.invoiceId != null ? purchase.invoiceId : "") + " (Total: ₹" + purchase.totalAmount + ")");
+                AuditTrailHelper.logAddition(application, AuditTrail.MODULE_PURCHASE, purchase.invoiceId != null ? purchase.invoiceId : ("PO #" + generatedPurchaseId[0]), "Created purchase order " + (purchase.invoiceId != null ? purchase.invoiceId : "") + " (Total: ₹" + purchase.totalAmount + ")");
                 if (callback != null) {
                     mainHandler.post(() -> callback.onSuccess(generatedPurchaseId[0]));
                 }
@@ -219,14 +267,7 @@ public class PurchaseRepository {
      * - If batch is new: inserts new batch with expiry date.
      * - If not batchEnabled: increments product stock directly.
      */
-    public void processReceive(
-            int purchaseId,
-            Map<Integer, Double> receiveQtyMap,
-            Map<Integer, BatchReceiveInput> batchInputMap,
-            String notes,
-            long userId,
-            ReceiveOrderCallback callback
-    ) {
+    public void processReceive(int purchaseId, Map<Integer, Double> receiveQtyMap, Map<Integer, BatchReceiveInput> batchInputMap, String notes, long userId, ReceiveOrderCallback callback) {
         executorService.execute(() -> {
             try {
                 final long[] createdRecordId = new long[1];
@@ -248,7 +289,7 @@ public class PurchaseRepository {
                     String dateStr = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
 
                     // Create receive record with active user id
-                    long receiveUserId = userId > 0 ? userId : in.gbtsolutions.inventoryhub.helpers.UserHelper.getCurrentUserId(application);
+                    long receiveUserId = userId > 0 ? userId : UserHelper.getCurrentUserId(application);
                     ReceiveRecord record = new ReceiveRecord(purchaseId, dateStr, receiveUserId, notes, now);
                     long recId = receiveRecordDao.insert(record);
                     createdRecordId[0] = recId;
@@ -261,9 +302,9 @@ public class PurchaseRepository {
                             anyReceivedInThisBatch = true;
                             double remaining = Math.max(0.0, item.quantity - item.receivedQuantity);
                             double actualReceive = Math.min(toReceive, remaining);
-                            actualReceive = in.gbtsolutions.inventoryhub.helpers.CommonFunctions.roundTo3Decimals(actualReceive);
+                            actualReceive = CommonFunctions.roundTo3Decimals(actualReceive);
 
-                            double newReceivedQty = in.gbtsolutions.inventoryhub.helpers.CommonFunctions.roundTo3Decimals(item.receivedQuantity + actualReceive);
+                            double newReceivedQty = CommonFunctions.roundTo3Decimals(item.receivedQuantity + actualReceive);
                             purchaseItemDao.updateReceivedQuantity(item.purchaseItemId, newReceivedQty);
                             item.setReceivedQuantity(newReceivedQty);
 
@@ -290,40 +331,29 @@ public class PurchaseRepository {
 
                                         if (!existingExp.equals(inputExp)) {
                                             String prodName = !TextUtils.isEmpty(prod.productName) ? prod.productName : "Product #" + item.productId;
-                                            throw new IllegalArgumentException("Batch '" + bNo + "' already exists for '" + prodName +
-                                                    "' with expiry date " + existingExp + ", but entered expiry date is " + inputExp +
-                                                    ". Expiry dates must match for the same batch number.");
+                                            throw new IllegalArgumentException("Batch '" + bNo + "' already exists for '" + prodName + "' with expiry date " + existingExp + ", but entered expiry date is " + inputExp + ". Expiry dates must match for the same batch number.");
                                         }
 
                                         // Expiry matches: increase batch count
-                                        existingBatch.quantity = in.gbtsolutions.inventoryhub.helpers.CommonFunctions.roundTo3Decimals(existingBatch.quantity + actualReceive);
+                                        existingBatch.quantity = CommonFunctions.roundTo3Decimals(existingBatch.quantity + actualReceive);
                                         existingBatch.updatedAt = System.currentTimeMillis();
                                         productBatchDao.update(existingBatch);
                                     } else {
                                         // New batch
-                                        ProductBatch newBatch = new ProductBatch(
-                                                item.productId,
-                                                bNo,
-                                                actualReceive,
-                                                item.unitPrice,
-                                                prod.sellingPrice,
-                                                batchInput.expiryDate,
-                                                System.currentTimeMillis(),
-                                                System.currentTimeMillis()
-                                        );
+                                        ProductBatch newBatch = new ProductBatch(item.productId, bNo, actualReceive, item.unitPrice, prod.sellingPrice, batchInput.expiryDate, System.currentTimeMillis(), System.currentTimeMillis());
                                         productBatchDao.insert(newBatch);
                                     }
 
                                     // Synchronize product overall quantity from batch totals
                                     double totalBatchQty = productBatchDao.sumQuantityForProduct(item.productId);
-                                    prod.quantity = in.gbtsolutions.inventoryhub.helpers.CommonFunctions.roundTo3Decimals(totalBatchQty);
+                                    prod.quantity = CommonFunctions.roundTo3Decimals(totalBatchQty);
                                     if (prod.quantity > 0) {
                                         prod.status = "In Stock";
                                     }
                                     productDao.update(prod);
                                 } else {
                                     // Not batch enabled: increase stock count directly
-                                    prod.quantity = in.gbtsolutions.inventoryhub.helpers.CommonFunctions.roundTo3Decimals(prod.quantity + actualReceive);
+                                    prod.quantity = CommonFunctions.roundTo3Decimals(prod.quantity + actualReceive);
                                     if (prod.quantity > 0) {
                                         prod.status = "In Stock";
                                     }
@@ -368,10 +398,7 @@ public class PurchaseRepository {
                     updatedPurchase[0] = purchase;
                 });
 
-                in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper.logEdit(application,
-                        in.gbtsolutions.inventoryhub.models.AuditTrail.MODULE_PURCHASE,
-                        "PO #" + purchaseId,
-                        "Received items for purchase order #" + purchaseId);
+                AuditTrailHelper.logEdit(application, AuditTrail.MODULE_PURCHASE, "PO #" + purchaseId, "Received items for purchase order #" + purchaseId);
 
                 if (callback != null) {
                     mainHandler.post(() -> callback.onSuccess(createdRecordId[0], isFullReceived[0], updatedPurchase[0]));
@@ -385,12 +412,12 @@ public class PurchaseRepository {
     }
 
     public void cancelPurchase(int purchaseId, PurchaseActionCallback callback) {
-        cancelPurchase(purchaseId, in.gbtsolutions.inventoryhub.helpers.UserHelper.getCurrentUserId(application), callback);
+        cancelPurchase(purchaseId, UserHelper.getCurrentUserId(application), callback);
     }
 
     public void cancelPurchase(int purchaseId, long userId, PurchaseActionCallback callback) {
         if (isOnlineMode()) {
-            getOnlineRepository().cancelPurchase(purchaseId, new in.gbtsolutions.inventoryhub.online.repository.OnlinePurchaseRepository.ReceiveActionCallback() {
+            getOnlineRepository().cancelPurchase(purchaseId, new OnlinePurchaseRepository.ReceiveActionCallback() {
                 @Override
                 public void onSuccess() {
                     if (callback != null) callback.onSuccess();
@@ -425,14 +452,11 @@ public class PurchaseRepository {
 
                     String newStatus = someReceived ? "Partially Cancelled" : "Cancelled";
                     String now = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
-                    long finalUserId = userId > 0 ? userId : in.gbtsolutions.inventoryhub.helpers.UserHelper.getCurrentUserId(application);
+                    long finalUserId = userId > 0 ? userId : UserHelper.getCurrentUserId(application);
                     purchaseDao.updateCancellation(purchaseId, newStatus, finalUserId, now);
                 });
 
-                in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper.logEdit(application,
-                        in.gbtsolutions.inventoryhub.models.AuditTrail.MODULE_PURCHASE,
-                        "PO #" + purchaseId,
-                        "Cancelled purchase order #" + purchaseId);
+                AuditTrailHelper.logEdit(application, AuditTrail.MODULE_PURCHASE, "PO #" + purchaseId, "Cancelled purchase order #" + purchaseId);
 
                 if (callback != null) {
                     mainHandler.post(callback::onSuccess);
@@ -475,10 +499,7 @@ public class PurchaseRepository {
             try {
                 purchaseItemDao.deletePurchaseItemsByPurchaseId(purchase.purchaseId);
                 purchaseDao.delete(purchase);
-                in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper.logDeletion(application,
-                        in.gbtsolutions.inventoryhub.models.AuditTrail.MODULE_PURCHASE,
-                        purchase.invoiceId != null ? purchase.invoiceId : ("PO #" + purchase.purchaseId),
-                        "Deleted purchase order " + (purchase.invoiceId != null ? purchase.invoiceId : ""));
+                AuditTrailHelper.logDeletion(application, AuditTrail.MODULE_PURCHASE, purchase.invoiceId != null ? purchase.invoiceId : ("PO #" + purchase.purchaseId), "Deleted purchase order " + (purchase.invoiceId != null ? purchase.invoiceId : ""));
                 if (callback != null) {
                     mainHandler.post(callback::onSuccess);
                 }

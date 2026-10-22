@@ -25,23 +25,13 @@ public class GSTR1Validator {
             if (!TextUtils.isEmpty(sale.customerGstin)) {
                 String gstin = sale.customerGstin.trim().toUpperCase();
                 if (!HelperMethods.validateGST(gstin)) {
-                    issues.add(new GSTR1Models.ValidationIssue(
-                            GSTR1Models.ValidationIssue.Severity.ERROR,
-                            inv,
-                            "Invalid GSTIN Format",
-                            "Customer GSTIN '" + gstin + "' does not match standard 15-character GSTIN pattern."
-                    ));
+                    issues.add(new GSTR1Models.ValidationIssue(GSTR1Models.ValidationIssue.Severity.ERROR, inv, "Invalid GSTIN Format", "Customer GSTIN '" + gstin + "' does not match standard 15-character GSTIN pattern."));
                 }
             }
 
             // POS Validation
             if (TextUtils.isEmpty(sale.placeOfSupplyStateCode)) {
-                issues.add(new GSTR1Models.ValidationIssue(
-                        GSTR1Models.ValidationIssue.Severity.WARNING,
-                        inv,
-                        "Missing Place of Supply",
-                        "Place of supply state code is not specified; defaulted to home state."
-                ));
+                issues.add(new GSTR1Models.ValidationIssue(GSTR1Models.ValidationIssue.Severity.WARNING, inv, "Missing Place of Supply", "Place of supply state code is not specified; defaulted to home state."));
             }
         }
 
@@ -59,12 +49,7 @@ public class GSTR1Validator {
 
                 if (rate > 0 && TextUtils.isEmpty(hsn)) {
                     String prodName = item.product != null ? item.product.productName : "Product #" + item.saleItem.productId;
-                    issues.add(new GSTR1Models.ValidationIssue(
-                            GSTR1Models.ValidationIssue.Severity.WARNING,
-                            prodName,
-                            "Missing HSN / SAC Code",
-                            "Taxable item is being reported without an HSN/SAC code."
-                    ));
+                    issues.add(new GSTR1Models.ValidationIssue(GSTR1Models.ValidationIssue.Severity.WARNING, prodName, "Missing HSN / SAC Code", "Taxable item is being reported without an HSN/SAC code."));
                 }
             }
         }

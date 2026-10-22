@@ -30,6 +30,11 @@ import android.content.pm.PackageInfo;
 import android.util.TypedValue;
 import android.widget.ProgressBar;
 import android.widget.Toast;
+import android.text.Editable;
+import android.text.InputType;
+import android.text.TextWatcher;
+import android.util.Patterns;
+import android.widget.Button;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -67,6 +72,7 @@ import in.gbtsolutions.inventoryhub.online.api.OnlineApiService;
 import in.gbtsolutions.inventoryhub.online.config.AppMode;
 import in.gbtsolutions.inventoryhub.online.config.AppModeManager;
 import in.gbtsolutions.inventoryhub.online.models.ApiResponse;
+import in.gbtsolutions.inventoryhub.helpers.UserHelper;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -149,7 +155,7 @@ public class LoginActivity extends AppCompatActivity {
                 Database db = Database.getInstance(getApplicationContext());
                 User user = db.userDao().getUserById(userId);
                 if (user != null) {
-                    in.gbtsolutions.inventoryhub.helpers.UserHelper.saveLoggedInUser(LoginActivity.this, user);
+                    UserHelper.saveLoggedInUser(LoginActivity.this, user);
                     runOnUiThread(() -> {
                         if (!isFinishing() && !isDestroyed()) {
                             onLoginSuccess();
@@ -210,8 +216,8 @@ public class LoginActivity extends AppCompatActivity {
             showPassword = !showPassword;
             int cursorPos = passwordInput.getSelectionStart();
             passwordInput.setInputType(showPassword
-                    ? android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
-                    : android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+                    ? InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+                    : InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
             passwordInput.setSelection(Math.max(cursorPos, 0));
             btnTogglePassword.setImageResource(showPassword ? R.drawable.ic_eye : R.drawable.ic_eye_off);
         });
@@ -368,7 +374,7 @@ public class LoginActivity extends AppCompatActivity {
     private void onLoginSuccess() {
         User user = GlobalStore.getInstance().getLoggedInUser();
         if (user == null) return;
-        in.gbtsolutions.inventoryhub.helpers.UserHelper.saveLoggedInUser(this, user);
+        UserHelper.saveLoggedInUser(this, user);
         GlobalStore.getInstance().loadSettings(this);
         if (rememberMe) {
             SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -447,21 +453,21 @@ public class LoginActivity extends AppCompatActivity {
         }
 
         if (etEmail != null && tilEmail != null) {
-            etEmail.addTextChangedListener(new android.text.TextWatcher() {
+            etEmail.addTextChangedListener(new TextWatcher() {
                 @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
                 @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
                     tilEmail.setError(null);
                 }
-                @Override public void afterTextChanged(android.text.Editable s) {}
+                @Override public void afterTextChanged(Editable s) {}
             });
         }
         if (etPhone != null && tilPhone != null) {
-            etPhone.addTextChangedListener(new android.text.TextWatcher() {
+            etPhone.addTextChangedListener(new TextWatcher() {
                 @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
                 @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
                     tilPhone.setError(null);
                 }
-                @Override public void afterTextChanged(android.text.Editable s) {}
+                @Override public void afterTextChanged(Editable s) {}
             });
         }
 
@@ -473,7 +479,7 @@ public class LoginActivity extends AppCompatActivity {
                 .create();
 
         dialog.setOnShowListener(d -> {
-            android.widget.Button syncBtn = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+            Button syncBtn = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
             if (syncBtn != null) {
                 syncBtn.setOnClickListener(v -> {
                     String email = etEmail != null && etEmail.getText() != null
@@ -486,7 +492,7 @@ public class LoginActivity extends AppCompatActivity {
                     if (TextUtils.isEmpty(email)) {
                         tilEmail.setError("Email is mandatory");
                         hasError = true;
-                    } else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                    } else if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
                         tilEmail.setError("Please enter a valid email address");
                         hasError = true;
                     } else {

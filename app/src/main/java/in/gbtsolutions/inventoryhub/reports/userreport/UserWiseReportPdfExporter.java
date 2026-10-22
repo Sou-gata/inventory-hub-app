@@ -36,7 +36,7 @@ public class UserWiseReportPdfExporter {
 
         int y = MARGIN + 16;
 
-        // 1. Header Banner
+        //  Header Banner
         boldPaint.setTextSize(16);
         boldPaint.setColor(Color.parseColor("#1A1D2E"));
         canvas.drawText(report.companyName, MARGIN, y, boldPaint);
@@ -55,9 +55,7 @@ public class UserWiseReportPdfExporter {
         y += 14;
         paint.setTextSize(9);
         paint.setColor(Color.parseColor("#4A5278"));
-        String metaLine = "GSTIN: " + (report.companyGst != null && !report.companyGst.isEmpty() ? report.companyGst : "N/A")
-                + "  |  Period: " + (report.startDate != null ? report.startDate : "Start") + " to " + (report.endDate != null ? report.endDate : "End")
-                + "  |  User: " + (report.filterUserName != null ? report.filterUserName : "All Users");
+        String metaLine = "GSTIN: " + (report.companyGst != null && !report.companyGst.isEmpty() ? report.companyGst : "N/A") + "  |  Period: " + (report.startDate != null ? report.startDate : "Start") + " to " + (report.endDate != null ? report.endDate : "End") + "  |  User: " + (report.filterUserName != null ? report.filterUserName : "All Users");
         canvas.drawText(metaLine, MARGIN, y, paint);
 
         y += 14;
@@ -66,7 +64,7 @@ public class UserWiseReportPdfExporter {
         canvas.drawLine(MARGIN, y, PAGE_WIDTH - MARGIN, y, paint);
         y += 14;
 
-        // 2. KPI Summary Bar
+        //  KPI Summary Bar
         paint.setColor(Color.parseColor("#F4F6FC"));
         paint.setStyle(Paint.Style.FILL);
         canvas.drawRect(MARGIN, y, PAGE_WIDTH - MARGIN, y + 42, paint);
@@ -106,9 +104,8 @@ public class UserWiseReportPdfExporter {
 
         y += 54;
 
-        // 3. Table Column Layout
-        int[] colX = {
-                MARGIN,             // 0: #
+        //  able Column Layout
+        int[] colX = {MARGIN,             // 0: #
                 MARGIN + 22,        // 1: User / Staff
                 MARGIN + 145,       // 2: Role
                 MARGIN + 205,       // 3: Sales Inv

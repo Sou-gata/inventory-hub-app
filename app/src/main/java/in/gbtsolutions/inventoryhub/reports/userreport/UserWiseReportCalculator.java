@@ -28,7 +28,7 @@ public class UserWiseReportCalculator {
         report.endDate = endDate;
         report.filterUserId = filterUserId;
 
-        // 1. Company Configuration
+        //  Company Configuration
         List<Config> configs = db.configDao().getAllConfigsSync();
         Map<String, String> configMap = new HashMap<>();
         if (configs != null) {
@@ -44,7 +44,7 @@ public class UserWiseReportCalculator {
         report.companyPhone = configMap.getOrDefault("company_phone", "");
         report.companyAddress = configMap.getOrDefault("company_address", "");
 
-        // 2. Fetch Users
+        //  Fetch Users
         List<User> allUsers = db.userDao().getAllUsersSync();
         if (allUsers == null) {
             allUsers = new ArrayList<>();
@@ -80,7 +80,7 @@ public class UserWiseReportCalculator {
             }
         }
 
-        // 3. Fetch Purchases and aggregate
+        //  Fetch Purchases and aggregate
         List<Purchase> purchases = db.purchaseDao().getPurchasesForExport(startDate, endDate);
         if (purchases != null) {
             for (Purchase purchase : purchases) {
@@ -106,7 +106,7 @@ public class UserWiseReportCalculator {
             }
         }
 
-        // 4. Fetch Sales and aggregate
+        //  Fetch Sales and aggregate
         List<Sale> sales = db.saleDao().getSalesForExport(startDate, endDate);
         if (sales != null) {
             for (Sale sale : sales) {
@@ -133,7 +133,7 @@ public class UserWiseReportCalculator {
             }
         }
 
-        // 5. Compute Row Totals & Collect rows
+        //  Compute Row Totals & Collect rows
         List<UserWiseReportModels.UserWiseReportRow> allRows = new ArrayList<>();
         for (UserWiseReportModels.UserWiseReportRow row : rowMap.values()) {
             row.totalTransactions = row.salesCount + row.purchaseCount;
@@ -151,7 +151,7 @@ public class UserWiseReportCalculator {
             }
         }
 
-        // 6. Sort Rows
+        //  Sort Rows
         // Priority: Active users with transactions first (highest transactions & sales first),
         // then other users alphabetically by name.
         Collections.sort(allRows, (r1, r2) -> {
@@ -167,7 +167,7 @@ public class UserWiseReportCalculator {
 
         report.rows = allRows;
 
-        // 7. Compute Summary
+        //  Compute Summary
         UserWiseReportModels.UserWiseReportSummary summary = report.summary;
         summary.totalUsersCount = allRows.size();
 
@@ -201,8 +201,7 @@ public class UserWiseReportCalculator {
         return report;
     }
 
-    private static UserWiseReportModels.UserWiseReportRow getOrCreateRow(
-            Map<Long, UserWiseReportModels.UserWiseReportRow> map, long userId) {
+    private static UserWiseReportModels.UserWiseReportRow getOrCreateRow(Map<Long, UserWiseReportModels.UserWiseReportRow> map, long userId) {
         UserWiseReportModels.UserWiseReportRow row = map.get(userId);
         if (row == null) {
             row = new UserWiseReportModels.UserWiseReportRow();

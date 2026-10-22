@@ -23,7 +23,15 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import in.gbtsolutions.inventoryhub.online.models.PagedData;
+
 public class OnlinePurchaseRepository {
+
+    public interface PagedPurchaseCallback {
+        void onSuccess(List<PurchaseWithSupplier> purchases, int currentPage, int totalPages, int totalRecords, boolean hasMore);
+
+        void onError(String errorMessage);
+    }
 
     public interface PurchaseCreateCallback {
         void onSuccess(int purchaseId);
@@ -52,6 +60,7 @@ public class OnlinePurchaseRepository {
     private final Context context;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final Gson gson = new Gson();
+    private Call<ApiResponse<PagedData<OnlinePurchaseDto>>> currentPurchasesCall;
 
     public OnlinePurchaseRepository(Context context) {
         this.context = context.getApplicationContext();
@@ -116,23 +125,56 @@ public class OnlinePurchaseRepository {
     }
 
     public void fetchPurchases(String startDate, String endDate, String search, PurchaseListCallback callback) {
-        getApi().getPurchases(search, startDate, endDate).enqueue(new Callback<ApiResponse<List<OnlinePurchaseDto>>>() {
+        fetchPurchasesPaged(1, 100, startDate, endDate, search, null, new PagedPurchaseCallback() {
             @Override
-            public void onResponse(Call<ApiResponse<List<OnlinePurchaseDto>>> call,
-                                   Response<ApiResponse<List<OnlinePurchaseDto>>> response) {
+            public void onSuccess(List<PurchaseWithSupplier> purchases, int currentPage, int totalPages, int totalRecords, boolean hasMore) {
+                if (callback != null) {
+                    callback.onSuccess(purchases);
+                }
+            }
+
+            @Override
+            public void onError(String errorMessage) {
+                if (callback != null) {
+                    callback.onError(errorMessage);
+                }
+            }
+        });
+    }
+
+    public synchronized void fetchPurchasesPaged(int page, int limit, String startDate, String endDate, String search, String status, PagedPurchaseCallback callback) {
+        if (currentPurchasesCall != null && !currentPurchasesCall.isCanceled()) {
+            currentPurchasesCall.cancel();
+        }
+
+        String query = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
+        String start = (startDate != null && !startDate.trim().isEmpty()) ? startDate.trim() : null;
+        String end = (endDate != null && !endDate.trim().isEmpty()) ? endDate.trim() : null;
+        String statusParam = (status != null && !status.trim().isEmpty()) ? status.trim() : null;
+
+        currentPurchasesCall = getApi().getPurchases(page, limit, query, start, end, statusParam);
+        currentPurchasesCall.enqueue(new Callback<ApiResponse<PagedData<OnlinePurchaseDto>>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<PagedData<OnlinePurchaseDto>>> call,
+                                   Response<ApiResponse<PagedData<OnlinePurchaseDto>>> response) {
+                if (call.isCanceled()) return;
+
                 if (response.isSuccessful() && response.body() != null) {
-                    ApiResponse<List<OnlinePurchaseDto>> body = response.body();
+                    ApiResponse<PagedData<OnlinePurchaseDto>> body = response.body();
                     if (body.isSuccess() && body.getData() != null) {
-                        List<PurchaseWithSupplier> domainPurchases = PurchaseMapper.toDomainList(body.getData());
+                        PagedData<OnlinePurchaseDto> pagedData = body.getData();
+                        List<PurchaseWithSupplier> domainPurchases = PurchaseMapper.toDomainList(pagedData.getItems());
                         mainHandler.post(() -> {
-                            if (callback != null) callback.onSuccess(domainPurchases);
+                            if (callback != null) {
+                                callback.onSuccess(domainPurchases, pagedData.getPage(), pagedData.getTotalPages(), pagedData.getTotalRecords(), pagedData.hasMore());
+                            }
                         });
                         return;
                     } else {
                         String msg = body.getMessage();
                         mainHandler.post(() -> {
                             if (callback != null)
-                                callback.onError(!msg.isEmpty() ? msg : "Failed to load purchases");
+                                callback.onError(msg != null && !msg.isEmpty() ? msg : "Failed to load purchases");
                         });
                         return;
                     }
@@ -141,7 +183,8 @@ public class OnlinePurchaseRepository {
             }
 
             @Override
-            public void onFailure(Call<ApiResponse<List<OnlinePurchaseDto>>> call, Throwable t) {
+            public void onFailure(Call<ApiResponse<PagedData<OnlinePurchaseDto>>> call, Throwable t) {
+                if (call.isCanceled()) return;
                 mainHandler.post(() -> {
                     if (callback != null)
                         callback.onError(NetworkErrorHelper.getErrorMessage(t));

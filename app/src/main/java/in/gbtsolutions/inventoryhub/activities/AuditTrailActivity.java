@@ -32,6 +32,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.provider.MediaStore;
 import android.text.TextUtils;
+import android.media.MediaScannerConnection;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -61,6 +62,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.Executors;
+import java.io.IOException;
 
 import in.gbtsolutions.inventoryhub.online.config.AppModeManager;
 import in.gbtsolutions.inventoryhub.online.paging.EndlessRecyclerScrollListener;
@@ -1030,14 +1032,14 @@ public class AuditTrailActivity extends BaseActivity {
 
                     Uri fileUri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues);
                     if (fileUri == null) {
-                        throw new java.io.IOException("Failed to create MediaStore entry in Downloads.");
+                        throw new IOException("Failed to create MediaStore entry in Downloads.");
                     }
 
                     try {
                         try (InputStream in = new FileInputStream(file);
                              OutputStream out = resolver.openOutputStream(fileUri)) {
                             if (out == null) {
-                                throw new java.io.IOException("Failed to open output stream for download URI.");
+                                throw new IOException("Failed to open output stream for download URI.");
                             }
                             byte[] buffer = new byte[8192];
                             int bytesRead;
@@ -1062,7 +1064,7 @@ public class AuditTrailActivity extends BaseActivity {
                     File downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
                     File targetDir = new File(downloadDir, "Inventory Hub" + File.separator + "Reports");
                     if (!targetDir.exists() && !targetDir.mkdirs()) {
-                        throw new java.io.IOException("Failed to create target directory: " + targetDir.getAbsolutePath());
+                        throw new IOException("Failed to create target directory: " + targetDir.getAbsolutePath());
                     }
                     File destFile = new File(targetDir, file.getName());
 
@@ -1077,7 +1079,7 @@ public class AuditTrailActivity extends BaseActivity {
                     }
                     savedPath = destFile.getAbsolutePath();
                     savedFile = destFile;
-                    android.media.MediaScannerConnection.scanFile(this, new String[]{destFile.getAbsolutePath()}, null, null);
+                    MediaScannerConnection.scanFile(this, new String[]{destFile.getAbsolutePath()}, null, null);
                     success = true;
                 }
             } catch (Exception e) {

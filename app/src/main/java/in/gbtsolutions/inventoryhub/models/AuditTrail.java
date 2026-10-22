@@ -4,16 +4,13 @@ import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.Index;
 import androidx.room.PrimaryKey;
+import androidx.room.Ignore;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-@Entity(tableName = "audit_trails", indices = {
-        @Index(value = "timestamp"),
-        @Index(value = "action_type"),
-        @Index(value = "module")
-})
+@Entity(tableName = "audit_trails", indices = {@Index(value = "timestamp"), @Index(value = "action_type"), @Index(value = "module")})
 public class AuditTrail {
 
     public static final String ACTION_ADD = "ADD";
@@ -47,7 +44,7 @@ public class AuditTrail {
     public String details;
 
     @ColumnInfo(name = "performed_by")
-    public String performedBy; 
+    public String performedBy;
 
     @ColumnInfo(name = "timestamp")
     public long timestamp;
@@ -55,7 +52,7 @@ public class AuditTrail {
     public AuditTrail() {
     }
 
-    @androidx.room.Ignore
+    @Ignore
     public AuditTrail(String actionType, String module, String recordId, String details, String performedBy, long timestamp) {
         this.actionType = actionType;
         this.module = module;

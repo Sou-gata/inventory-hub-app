@@ -153,9 +153,7 @@ public class SelectProductsFragment extends Fragment {
                     }
                     if (adapter != null) adapter.notifyDataSetChanged();
                     if (getContext() != null) {
-                        String name = (prod.productName != null && !prod.productName.trim().isEmpty())
-                                ? prod.productName.trim()
-                                : "Product";
+                        String name = (prod.productName != null && !prod.productName.trim().isEmpty()) ? prod.productName.trim() : "Product";
                         if (selections != null && !selections.isEmpty()) {
                             Toast.makeText(getContext(), name + " added to cart", Toast.LENGTH_SHORT).show();
                         } else if (wasInCart) {
@@ -169,18 +167,14 @@ public class SelectProductsFragment extends Fragment {
                     SellCartManager.getInstance().removeProduct(product.productId);
                     if (adapter != null) adapter.notifyDataSetChanged();
                     if (getContext() != null) {
-                        String name = (product.productName != null && !product.productName.trim().isEmpty())
-                                ? product.productName.trim()
-                                : "Product";
+                        String name = (product.productName != null && !product.productName.trim().isEmpty()) ? product.productName.trim() : "Product";
                         Toast.makeText(getContext(), name + " removed from cart", Toast.LENGTH_SHORT).show();
                     }
                 } else {
                     boolean added = SellCartManager.getInstance().addProduct(product);
                     if (adapter != null) adapter.notifyDataSetChanged();
                     if (getContext() != null) {
-                        String name = (product.productName != null && !product.productName.trim().isEmpty())
-                                ? product.productName.trim()
-                                : "Product";
+                        String name = (product.productName != null && !product.productName.trim().isEmpty()) ? product.productName.trim() : "Product";
                         if (added) {
                             Toast.makeText(getContext(), name + " added to cart", Toast.LENGTH_SHORT).show();
                         } else {
@@ -236,55 +230,54 @@ public class SelectProductsFragment extends Fragment {
             adapter.clearProducts();
         }
 
-        productRepository.fetchProductsPaged(page, EndlessRecyclerScrollListener.PAGE_SIZE, currentQuery, "all", null,
-                new OnlineProductRepository.PagedProductCallback() {
-                    @Override
-                    public void onSuccess(List<Product> products, int currentPage, int totalPages, int totalRecords, boolean hasMore) {
-                        if (!isAdded()) return;
-                        onlineIsLoading = false;
-                        onlineCurrentPage = currentPage;
-                        onlineHasMore = hasMore;
-                        if (endlessScrollListener != null) {
-                            endlessScrollListener.setHasMore(hasMore);
-                            endlessScrollListener.setLoading(false);
-                        }
+        productRepository.fetchProductsPaged(page, EndlessRecyclerScrollListener.PAGE_SIZE, currentQuery, "all", null, new OnlineProductRepository.PagedProductCallback() {
+            @Override
+            public void onSuccess(List<Product> products, int currentPage, int totalPages, int totalRecords, boolean hasMore) {
+                if (!isAdded()) return;
+                onlineIsLoading = false;
+                onlineCurrentPage = currentPage;
+                onlineHasMore = hasMore;
+                if (endlessScrollListener != null) {
+                    endlessScrollListener.setHasMore(hasMore);
+                    endlessScrollListener.setLoading(false);
+                }
 
-                        if (isNewSearch) {
-                            adapter.setProducts(products);
-                        } else {
-                            adapter.addProducts(products);
-                        }
+                if (isNewSearch) {
+                    adapter.setProducts(products);
+                } else {
+                    adapter.addProducts(products);
+                }
 
-                        int totalLoaded = adapter.getProducts().size();
-                        if (totalLoaded == 0) {
-                            recyclerView.setVisibility(View.GONE);
-                            if (currentQuery.isEmpty()) {
-                                layoutSearchEmpty.setVisibility(View.GONE);
-                                layoutEmptyProducts.setVisibility(View.VISIBLE);
-                            } else {
-                                layoutEmptyProducts.setVisibility(View.GONE);
-                                layoutSearchEmpty.setVisibility(View.VISIBLE);
-                                if (textSearchEmptyQuery != null) {
-                                    textSearchEmptyQuery.setText(String.format("No products match \"%s\"", currentQuery));
-                                }
-                            }
-                        } else {
-                            layoutEmptyProducts.setVisibility(View.GONE);
-                            layoutSearchEmpty.setVisibility(View.GONE);
-                            recyclerView.setVisibility(View.VISIBLE);
+                int totalLoaded = adapter.getProducts().size();
+                if (totalLoaded == 0) {
+                    recyclerView.setVisibility(View.GONE);
+                    if (currentQuery.isEmpty()) {
+                        layoutSearchEmpty.setVisibility(View.GONE);
+                        layoutEmptyProducts.setVisibility(View.VISIBLE);
+                    } else {
+                        layoutEmptyProducts.setVisibility(View.GONE);
+                        layoutSearchEmpty.setVisibility(View.VISIBLE);
+                        if (textSearchEmptyQuery != null) {
+                            textSearchEmptyQuery.setText(String.format("No products match \"%s\"", currentQuery));
                         }
                     }
+                } else {
+                    layoutEmptyProducts.setVisibility(View.GONE);
+                    layoutSearchEmpty.setVisibility(View.GONE);
+                    recyclerView.setVisibility(View.VISIBLE);
+                }
+            }
 
-                    @Override
-                    public void onError(String errorMessage, boolean sessionExpired) {
-                        if (!isAdded() || getContext() == null) return;
-                        onlineIsLoading = false;
-                        if (endlessScrollListener != null) {
-                            endlessScrollListener.setLoading(false);
-                        }
-                        Toast.makeText(getContext(), "Cloud: " + errorMessage, Toast.LENGTH_SHORT).show();
-                    }
-                });
+            @Override
+            public void onError(String errorMessage, boolean sessionExpired) {
+                if (!isAdded() || getContext() == null) return;
+                onlineIsLoading = false;
+                if (endlessScrollListener != null) {
+                    endlessScrollListener.setLoading(false);
+                }
+                Toast.makeText(getContext(), "Cloud: " + errorMessage, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void observeData() {
@@ -310,7 +303,8 @@ public class SelectProductsFragment extends Fragment {
                 }
 
                 @Override
-                public void onError(String errorMessage) {}
+                public void onError(String errorMessage) {
+                }
             });
             loadOnlineProducts(1, true);
             return;

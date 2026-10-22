@@ -5,6 +5,7 @@ import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
 import androidx.room.Update;
+import androidx.room.OnConflictStrategy;
 
 import java.util.List;
 
@@ -15,7 +16,7 @@ public interface UserDao {
     @Insert
     long insert(User user);
 
-    @androidx.room.Insert(onConflict = androidx.room.OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertAll(List<User> users);
 
     @Query("DELETE FROM users")

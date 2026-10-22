@@ -8,6 +8,7 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.widget.Toast;
+import android.device.PrinterManager;
 
 import in.gbtsolutions.inventoryhub.InventoryHubApp;
 
@@ -391,22 +392,31 @@ public class PrinterHelper {
 
     private interface PrinterDriver {
         int getStatus();
+
         void setupPage(int width, int height);
+
         int printPage(int mode);
+
         void paperFeed(int lines);
+
         void setGrayLevel(int level);
+
         void setSpeedLevel(int level);
+
         int drawTextEx(String text, int x, int y, int width, int height, String fontName, int fontSize, int fontRotate, int fontStyle, int fontFormat);
+
         int drawBarcode(String text, int x, int y, int barcodeType, int width, int height, int rotate);
+
         int drawBitmap(Bitmap bitmap, int x, int y);
+
         void close();
     }
 
     private static class HardwarePrinterDriver implements PrinterDriver {
-        private final android.device.PrinterManager mPrinterManager;
+        private final PrinterManager mPrinterManager;
 
         HardwarePrinterDriver() throws Throwable {
-            mPrinterManager = new android.device.PrinterManager();
+            mPrinterManager = new PrinterManager();
             mPrinterManager.open();
         }
 

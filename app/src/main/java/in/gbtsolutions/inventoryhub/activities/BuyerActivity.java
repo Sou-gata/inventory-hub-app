@@ -37,6 +37,7 @@ import in.gbtsolutions.inventoryhub.R;
 import in.gbtsolutions.inventoryhub.adapters.BuyerAdapter;
 import in.gbtsolutions.inventoryhub.helpers.ThemeManager;
 import in.gbtsolutions.inventoryhub.models.Buyer;
+import in.gbtsolutions.inventoryhub.online.paging.EndlessRecyclerScrollListener;
 import in.gbtsolutions.inventoryhub.online.repository.OnlineBuyerRepository;
 import in.gbtsolutions.inventoryhub.repository.BuyerRepository;
 
@@ -52,6 +53,10 @@ public class BuyerActivity extends BaseActivity {
     private RecyclerView recyclerBuyers;
     private BuyerAdapter buyerAdapter;
     private BuyerRepository buyerRepository;
+    private EndlessRecyclerScrollListener endlessScrollListener;
+
+    private final android.os.Handler searchHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private Runnable searchRunnable;
 
     private View layoutEmptyState;
     private View layoutListContainer;
@@ -72,6 +77,11 @@ public class BuyerActivity extends BaseActivity {
     private String currentSearchQuery = "";
     private FilterStatus currentFilter = FilterStatus.ALL;
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
+
+    private int onlineCurrentPage = 1;
+    private boolean onlineHasMore = true;
+    private boolean onlineIsLoading = false;
+    private int onlineTotalRecords = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -146,7 +156,11 @@ public class BuyerActivity extends BaseActivity {
         chipFilterDeactive.setBackgroundResource(filter == FilterStatus.DEACTIVATED ? R.drawable.bg_button : R.drawable.bg_card);
         chipFilterDeactive.setTextColor(ContextCompat.getColor(this, filter == FilterStatus.DEACTIVATED ? R.color.white : R.color.fg_muted));
 
-        applyFilters();
+        if (buyerRepository != null && buyerRepository.isOnlineMode()) {
+            loadOnlineBuyers(1, true);
+        } else {
+            applyFilters();
+        }
     }
 
     private void setupSearch() {
@@ -162,7 +176,16 @@ public class BuyerActivity extends BaseActivity {
                         btnClearSearch.setVisibility(query.isEmpty() ? View.GONE : View.VISIBLE);
                     }
                     currentSearchQuery = query.trim();
-                    applyFilters();
+
+                    if (buyerRepository != null && buyerRepository.isOnlineMode()) {
+                        if (searchRunnable != null) {
+                            searchHandler.removeCallbacks(searchRunnable);
+                        }
+                        searchRunnable = () -> loadOnlineBuyers(1, true);
+                        searchHandler.postDelayed(searchRunnable, 300);
+                    } else {
+                        applyFilters();
+                    }
                 }
 
                 @Override
@@ -173,6 +196,12 @@ public class BuyerActivity extends BaseActivity {
                 if (actionId == EditorInfo.IME_ACTION_SEARCH) {
                     hideKeyboard(v);
                     editSearchBuyer.clearFocus();
+                    if (buyerRepository != null && buyerRepository.isOnlineMode()) {
+                        if (searchRunnable != null) {
+                            searchHandler.removeCallbacks(searchRunnable);
+                        }
+                        loadOnlineBuyers(1, true);
+                    }
                     return true;
                 }
                 return false;
@@ -184,6 +213,13 @@ public class BuyerActivity extends BaseActivity {
                 if (editSearchBuyer != null) {
                     editSearchBuyer.setText("");
                 }
+                if (buyerRepository != null && buyerRepository.isOnlineMode()) {
+                    currentSearchQuery = "";
+                    if (searchRunnable != null) {
+                        searchHandler.removeCallbacks(searchRunnable);
+                    }
+                    loadOnlineBuyers(1, true);
+                }
             });
         }
 
@@ -192,6 +228,7 @@ public class BuyerActivity extends BaseActivity {
                 if (editSearchBuyer != null) {
                     editSearchBuyer.setText("");
                 }
+                currentSearchQuery = "";
                 selectFilter(FilterStatus.ALL);
             });
         }
@@ -199,8 +236,19 @@ public class BuyerActivity extends BaseActivity {
 
     private void setupRecyclerView() {
         buyerAdapter = new BuyerAdapter();
-        recyclerBuyers.setLayoutManager(new LinearLayoutManager(this));
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        recyclerBuyers.setLayoutManager(layoutManager);
         recyclerBuyers.setAdapter(buyerAdapter);
+
+        endlessScrollListener = new EndlessRecyclerScrollListener(layoutManager) {
+            @Override
+            public void onLoadMore(int page, int totalItemsCount, RecyclerView view) {
+                if (buyerRepository != null && buyerRepository.isOnlineMode() && onlineHasMore && !onlineIsLoading) {
+                    loadOnlineBuyers(page, false);
+                }
+            }
+        };
+        recyclerBuyers.addOnScrollListener(endlessScrollListener);
 
         buyerAdapter.setOnBuyerClickListener(this::showBuyerDetailsSheet);
         buyerAdapter.setOnBuyerEditListener(this::openEditBuyer);
@@ -209,7 +257,7 @@ public class BuyerActivity extends BaseActivity {
 
     private void observeBuyers() {
         if (buyerRepository.isOnlineMode()) {
-            loadOnlineBuyers();
+            loadOnlineBuyers(1, true);
             return;
         }
         buyerRepository.getAllBuyers().observe(this, buyers -> {
@@ -221,27 +269,129 @@ public class BuyerActivity extends BaseActivity {
         });
     }
 
-    private void loadOnlineBuyers() {
-        buyerRepository.fetchBuyersOnline(new OnlineBuyerRepository.BuyerListCallback() {
+    private void loadOnlineBuyers(int page, boolean isNewSearch) {
+        if (onlineIsLoading && !isNewSearch) return;
+        onlineIsLoading = true;
+
+        if (isNewSearch) {
+            onlineCurrentPage = 1;
+            onlineHasMore = true;
+            onlineTotalRecords = 0;
+            if (endlessScrollListener != null) {
+                endlessScrollListener.resetState();
+            }
+            if (textBuyerCount != null) {
+                textBuyerCount.setText("Loading...");
+            }
+        } else {
+            buyerAdapter.showLoadingFooter();
+        }
+
+        String statusParam = null;
+        if (currentFilter == FilterStatus.ACTIVE) {
+            statusParam = "ACTIVE";
+        } else if (currentFilter == FilterStatus.DEACTIVATED) {
+            statusParam = "INACTIVE";
+        }
+
+        String query = currentSearchQuery.isEmpty() ? null : currentSearchQuery;
+
+        buyerRepository.fetchBuyersPaged(page, EndlessRecyclerScrollListener.PAGE_SIZE, query, statusParam, new OnlineBuyerRepository.PagedBuyerCallback() {
             @Override
-            public void onSuccess(List<Buyer> buyers) {
+            public void onSuccess(List<Buyer> buyers, int currentPage, int totalPages, int totalRecords, boolean hasMore) {
                 runOnUiThread(() -> {
-                    allBuyers.clear();
-                    if (buyers != null) {
-                        allBuyers.addAll(buyers);
+                    onlineIsLoading = false;
+                    onlineCurrentPage = currentPage;
+                    onlineHasMore = hasMore;
+                    onlineTotalRecords = totalRecords;
+
+                    if (endlessScrollListener != null) {
+                        endlessScrollListener.setHasMore(hasMore);
+                        endlessScrollListener.setLoading(false);
                     }
-                    applyFilters();
+
+                    buyerAdapter.removeFooter();
+
+                    if (isNewSearch) {
+                        allBuyers.clear();
+                        if (buyers != null) {
+                            allBuyers.addAll(buyers);
+                        }
+                        buyerAdapter.setBuyers(allBuyers);
+                    } else {
+                        if (buyers != null && !buyers.isEmpty()) {
+                            allBuyers.addAll(buyers);
+                            buyerAdapter.addBuyers(buyers);
+                        }
+                    }
+
+                    updateBuyersUi(buyerAdapter.getBuyers().size(), totalRecords);
                 });
             }
 
             @Override
             public void onError(String errorMessage) {
                 runOnUiThread(() -> {
-                    showToast("Failed to load buyers: " + errorMessage);
-                    applyFilters();
+                    onlineIsLoading = false;
+                    if (endlessScrollListener != null) {
+                        endlessScrollListener.setLoading(false);
+                    }
+                    if (isNewSearch) {
+                        buyerAdapter.removeFooter();
+                        showToast("Failed to load buyers: " + errorMessage);
+                        updateBuyersUi(0, 0);
+                    } else {
+                        buyerAdapter.showRetryFooter("Failed to load more. Tap to retry", () -> loadOnlineBuyers(page, false));
+                    }
                 });
             }
         });
+    }
+
+    private void updateBuyersUi(int loadedCount, int totalRecords) {
+        if (loadedCount == 0) {
+            if (!currentSearchQuery.isEmpty() || currentFilter != FilterStatus.ALL) {
+                layoutListContainer.setVisibility(View.GONE);
+                layoutEmptyState.setVisibility(View.GONE);
+                if (layoutSearchEmpty != null) {
+                    layoutSearchEmpty.setVisibility(View.VISIBLE);
+                    if (textSearchEmptyQuery != null) {
+                        if (!currentSearchQuery.isEmpty()) {
+                            textSearchEmptyQuery.setText("No buyers found matching \"" + currentSearchQuery + "\"");
+                        } else {
+                            textSearchEmptyQuery.setText("No buyers match the selected filter status.");
+                        }
+                    }
+                }
+            } else {
+                if (layoutSearchEmpty != null) {
+                    layoutSearchEmpty.setVisibility(View.GONE);
+                }
+                layoutListContainer.setVisibility(View.GONE);
+                layoutEmptyState.setVisibility(View.VISIBLE);
+            }
+            if (textMetaLabel != null) {
+                textMetaLabel.setText(!currentSearchQuery.isEmpty() ? "SEARCH RESULTS" : getFilterTitle());
+            }
+            textBuyerCount.setText("0 Buyers");
+        } else {
+            layoutEmptyState.setVisibility(View.GONE);
+            if (layoutSearchEmpty != null) {
+                layoutSearchEmpty.setVisibility(View.GONE);
+            }
+            layoutListContainer.setVisibility(View.VISIBLE);
+            recyclerBuyers.setVisibility(View.VISIBLE);
+
+            if (textMetaLabel != null) {
+                textMetaLabel.setText(currentSearchQuery.isEmpty() && currentFilter == FilterStatus.ALL ? "ALL BUYERS" : (!currentSearchQuery.isEmpty() ? "SEARCH RESULTS" : getFilterTitle()));
+            }
+
+            if (buyerRepository != null && buyerRepository.isOnlineMode()) {
+                textBuyerCount.setText(String.format(Locale.getDefault(), "%d of %d Buyers", loadedCount, totalRecords));
+            } else {
+                textBuyerCount.setText(String.format(Locale.getDefault(), "%d %s", loadedCount, loadedCount == 1 ? "Buyer" : "Buyers"));
+            }
+        }
     }
 
     private void applyFilters() {
@@ -357,7 +507,7 @@ public class BuyerActivity extends BaseActivity {
                     String actionText = newStatus ? "activated" : "deactivated";
                     showToast("Buyer \"" + buyer.buyerName + "\" " + actionText);
                     if (buyerRepository.isOnlineMode()) {
-                        loadOnlineBuyers();
+                        loadOnlineBuyers(1, true);
                     }
                 });
             }
@@ -592,7 +742,7 @@ public class BuyerActivity extends BaseActivity {
             navView.setCheckedItem(R.id.nav_buyer);
         }
         if (buyerRepository != null && buyerRepository.isOnlineMode()) {
-            loadOnlineBuyers();
+            loadOnlineBuyers(1, true);
         }
     }
 

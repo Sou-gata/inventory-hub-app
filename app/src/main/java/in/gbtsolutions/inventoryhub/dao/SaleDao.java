@@ -7,6 +7,7 @@ import androidx.room.Insert;
 import androidx.room.Query;
 import androidx.room.Transaction;
 import androidx.room.Update;
+import androidx.room.OnConflictStrategy;
 
 import java.util.List;
 
@@ -57,36 +58,22 @@ public interface SaleDao {
     LiveData<List<SaleWithBuyer>> getAllSalesWithBuyer();
 
     @Transaction
-    @Query("SELECT sales.* FROM sales " +
-            "LEFT JOIN buyers ON sales.buyer_id = buyers.buyer_id " +
-            "WHERE (:startDate IS NULL OR :startDate = '' OR sales.billing_date >= :startDate) " +
-            "  AND (:endDate IS NULL OR :endDate = '' OR sales.billing_date <= :endDate) " +
-            "  AND (:buyerQuery IS NULL OR :buyerQuery = '' OR buyers.buyer_name LIKE '%' || :buyerQuery || '%' OR sales.customer_name LIKE '%' || :buyerQuery || '%' OR sales.invoice_id LIKE '%' || :buyerQuery || '%' OR (sales.customer_phone IS NOT NULL AND sales.customer_phone LIKE '%' || :buyerQuery || '%')) " +
-            "ORDER BY sales.sale_id DESC")
+    @Query("SELECT sales.* FROM sales " + "LEFT JOIN buyers ON sales.buyer_id = buyers.buyer_id " + "WHERE (:startDate IS NULL OR :startDate = '' OR sales.billing_date >= :startDate) " + "  AND (:endDate IS NULL OR :endDate = '' OR sales.billing_date <= :endDate) " + "  AND (:buyerQuery IS NULL OR :buyerQuery = '' OR buyers.buyer_name LIKE '%' || :buyerQuery || '%' OR sales.customer_name LIKE '%' || :buyerQuery || '%' OR sales.invoice_id LIKE '%' || :buyerQuery || '%' OR (sales.customer_phone IS NOT NULL AND sales.customer_phone LIKE '%' || :buyerQuery || '%')) " + "ORDER BY sales.sale_id DESC")
     LiveData<List<SaleWithBuyer>> getFilteredSales(String startDate, String endDate, String buyerQuery);
 
     @Transaction
-    @Query("SELECT sales.* FROM sales " +
-            "WHERE (:startDate IS NULL OR :startDate = '' OR billing_date >= :startDate) " +
-            "  AND (:endDate IS NULL OR :endDate = '' OR billing_date <= :endDate) " +
-            "ORDER BY billing_date ASC, sale_id ASC")
+    @Query("SELECT sales.* FROM sales " + "WHERE (:startDate IS NULL OR :startDate = '' OR billing_date >= :startDate) " + "  AND (:endDate IS NULL OR :endDate = '' OR billing_date <= :endDate) " + "ORDER BY billing_date ASC, sale_id ASC")
     List<SaleWithBuyer> getSalesWithBuyerForExport(String startDate, String endDate);
 
-    @Query("SELECT * FROM sales " +
-            "WHERE (:startDate IS NULL OR :startDate = '' OR billing_date >= :startDate) " +
-            "  AND (:endDate IS NULL OR :endDate = '' OR billing_date <= :endDate) " +
-            "ORDER BY billing_date ASC, sale_id ASC")
+    @Query("SELECT * FROM sales " + "WHERE (:startDate IS NULL OR :startDate = '' OR billing_date >= :startDate) " + "  AND (:endDate IS NULL OR :endDate = '' OR billing_date <= :endDate) " + "ORDER BY billing_date ASC, sale_id ASC")
     List<Sale> getSalesForExport(String startDate, String endDate);
 
-    @Query("SELECT COUNT(*) FROM sales " +
-            "WHERE (:startDate IS NULL OR :startDate = '' OR billing_date >= :startDate) " +
-            "  AND (:endDate IS NULL OR :endDate = '' OR billing_date <= :endDate) " +
-            "  AND status = 'Cancelled'")
+    @Query("SELECT COUNT(*) FROM sales " + "WHERE (:startDate IS NULL OR :startDate = '' OR billing_date >= :startDate) " + "  AND (:endDate IS NULL OR :endDate = '' OR billing_date <= :endDate) " + "  AND status = 'Cancelled'")
     int countCancelledSales(String startDate, String endDate);
 
     @Query("UPDATE sales SET status = :status, cancelled_by = :cancelledBy, updated_at = :updatedAt WHERE sale_id = :saleId")
     void updateCancellation(int saleId, String status, long cancelledBy, String updatedAt);
 
-    @Insert(onConflict = androidx.room.OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     void upsert(Sale sale);
 }

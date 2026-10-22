@@ -11,6 +11,8 @@ import java.util.concurrent.Executors;
 import in.gbtsolutions.inventoryhub.Database;
 import in.gbtsolutions.inventoryhub.dao.UserDao;
 import in.gbtsolutions.inventoryhub.models.User;
+import in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper;
+import in.gbtsolutions.inventoryhub.models.AuditTrail;
 
 public class UserRepository {
     private final UserDao userDao;
@@ -33,20 +35,14 @@ public class UserRepository {
     public void insert(User user) {
         executorService.execute(() -> {
             userDao.insert(user);
-            in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper.logAddition(application,
-                    in.gbtsolutions.inventoryhub.models.AuditTrail.MODULE_USER,
-                    user.username,
-                    "Created user '" + user.username + "' with role '" + user.role + "'");
+            AuditTrailHelper.logAddition(application, AuditTrail.MODULE_USER, user.username, "Created user '" + user.username + "' with role '" + user.role + "'");
         });
     }
 
     public void update(User user) {
         executorService.execute(() -> {
             userDao.update(user);
-            in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper.logEdit(application,
-                    in.gbtsolutions.inventoryhub.models.AuditTrail.MODULE_USER,
-                    user.username,
-                    "Updated user '" + user.username + "'");
+            AuditTrailHelper.logEdit(application, AuditTrail.MODULE_USER, user.username, "Updated user '" + user.username + "'");
         });
     }
 

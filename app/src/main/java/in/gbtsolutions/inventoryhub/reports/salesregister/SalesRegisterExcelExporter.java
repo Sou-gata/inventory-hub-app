@@ -117,16 +117,7 @@ public class SalesRegisterExcelExporter {
         return outputFile;
     }
 
-    private static void buildSalesRegisterSheet(
-            XSSFWorkbook wb,
-            SalesRegisterModels.ReportData report,
-            CellStyle titleStyle,
-            CellStyle headerStyle,
-            CellStyle normalStyle,
-            CellStyle centerStyle,
-            CellStyle moneyStyle,
-            CellStyle totalStyle,
-            CellStyle totalLabelStyle) {
+    private static void buildSalesRegisterSheet(XSSFWorkbook wb, SalesRegisterModels.ReportData report, CellStyle titleStyle, CellStyle headerStyle, CellStyle normalStyle, CellStyle centerStyle, CellStyle moneyStyle, CellStyle totalStyle, CellStyle totalLabelStyle) {
 
         Sheet sheet = wb.createSheet("Sales Register");
         int r = 0;
@@ -146,12 +137,7 @@ public class SalesRegisterExcelExporter {
         r++; // Blank row
 
         // Headers
-        String[] headers = {
-                "#", "Invoice No", "Date", "Customer Name", "Customer Phone",
-                "Customer GSTIN", "Type", "Place of Supply", "Taxable Value (₹)",
-                "CGST (₹)", "SGST (₹)", "IGST (₹)", "Cess (₹)", "Total Tax (₹)",
-                "Invoice Total (₹)", "Payment", "Status"
-        };
+        String[] headers = {"#", "Invoice No", "Date", "Customer Name", "Customer Phone", "Customer GSTIN", "Type", "Place of Supply", "Taxable Value (₹)", "CGST (₹)", "SGST (₹)", "IGST (₹)", "Cess (₹)", "Total Tax (₹)", "Invoice Total (₹)", "Payment", "Status"};
 
         Row headerRow = sheet.createRow(r++);
         for (int i = 0; i < headers.length; i++) {
@@ -243,13 +229,27 @@ public class SalesRegisterExcelExporter {
             } else if (i <= 14) {
                 c.setCellStyle(totalStyle);
                 switch (i) {
-                    case 8: c.setCellValue(report.summary.taxableValue.doubleValue()); break;
-                    case 9: c.setCellValue(report.summary.cgst.doubleValue()); break;
-                    case 10: c.setCellValue(report.summary.sgst.doubleValue()); break;
-                    case 11: c.setCellValue(report.summary.igst.doubleValue()); break;
-                    case 12: c.setCellValue(report.summary.cess.doubleValue()); break;
-                    case 13: c.setCellValue(report.summary.totalTax.doubleValue()); break;
-                    case 14: c.setCellValue(report.summary.grossSales.doubleValue()); break;
+                    case 8:
+                        c.setCellValue(report.summary.taxableValue.doubleValue());
+                        break;
+                    case 9:
+                        c.setCellValue(report.summary.cgst.doubleValue());
+                        break;
+                    case 10:
+                        c.setCellValue(report.summary.sgst.doubleValue());
+                        break;
+                    case 11:
+                        c.setCellValue(report.summary.igst.doubleValue());
+                        break;
+                    case 12:
+                        c.setCellValue(report.summary.cess.doubleValue());
+                        break;
+                    case 13:
+                        c.setCellValue(report.summary.totalTax.doubleValue());
+                        break;
+                    case 14:
+                        c.setCellValue(report.summary.grossSales.doubleValue());
+                        break;
                 }
             } else {
                 c.setCellStyle(totalLabelStyle);
@@ -276,13 +276,7 @@ public class SalesRegisterExcelExporter {
         sheet.setColumnWidth(16, 12 * 256);
     }
 
-    private static void buildSummarySheet(
-            XSSFWorkbook wb,
-            SalesRegisterModels.ReportData report,
-            CellStyle titleStyle,
-            CellStyle headerStyle,
-            CellStyle normalStyle,
-            CellStyle moneyStyle) {
+    private static void buildSummarySheet(XSSFWorkbook wb, SalesRegisterModels.ReportData report, CellStyle titleStyle, CellStyle headerStyle, CellStyle normalStyle, CellStyle moneyStyle) {
 
         Sheet sheet = wb.createSheet("Executive Summary");
         int r = 0;

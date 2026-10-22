@@ -11,11 +11,15 @@ import java.util.Locale;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CountDownLatch;
 
 import in.gbtsolutions.inventoryhub.Database;
 import in.gbtsolutions.inventoryhub.InventoryHubApp;
 import in.gbtsolutions.inventoryhub.models.Product;
 import in.gbtsolutions.inventoryhub.models.ProductBatch;
+import in.gbtsolutions.inventoryhub.online.config.AppModeManager;
+import in.gbtsolutions.inventoryhub.online.models.OnlineQrLookupRequest;
+import in.gbtsolutions.inventoryhub.online.repository.OnlineProductRepository;
 
 public class ProductQRHelper {
 
@@ -23,6 +27,7 @@ public class ProductQRHelper {
 
     public interface OnProductScannedCallback {
         void onProductLoaded(Product product);
+
         void onError(String message);
     }
 
@@ -130,30 +135,28 @@ public class ProductQRHelper {
             if (appContext != null) {
                 final int finalBatchId = batchId;
                 final String finalExpDate = expDateYYDDD;
-                boolean isOnline = in.gbtsolutions.inventoryhub.online.config.AppModeManager.getInstance(appContext).isOnlineMode();
+                boolean isOnline = AppModeManager.getInstance(appContext).isOnlineMode();
 
                 if (isOnline) {
                     final Product[] holder = new Product[1];
-                    final java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
-                    in.gbtsolutions.inventoryhub.online.models.OnlineQrLookupRequest req =
-                            new in.gbtsolutions.inventoryhub.online.models.OnlineQrLookupRequest(
-                                    decrypted, productId, batchId, sellingPrice, expDateYYDDD);
-                    new in.gbtsolutions.inventoryhub.online.repository.OnlineProductRepository(appContext)
-                            .lookupProductByQr(req, new in.gbtsolutions.inventoryhub.online.repository.OnlineProductRepository.ProductActionCallback() {
-                                @Override
-                                public void onSuccess(Product p) {
-                                    holder[0] = p;
-                                    latch.countDown();
-                                }
+                    final CountDownLatch latch = new CountDownLatch(1);
+                    OnlineQrLookupRequest req = new OnlineQrLookupRequest(decrypted, productId, batchId, sellingPrice, expDateYYDDD);
+                    new OnlineProductRepository(appContext).lookupProductByQr(req, new OnlineProductRepository.ProductActionCallback() {
+                        @Override
+                        public void onSuccess(Product p) {
+                            holder[0] = p;
+                            latch.countDown();
+                        }
 
-                                @Override
-                                public void onError(String errorMessage) {
-                                    latch.countDown();
-                                }
-                            });
+                        @Override
+                        public void onError(String errorMessage) {
+                            latch.countDown();
+                        }
+                    });
                     try {
                         latch.await(4, TimeUnit.SECONDS);
-                    } catch (InterruptedException ignored) {}
+                    } catch (InterruptedException ignored) {
+                    }
                     product = holder[0];
                 } else {
                     if (Looper.myLooper() == Looper.getMainLooper()) {
@@ -226,7 +229,7 @@ public class ProductQRHelper {
         }
 
         Context appContext = context != null ? context.getApplicationContext() : InventoryHubApp.getInstance();
-        boolean isOnline = appContext != null && in.gbtsolutions.inventoryhub.online.config.AppModeManager.getInstance(appContext).isOnlineMode();
+        boolean isOnline = appContext != null && AppModeManager.getInstance(appContext).isOnlineMode();
 
         Executors.newSingleThreadExecutor().execute(() -> {
             try {
@@ -263,24 +266,21 @@ public class ProductQRHelper {
                 }
 
                 if (isOnline) {
-                    in.gbtsolutions.inventoryhub.online.models.OnlineQrLookupRequest req =
-                            new in.gbtsolutions.inventoryhub.online.models.OnlineQrLookupRequest(
-                                    decrypted, productId, batchId, sellingPrice, expDateYYDDD);
-                    new in.gbtsolutions.inventoryhub.online.repository.OnlineProductRepository(appContext)
-                            .lookupProductByQr(req, new in.gbtsolutions.inventoryhub.online.repository.OnlineProductRepository.ProductActionCallback() {
-                                @Override
-                                public void onSuccess(Product product) {
-                                    if (product != null && sellingPrice > 0) {
-                                        product.sellingPrice = sellingPrice;
-                                    }
-                                    if (callback != null) callback.onProductLoaded(product);
-                                }
+                    OnlineQrLookupRequest req = new OnlineQrLookupRequest(decrypted, productId, batchId, sellingPrice, expDateYYDDD);
+                    new OnlineProductRepository(appContext).lookupProductByQr(req, new OnlineProductRepository.ProductActionCallback() {
+                        @Override
+                        public void onSuccess(Product product) {
+                            if (product != null && sellingPrice > 0) {
+                                product.sellingPrice = sellingPrice;
+                            }
+                            if (callback != null) callback.onProductLoaded(product);
+                        }
 
-                                @Override
-                                public void onError(String errorMessage) {
-                                    if (callback != null) callback.onError(errorMessage);
-                                }
-                            });
+                        @Override
+                        public void onError(String errorMessage) {
+                            if (callback != null) callback.onError(errorMessage);
+                        }
+                    });
                 } else {
                     Product product = loadProductWithBatch(appContext, productId, batchId, expDateYYDDD);
                     if (product != null && sellingPrice > 0) {
@@ -298,7 +298,8 @@ public class ProductQRHelper {
                 }
             } catch (Exception e) {
                 new Handler(Looper.getMainLooper()).post(() -> {
-                    if (callback != null) callback.onError(e.getMessage() != null ? e.getMessage() : "Failed to scan QR");
+                    if (callback != null)
+                        callback.onError(e.getMessage() != null ? e.getMessage() : "Failed to scan QR");
                 });
             }
         });
@@ -308,8 +309,7 @@ public class ProductQRHelper {
         int len = hex.length();
         byte[] data = new byte[len / 2];
         for (int i = 0; i < len; i += 2) {
-            data[i / 2] = (byte) ((Character.digit(hex.charAt(i), 16) << 4)
-                    + Character.digit(hex.charAt(i + 1), 16));
+            data[i / 2] = (byte) ((Character.digit(hex.charAt(i), 16) << 4) + Character.digit(hex.charAt(i + 1), 16));
         }
         return data;
     }

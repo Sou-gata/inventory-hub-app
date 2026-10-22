@@ -5,14 +5,18 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.os.Build;
+
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import androidx.work.Data;
 import androidx.work.ForegroundInfo;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
+
 import com.google.gson.JsonObject;
+
 import java.io.File;
+
 import in.gbtsolutions.inventoryhub.Database;
 import in.gbtsolutions.inventoryhub.R;
 import in.gbtsolutions.inventoryhub.online.api.NetworkErrorHelper;
@@ -45,13 +49,13 @@ public class MigrationWorker extends Worker {
 
         File dumpGz = null;
         try {
-            // 1. Create Compressed Snapshot using streaming GZIP (constant O(1) memory)
+            // Create Compressed Snapshot using streaming GZIP
             dumpGz = DatabaseCompressor.createGzipSnapshot(context, (written, total) -> {
                 int pct = total > 0 ? (int) ((written * 100) / total) : 0;
                 updateProgress("Compressing database: " + pct + "%");
             });
 
-            // 2. Upload to Server
+            // Upload to Server
             updateProgress("Uploading database snapshot to cloud...");
             RequestBody fileBody = RequestBody.create(MediaType.parse("application/gzip"), dumpGz);
             MultipartBody.Part part = MultipartBody.Part.createFormData("database", dumpGz.getName(), fileBody);
@@ -73,7 +77,7 @@ public class MigrationWorker extends Worker {
             }
             String jobId = uploadData.get("jobId").getAsString();
 
-            // 3. Poll for Status until COMPLETED or FAILED
+            // Poll for Status until COMPLETED or FAILED
             boolean completed = false;
             String serverMigrationStatus = null;
             while (!completed) {
@@ -101,7 +105,7 @@ public class MigrationWorker extends Worker {
                 }
             }
 
-            // 4. Finalize Mode Switch & Update Migration Count in Android DB and Prefs
+            // Finalize Mode Switch & Update Migration Count in Android DB and Prefs
             AppModeManager.getInstance(context).setAppMode(AppMode.ONLINE);
             if (serverMigrationStatus != null && !serverMigrationStatus.trim().isEmpty()) {
                 AppModeManager.getInstance(context).setMigrationStatus(serverMigrationStatus.trim());
@@ -109,7 +113,7 @@ public class MigrationWorker extends Worker {
                 AppModeManager.getInstance(context).incrementMigrationCount();
             }
 
-            // 5. Invalidate Local DB and rename to backup
+            // Invalidate Local DB and rename to backup
             Database.invalidateInstance();
             File originalDb = context.getDatabasePath("app_database");
             File backupDb = new File(context.getFilesDir(), "app_database_archived.db");
@@ -139,22 +143,13 @@ public class MigrationWorker extends Worker {
 
     private ForegroundInfo createForegroundInfo(String statusText) {
         createNotificationChannel();
-        Notification notification = new NotificationCompat.Builder(getApplicationContext(), NOTIFICATION_CHANNEL_ID)
-                .setContentTitle("Cloud Migration")
-                .setContentText(statusText)
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setOngoing(true)
-                .build();
+        Notification notification = new NotificationCompat.Builder(getApplicationContext(), NOTIFICATION_CHANNEL_ID).setContentTitle("Cloud Migration").setContentText(statusText).setSmallIcon(R.mipmap.ic_launcher).setOngoing(true).build();
         return new ForegroundInfo(NOTIFICATION_ID, notification);
     }
 
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    NOTIFICATION_CHANNEL_ID,
-                    "Database Migration",
-                    NotificationManager.IMPORTANCE_LOW
-            );
+            NotificationChannel channel = new NotificationChannel(NOTIFICATION_CHANNEL_ID, "Database Migration", NotificationManager.IMPORTANCE_LOW);
             NotificationManager manager = getApplicationContext().getSystemService(NotificationManager.class);
             if (manager != null) {
                 manager.createNotificationChannel(channel);

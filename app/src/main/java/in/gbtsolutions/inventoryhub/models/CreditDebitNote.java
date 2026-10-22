@@ -84,11 +84,7 @@ public class CreditDebitNote {
     }
 
     @Ignore
-    public CreditDebitNote(String noteNumber, String noteType, String noteDate, String originalInvoiceNumber,
-                           String originalInvoiceDate, Integer buyerId, String customerName, String customerGstin,
-                           boolean isRegistered, String placeOfSupply, String placeOfSupplyStateCode,
-                           double taxableValue, double gstRate, double cgstAmount, double sgstAmount,
-                           double igstAmount, double cessAmount, double totalAmount, String reason) {
+    public CreditDebitNote(String noteNumber, String noteType, String noteDate, String originalInvoiceNumber, String originalInvoiceDate, Integer buyerId, String customerName, String customerGstin, boolean isRegistered, String placeOfSupply, String placeOfSupplyStateCode, double taxableValue, double gstRate, double cgstAmount, double sgstAmount, double igstAmount, double cessAmount, double totalAmount, String reason) {
         this.noteNumber = noteNumber;
         this.noteType = noteType;
         this.noteDate = noteDate;

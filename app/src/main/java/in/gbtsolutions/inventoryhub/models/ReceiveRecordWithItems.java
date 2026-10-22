@@ -9,9 +9,6 @@ public class ReceiveRecordWithItems {
     @Embedded
     public ReceiveRecord record;
 
-    @Relation(
-            parentColumn = "receive_record_id",
-            entityColumn = "receive_record_id"
-    )
+    @Relation(parentColumn = "receive_record_id", entityColumn = "receive_record_id")
     public List<ReceiveItem> items;
 }

@@ -37,6 +37,7 @@ import in.gbtsolutions.inventoryhub.R;
 import in.gbtsolutions.inventoryhub.adapters.SupplierAdapter;
 import in.gbtsolutions.inventoryhub.helpers.ThemeManager;
 import in.gbtsolutions.inventoryhub.models.Suppliers;
+import in.gbtsolutions.inventoryhub.online.paging.EndlessRecyclerScrollListener;
 import in.gbtsolutions.inventoryhub.online.repository.OnlineSupplierRepository;
 import in.gbtsolutions.inventoryhub.repository.SupplierRepository;
 
@@ -48,6 +49,11 @@ public class SupplierActivity extends BaseActivity {
     private RecyclerView recyclerSuppliers;
     private SupplierAdapter supplierAdapter;
     private SupplierRepository supplierRepository;
+    private EndlessRecyclerScrollListener endlessScrollListener;
+
+    private final android.os.Handler searchHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private Runnable searchRunnable;
+
     private View layoutEmptyState;
     private View layoutListContainer;
     private TextView textSupplierCount;
@@ -62,6 +68,11 @@ public class SupplierActivity extends BaseActivity {
     private TextView chipFilterDeactive;
     private String currentSearchQuery = "";
     private FilterStatus currentFilter = FilterStatus.ALL;
+
+    private int onlineCurrentPage = 1;
+    private boolean onlineHasMore = true;
+    private boolean onlineIsLoading = false;
+    private int onlineTotalRecords = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -136,7 +147,11 @@ public class SupplierActivity extends BaseActivity {
         chipFilterDeactive.setBackgroundResource(filter == FilterStatus.DEACTIVATED ? R.drawable.bg_button : R.drawable.bg_card);
         chipFilterDeactive.setTextColor(ContextCompat.getColor(this, filter == FilterStatus.DEACTIVATED ? R.color.white : R.color.fg_muted));
 
-        applyFilters();
+        if (supplierRepository != null && supplierRepository.isOnlineMode()) {
+            loadOnlineSuppliers(1, true);
+        } else {
+            applyFilters();
+        }
     }
 
     private void setupSearch() {
@@ -153,7 +168,16 @@ public class SupplierActivity extends BaseActivity {
                         btnClearSearch.setVisibility(query.isEmpty() ? View.GONE : View.VISIBLE);
                     }
                     currentSearchQuery = query.trim();
-                    applyFilters();
+
+                    if (supplierRepository != null && supplierRepository.isOnlineMode()) {
+                        if (searchRunnable != null) {
+                            searchHandler.removeCallbacks(searchRunnable);
+                        }
+                        searchRunnable = () -> loadOnlineSuppliers(1, true);
+                        searchHandler.postDelayed(searchRunnable, 300);
+                    } else {
+                        applyFilters();
+                    }
                 }
 
                 @Override
@@ -165,6 +189,12 @@ public class SupplierActivity extends BaseActivity {
                 if (actionId == EditorInfo.IME_ACTION_SEARCH) {
                     hideKeyboard(v);
                     editSearchSupplier.clearFocus();
+                    if (supplierRepository != null && supplierRepository.isOnlineMode()) {
+                        if (searchRunnable != null) {
+                            searchHandler.removeCallbacks(searchRunnable);
+                        }
+                        loadOnlineSuppliers(1, true);
+                    }
                     return true;
                 }
                 return false;
@@ -176,6 +206,13 @@ public class SupplierActivity extends BaseActivity {
                 if (editSearchSupplier != null) {
                     editSearchSupplier.setText("");
                 }
+                if (supplierRepository != null && supplierRepository.isOnlineMode()) {
+                    currentSearchQuery = "";
+                    if (searchRunnable != null) {
+                        searchHandler.removeCallbacks(searchRunnable);
+                    }
+                    loadOnlineSuppliers(1, true);
+                }
             });
         }
 
@@ -184,6 +221,7 @@ public class SupplierActivity extends BaseActivity {
                 if (editSearchSupplier != null) {
                     editSearchSupplier.setText("");
                 }
+                currentSearchQuery = "";
                 selectFilter(FilterStatus.ALL);
             });
         }
@@ -191,8 +229,19 @@ public class SupplierActivity extends BaseActivity {
 
     private void setupRecyclerView() {
         supplierAdapter = new SupplierAdapter();
-        recyclerSuppliers.setLayoutManager(new LinearLayoutManager(this));
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        recyclerSuppliers.setLayoutManager(layoutManager);
         recyclerSuppliers.setAdapter(supplierAdapter);
+
+        endlessScrollListener = new EndlessRecyclerScrollListener(layoutManager) {
+            @Override
+            public void onLoadMore(int page, int totalItemsCount, RecyclerView view) {
+                if (supplierRepository != null && supplierRepository.isOnlineMode() && onlineHasMore && !onlineIsLoading) {
+                    loadOnlineSuppliers(page, false);
+                }
+            }
+        };
+        recyclerSuppliers.addOnScrollListener(endlessScrollListener);
 
         supplierAdapter.setOnSupplierClickListener(this::showSupplierDetailsSheet);
         supplierAdapter.setOnSupplierEditListener(this::openEditSupplier);
@@ -201,7 +250,7 @@ public class SupplierActivity extends BaseActivity {
 
     private void observeSuppliers() {
         if (supplierRepository.isOnlineMode()) {
-            loadOnlineSuppliers();
+            loadOnlineSuppliers(1, true);
             return;
         }
         supplierRepository.getAllSuppliers().observe(this, suppliers -> {
@@ -213,27 +262,129 @@ public class SupplierActivity extends BaseActivity {
         });
     }
 
-    private void loadOnlineSuppliers() {
-        supplierRepository.fetchSuppliersOnline(new OnlineSupplierRepository.SupplierListCallback() {
+    private void loadOnlineSuppliers(int page, boolean isNewSearch) {
+        if (onlineIsLoading && !isNewSearch) return;
+        onlineIsLoading = true;
+
+        if (isNewSearch) {
+            onlineCurrentPage = 1;
+            onlineHasMore = true;
+            onlineTotalRecords = 0;
+            if (endlessScrollListener != null) {
+                endlessScrollListener.resetState();
+            }
+            if (textSupplierCount != null) {
+                textSupplierCount.setText("Loading...");
+            }
+        } else {
+            supplierAdapter.showLoadingFooter();
+        }
+
+        String statusParam = null;
+        if (currentFilter == FilterStatus.ACTIVE) {
+            statusParam = "ACTIVE";
+        } else if (currentFilter == FilterStatus.DEACTIVATED) {
+            statusParam = "INACTIVE";
+        }
+
+        String query = currentSearchQuery.isEmpty() ? null : currentSearchQuery;
+
+        supplierRepository.fetchSuppliersPaged(page, EndlessRecyclerScrollListener.PAGE_SIZE, query, statusParam, new OnlineSupplierRepository.PagedSupplierCallback() {
             @Override
-            public void onSuccess(List<Suppliers> suppliers) {
+            public void onSuccess(List<Suppliers> suppliers, int currentPage, int totalPages, int totalRecords, boolean hasMore) {
                 runOnUiThread(() -> {
-                    allSuppliers.clear();
-                    if (suppliers != null) {
-                        allSuppliers.addAll(suppliers);
+                    onlineIsLoading = false;
+                    onlineCurrentPage = currentPage;
+                    onlineHasMore = hasMore;
+                    onlineTotalRecords = totalRecords;
+
+                    if (endlessScrollListener != null) {
+                        endlessScrollListener.setHasMore(hasMore);
+                        endlessScrollListener.setLoading(false);
                     }
-                    applyFilters();
+
+                    supplierAdapter.removeFooter();
+
+                    if (isNewSearch) {
+                        allSuppliers.clear();
+                        if (suppliers != null) {
+                            allSuppliers.addAll(suppliers);
+                        }
+                        supplierAdapter.setSuppliers(allSuppliers);
+                    } else {
+                        if (suppliers != null && !suppliers.isEmpty()) {
+                            allSuppliers.addAll(suppliers);
+                            supplierAdapter.addSuppliers(suppliers);
+                        }
+                    }
+
+                    updateSuppliersUi(supplierAdapter.getSuppliers().size(), totalRecords);
                 });
             }
 
             @Override
             public void onError(String errorMessage) {
                 runOnUiThread(() -> {
-                    showToast("Failed to load suppliers: " + errorMessage);
-                    applyFilters();
+                    onlineIsLoading = false;
+                    if (endlessScrollListener != null) {
+                        endlessScrollListener.setLoading(false);
+                    }
+                    if (isNewSearch) {
+                        supplierAdapter.removeFooter();
+                        showToast("Failed to load suppliers: " + errorMessage);
+                        updateSuppliersUi(0, 0);
+                    } else {
+                        supplierAdapter.showRetryFooter("Failed to load more. Tap to retry", () -> loadOnlineSuppliers(page, false));
+                    }
                 });
             }
         });
+    }
+
+    private void updateSuppliersUi(int loadedCount, int totalRecords) {
+        if (loadedCount == 0) {
+            if (!currentSearchQuery.isEmpty() || currentFilter != FilterStatus.ALL) {
+                layoutListContainer.setVisibility(View.GONE);
+                layoutEmptyState.setVisibility(View.GONE);
+                if (layoutSearchEmpty != null) {
+                    layoutSearchEmpty.setVisibility(View.VISIBLE);
+                    if (textSearchEmptyQuery != null) {
+                        if (!currentSearchQuery.isEmpty()) {
+                            textSearchEmptyQuery.setText("No suppliers found matching \"" + currentSearchQuery + "\"");
+                        } else {
+                            textSearchEmptyQuery.setText("No suppliers match the selected filter status.");
+                        }
+                    }
+                }
+            } else {
+                if (layoutSearchEmpty != null) {
+                    layoutSearchEmpty.setVisibility(View.GONE);
+                }
+                layoutListContainer.setVisibility(View.GONE);
+                layoutEmptyState.setVisibility(View.VISIBLE);
+            }
+            if (textMetaLabel != null) {
+                textMetaLabel.setText(!currentSearchQuery.isEmpty() ? "SEARCH RESULTS" : getFilterTitle());
+            }
+            textSupplierCount.setText("0 Suppliers");
+        } else {
+            layoutEmptyState.setVisibility(View.GONE);
+            if (layoutSearchEmpty != null) {
+                layoutSearchEmpty.setVisibility(View.GONE);
+            }
+            layoutListContainer.setVisibility(View.VISIBLE);
+            recyclerSuppliers.setVisibility(View.VISIBLE);
+
+            if (textMetaLabel != null) {
+                textMetaLabel.setText(currentSearchQuery.isEmpty() && currentFilter == FilterStatus.ALL ? "ALL SUPPLIERS" : (!currentSearchQuery.isEmpty() ? "SEARCH RESULTS" : getFilterTitle()));
+            }
+
+            if (supplierRepository != null && supplierRepository.isOnlineMode()) {
+                textSupplierCount.setText(String.format(Locale.getDefault(), "%d of %d Suppliers", loadedCount, totalRecords));
+            } else {
+                textSupplierCount.setText(String.format(Locale.getDefault(), "%d %s", loadedCount, loadedCount == 1 ? "Supplier" : "Suppliers"));
+            }
+        }
     }
 
     private void applyFilters() {
@@ -349,7 +500,7 @@ public class SupplierActivity extends BaseActivity {
                     String actionText = newStatus ? "activated" : "deactivated";
                     showToast("Supplier \"" + supplier.supplierName + "\" " + actionText);
                     if (supplierRepository.isOnlineMode()) {
-                        loadOnlineSuppliers();
+                        loadOnlineSuppliers(1, true);
                     }
                 });
             }
@@ -584,7 +735,7 @@ public class SupplierActivity extends BaseActivity {
             navView.setCheckedItem(R.id.nav_supplier);
         }
         if (supplierRepository != null && supplierRepository.isOnlineMode()) {
-            loadOnlineSuppliers();
+            loadOnlineSuppliers(1, true);
         }
     }
 

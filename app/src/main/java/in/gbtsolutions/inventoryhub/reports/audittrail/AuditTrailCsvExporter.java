@@ -37,15 +37,7 @@ public class AuditTrailCsvExporter {
             writer.writeNext(new String[]{"ID", "Action", "Module", "Record ID", "Performed By", "Date & Time", "Details"});
 
             for (AuditTrailReportModels.AuditTrailRow row : report.rows) {
-                writer.writeNext(new String[]{
-                        String.valueOf(row.id),
-                        row.actionType != null ? row.actionType : "",
-                        row.module != null ? row.module : "",
-                        row.recordId != null ? row.recordId : "",
-                        row.performedBy != null ? row.performedBy : "",
-                        row.formattedDateTime != null ? row.formattedDateTime : "",
-                        row.details != null ? row.details : ""
-                });
+                writer.writeNext(new String[]{String.valueOf(row.id), row.actionType != null ? row.actionType : "", row.module != null ? row.module : "", row.recordId != null ? row.recordId : "", row.performedBy != null ? row.performedBy : "", row.formattedDateTime != null ? row.formattedDateTime : "", row.details != null ? row.details : ""});
             }
         }
 

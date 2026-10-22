@@ -19,12 +19,20 @@ import java.util.List;
 import in.gbtsolutions.inventoryhub.R;
 import in.gbtsolutions.inventoryhub.models.Suppliers;
 
-public class SupplierAdapter extends RecyclerView.Adapter<SupplierAdapter.SupplierViewHolder> {
+public class SupplierAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+
+    public static final int VIEW_TYPE_ITEM = 0;
+    public static final int VIEW_TYPE_FOOTER = 1;
 
     private final List<Suppliers> supplierList = new ArrayList<>();
     private OnSupplierClickListener clickListener;
     private OnSupplierEditListener editListener;
     private OnSupplierStatusToggleListener statusToggleListener;
+
+    private boolean isFooterAdded = false;
+    private boolean isRetryActive = false;
+    private String retryMessage = null;
+    private Runnable retryAction = null;
 
     public SupplierAdapter() {
     }
@@ -41,7 +49,81 @@ public class SupplierAdapter extends RecyclerView.Adapter<SupplierAdapter.Suppli
         this.statusToggleListener = listener;
     }
 
+    public List<Suppliers> getSuppliers() {
+        return new ArrayList<>(supplierList);
+    }
+
+    public void clearSuppliers() {
+        int count = getItemCount();
+        supplierList.clear();
+        isFooterAdded = false;
+        isRetryActive = false;
+        if (count > 0) {
+            notifyItemRangeRemoved(0, count);
+        }
+    }
+
+    public void addSuppliers(@NonNull List<Suppliers> moreSuppliers) {
+        if (moreSuppliers.isEmpty()) return;
+        List<Suppliers> toAdd = new ArrayList<>();
+        java.util.HashSet<Integer> existingIds = new java.util.HashSet<>();
+        for (Suppliers s : supplierList) {
+            existingIds.add(s.supplierId);
+        }
+        for (Suppliers s : moreSuppliers) {
+            if (s.supplierId <= 0 || !existingIds.contains(s.supplierId)) {
+                toAdd.add(s);
+                if (s.supplierId > 0) {
+                    existingIds.add(s.supplierId);
+                }
+            }
+        }
+        if (toAdd.isEmpty()) return;
+        int insertPos = supplierList.size();
+        supplierList.addAll(toAdd);
+        notifyItemRangeInserted(insertPos, toAdd.size());
+    }
+
+    public void showLoadingFooter() {
+        if (!isFooterAdded) {
+            isFooterAdded = true;
+            isRetryActive = false;
+            notifyItemInserted(supplierList.size());
+        } else if (isRetryActive) {
+            isRetryActive = false;
+            notifyItemChanged(supplierList.size());
+        }
+    }
+
+    public void showRetryFooter(String message, Runnable retry) {
+        this.retryMessage = message;
+        this.retryAction = retry;
+        this.isRetryActive = true;
+        if (!isFooterAdded) {
+            isFooterAdded = true;
+            notifyItemInserted(supplierList.size());
+        } else {
+            notifyItemChanged(supplierList.size());
+        }
+    }
+
+    public void removeFooter() {
+        if (isFooterAdded) {
+            isFooterAdded = false;
+            isRetryActive = false;
+            retryMessage = null;
+            retryAction = null;
+            notifyItemRemoved(supplierList.size());
+        }
+    }
+
+    public boolean isFooterAdded() {
+        return isFooterAdded;
+    }
+
     public void setSuppliers(@NonNull List<Suppliers> newSuppliers) {
+        isFooterAdded = false;
+        isRetryActive = false;
         DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new DiffUtil.Callback() {
             @Override
             public int getOldListSize() {
@@ -71,22 +153,38 @@ public class SupplierAdapter extends RecyclerView.Adapter<SupplierAdapter.Suppli
         diffResult.dispatchUpdatesTo(this);
     }
 
+    @Override
+    public int getItemViewType(int position) {
+        if (isFooterAdded && position == supplierList.size()) {
+            return VIEW_TYPE_FOOTER;
+        }
+        return VIEW_TYPE_ITEM;
+    }
+
     @NonNull
     @Override
-    public SupplierViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        if (viewType == VIEW_TYPE_FOOTER) {
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_loading_footer, parent, false);
+            return new FooterViewHolder(view);
+        }
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_supplier, parent, false);
         return new SupplierViewHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull SupplierViewHolder holder, int position) {
-        Suppliers supplier = supplierList.get(position);
-        holder.bind(supplier);
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+        if (holder instanceof SupplierViewHolder) {
+            Suppliers supplier = supplierList.get(position);
+            ((SupplierViewHolder) holder).bind(supplier);
+        } else if (holder instanceof FooterViewHolder) {
+            ((FooterViewHolder) holder).bind(isRetryActive, retryMessage, retryAction);
+        }
     }
 
     @Override
     public int getItemCount() {
-        return supplierList.size();
+        return isFooterAdded ? supplierList.size() + 1 : supplierList.size();
     }
 
     public interface OnSupplierClickListener {
@@ -210,6 +308,50 @@ public class SupplierAdapter extends RecyclerView.Adapter<SupplierAdapter.Suppli
                     statusToggleListener.onSupplierStatusToggle(supplier);
                 }
             });
+        }
+    }
+
+    public static class FooterViewHolder extends RecyclerView.ViewHolder {
+        private final View containerLoading;
+        private final View containerRetry;
+        private final TextView textLoadingMore;
+        private final TextView textRetryMessage;
+        private final TextView btnRetryLoad;
+
+        public FooterViewHolder(@NonNull View itemView) {
+            super(itemView);
+            containerLoading = itemView.findViewById(R.id.container_loading);
+            containerRetry = itemView.findViewById(R.id.container_retry);
+            textLoadingMore = itemView.findViewById(R.id.text_loading_more);
+            textRetryMessage = itemView.findViewById(R.id.text_retry_message);
+            btnRetryLoad = itemView.findViewById(R.id.btn_retry_load);
+        }
+
+        public void bind(boolean isRetry, String message, Runnable retryAction) {
+            if (isRetry) {
+                if (containerLoading != null) containerLoading.setVisibility(View.GONE);
+                if (containerRetry != null) {
+                    containerRetry.setVisibility(View.VISIBLE);
+                    if (textRetryMessage != null && message != null) {
+                        textRetryMessage.setText(message);
+                    }
+                    if (btnRetryLoad != null) {
+                        btnRetryLoad.setOnClickListener(v -> {
+                            if (retryAction != null) {
+                                retryAction.run();
+                            }
+                        });
+                    }
+                }
+            } else {
+                if (containerRetry != null) containerRetry.setVisibility(View.GONE);
+                if (containerLoading != null) {
+                    containerLoading.setVisibility(View.VISIBLE);
+                    if (textLoadingMore != null) {
+                        textLoadingMore.setText("Loading more suppliers...");
+                    }
+                }
+            }
         }
     }
 }

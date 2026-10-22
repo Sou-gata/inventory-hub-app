@@ -21,6 +21,8 @@ import java.util.Locale;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.widget.Toolbar;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.materialswitch.MaterialSwitch;
 
@@ -42,6 +44,9 @@ import in.gbtsolutions.inventoryhub.repository.ProductBatchRepository;
 import in.gbtsolutions.inventoryhub.repository.UnitOfMeasureRepository;
 import in.gbtsolutions.inventoryhub.repository.ProductRepository;
 import in.gbtsolutions.inventoryhub.views.BatchEntryBottomSheet;
+import in.gbtsolutions.inventoryhub.online.repository.OnlineCategoryRepository;
+import in.gbtsolutions.inventoryhub.online.repository.OnlineProductRepository;
+import in.gbtsolutions.inventoryhub.online.repository.OnlineUnitOfMeasureRepository;
 
 public class AddProductActivity extends BaseActivity {
 
@@ -83,7 +88,7 @@ public class AddProductActivity extends BaseActivity {
     private View sectionBatches;
     private TextView tvBatchTotalSummary;
     private View btnAddBatch;
-    private androidx.recyclerview.widget.RecyclerView recyclerBatches;
+    private RecyclerView recyclerBatches;
     private BatchListAdapter batchListAdapter;
     private final List<ProductBatch> pendingBatches = new ArrayList<>();
     private final List<ProductBatch> deletedBatches = new ArrayList<>();
@@ -300,7 +305,7 @@ public class AddProductActivity extends BaseActivity {
 
     private void observeCategories() {
         if (AppModeManager.getInstance(this).isOnlineMode()) {
-            categoryRepository.fetchCategoriesOnline(new in.gbtsolutions.inventoryhub.online.repository.OnlineCategoryRepository.CategoryListCallback() {
+            categoryRepository.fetchCategoriesOnline(new OnlineCategoryRepository.CategoryListCallback() {
                 @Override
                 public void onSuccess(List<Category> categories) {
                     populateCategories(categories);
@@ -367,7 +372,7 @@ public class AddProductActivity extends BaseActivity {
     private void observeUnitsOfMeasure() {
         UnitOfMeasureRepository uomRepo = new UnitOfMeasureRepository(getApplication());
         if (AppModeManager.getInstance(this).isOnlineMode()) {
-            uomRepo.fetchUnitsOnline(new in.gbtsolutions.inventoryhub.online.repository.OnlineUnitOfMeasureRepository.UnitListCallback() {
+            uomRepo.fetchUnitsOnline(new OnlineUnitOfMeasureRepository.UnitListCallback() {
                 @Override
                 public void onSuccess(List<UnitOfMeasure> units) {
                     populateUnitsOfMeasure(units);
@@ -480,7 +485,7 @@ public class AddProductActivity extends BaseActivity {
     private void setupBatchRecycler() {
         if (batchListAdapter != null) return; // already set up
         batchListAdapter = new BatchListAdapter();
-        recyclerBatches.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(this));
+        recyclerBatches.setLayoutManager(new LinearLayoutManager(this));
         recyclerBatches.setAdapter(batchListAdapter);
 
         batchListAdapter.setActionListener(new BatchListAdapter.OnBatchActionListener() {
@@ -531,7 +536,7 @@ public class AddProductActivity extends BaseActivity {
             totalQty += b.quantity;
         }
         if (tvBatchTotalSummary != null) {
-            tvBatchTotalSummary.setText(String.format(java.util.Locale.getDefault(),
+            tvBatchTotalSummary.setText(String.format(Locale.getDefault(),
                     "Total stock: %d pcs across %d batch(es)", totalQty, pendingBatches.size()));
         }
     }
@@ -927,7 +932,7 @@ public class AddProductActivity extends BaseActivity {
             return;
         }
         ProductBatch b = newBatches.get(index);
-        productRepository.getOnlineRepository().createBatchForProduct(productId, b, new in.gbtsolutions.inventoryhub.online.repository.OnlineProductRepository.ProductActionCallback() {
+        productRepository.getOnlineRepository().createBatchForProduct(productId, b, new OnlineProductRepository.ProductActionCallback() {
             @Override
             public void onSuccess(Product product) {
                 saveNewOnlineBatches(productId, newBatches, index + 1);

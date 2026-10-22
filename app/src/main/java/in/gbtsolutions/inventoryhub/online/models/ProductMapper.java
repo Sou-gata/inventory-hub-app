@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import in.gbtsolutions.inventoryhub.models.Product;
+import in.gbtsolutions.inventoryhub.models.ProductBatch;
 
 public class ProductMapper {
 
@@ -35,10 +36,10 @@ public class ProductMapper {
         product.updatedAt = dto.updatedAt != null ? dto.updatedAt : System.currentTimeMillis();
 
         if (dto.batches != null && !dto.batches.isEmpty()) {
-            List<in.gbtsolutions.inventoryhub.models.ProductBatch> batchList = new ArrayList<>();
+            List<ProductBatch> batchList = new ArrayList<>();
             for (OnlineProductDto.OnlineBatchDto bDto : dto.batches) {
                 if (bDto == null) continue;
-                in.gbtsolutions.inventoryhub.models.ProductBatch b = new in.gbtsolutions.inventoryhub.models.ProductBatch();
+                ProductBatch b = new ProductBatch();
                 b.batchId = bDto.batchId != null ? bDto.batchId : 0;
                 b.productId = bDto.productId != null ? bDto.productId : dto.productId;
                 b.batchNo = bDto.batchNo != null ? bDto.batchNo : ("BATCH-" + b.batchId);
@@ -50,7 +51,7 @@ public class ProductMapper {
             }
             product.setBatches(batchList);
         } else if (dto.batchId != null && dto.batchId > 0) {
-            in.gbtsolutions.inventoryhub.models.ProductBatch batch = new in.gbtsolutions.inventoryhub.models.ProductBatch();
+            ProductBatch batch = new ProductBatch();
             batch.batchId = dto.batchId;
             batch.productId = dto.productId;
             batch.batchNo = dto.batchNo != null ? dto.batchNo : ("BATCH-" + dto.batchId);
@@ -94,7 +95,7 @@ public class ProductMapper {
         if (product.batches != null && !product.batches.isEmpty()) {
             dto.batchEnabled = true;
             dto.batches = new ArrayList<>();
-            for (in.gbtsolutions.inventoryhub.models.ProductBatch b : product.batches) {
+            for (ProductBatch b : product.batches) {
                 if (b == null) continue;
                 Integer batchId = b.batchId > 0 ? Integer.valueOf(b.batchId) : null;
                 Integer productId = b.productId > 0 ? Integer.valueOf(b.productId) : (dto.productId > 0 ? Integer.valueOf(dto.productId) : null);
@@ -107,7 +108,7 @@ public class ProductMapper {
                 dto.batches.add(bDto);
             }
             // Populate primary batch fields for backward compatibility
-            in.gbtsolutions.inventoryhub.models.ProductBatch first = product.batches.get(0);
+            ProductBatch first = product.batches.get(0);
             dto.batchId = first.batchId > 0 ? Integer.valueOf(first.batchId) : null;
             dto.batchNo = first.batchNo;
             dto.batchQuantity = first.quantity;

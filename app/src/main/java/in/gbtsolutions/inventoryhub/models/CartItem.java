@@ -6,8 +6,7 @@ import java.util.Objects;
 
 public class CartItem {
     public enum DiscountType {
-        RUPEE,
-        PERCENT
+        RUPEE, PERCENT
     }
 
     public Product product;

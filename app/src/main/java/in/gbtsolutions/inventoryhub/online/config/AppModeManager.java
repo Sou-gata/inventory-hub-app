@@ -12,8 +12,12 @@ import java.io.IOException;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import in.gbtsolutions.inventoryhub.Configurations;
+import in.gbtsolutions.inventoryhub.Database;
+import in.gbtsolutions.inventoryhub.GlobalStore;
+import in.gbtsolutions.inventoryhub.models.Config;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -66,14 +70,14 @@ public class AppModeManager {
     public void loadModeFromConfigTable() {
         executor.execute(() -> {
             try {
-                String modeVal = in.gbtsolutions.inventoryhub.Database.getInstance(appContext).configDao().getValueByKey(Configurations.KEY_MODE);
+                String modeVal = Database.getInstance(appContext).configDao().getValueByKey(Configurations.KEY_MODE);
                 if (modeVal != null && !modeVal.trim().isEmpty()) {
                     AppMode mode = AppMode.fromKey(modeVal.trim());
                     if (this.currentMode != mode) {
                         mainHandler.post(() -> setAppMode(mode));
                     }
                 }
-                String migVal = in.gbtsolutions.inventoryhub.Database.getInstance(appContext).configDao().getValueByKey(Configurations.KEY_MIGRATION_COMPLETED);
+                String migVal = Database.getInstance(appContext).configDao().getValueByKey(Configurations.KEY_MIGRATION_COMPLETED);
                 if (migVal != null && !migVal.trim().isEmpty()) {
                     String normalized = normalizeMigrationStatus(migVal.trim());
                     preferences.edit().putString(Configurations.KEY_MIGRATION_COMPLETED, normalized).apply();
@@ -106,7 +110,7 @@ public class AppModeManager {
         this.currentMode = newMode;
         preferences.edit().putString(KEY_APP_MODE, newMode.getKey()).apply();
         try {
-            in.gbtsolutions.inventoryhub.GlobalStore.getInstance().setMode(newMode.name());
+            GlobalStore.getInstance().setMode(newMode.name());
         } catch (Exception ignored) {
         }
 
@@ -256,19 +260,19 @@ public class AppModeManager {
         String normalized = normalizeMigrationStatus(status);
         preferences.edit().putString(Configurations.KEY_MIGRATION_COMPLETED, normalized).apply();
         try {
-            in.gbtsolutions.inventoryhub.GlobalStore.getInstance().setSetting(Configurations.KEY_MIGRATION_COMPLETED, normalized);
+            GlobalStore.getInstance().setSetting(Configurations.KEY_MIGRATION_COMPLETED, normalized);
         } catch (Exception ignored) {
         }
         executor.execute(() -> {
             try {
-                in.gbtsolutions.inventoryhub.Database db = in.gbtsolutions.inventoryhub.Database.getInstance(appContext);
+                Database db = Database.getInstance(appContext);
                 if (db != null && db.configDao() != null) {
-                    in.gbtsolutions.inventoryhub.models.Config existing = db.configDao().getConfigByKey(Configurations.KEY_MIGRATION_COMPLETED);
+                    Config existing = db.configDao().getConfigByKey(Configurations.KEY_MIGRATION_COMPLETED);
                     if (existing != null) {
                         existing.setConfigValue(normalized);
                         db.configDao().update(existing);
                     } else {
-                        db.configDao().insert(new in.gbtsolutions.inventoryhub.models.Config(Configurations.KEY_MIGRATION_COMPLETED, normalized));
+                        db.configDao().insert(new Config(Configurations.KEY_MIGRATION_COMPLETED, normalized));
                     }
                 }
             } catch (Exception ignored) {
@@ -343,8 +347,8 @@ public class AppModeManager {
             String fullUrl = testUrl + "api/v1/health";
 
             OkHttpClient client = new OkHttpClient.Builder()
-                    .connectTimeout(5, java.util.concurrent.TimeUnit.SECONDS)
-                    .readTimeout(5, java.util.concurrent.TimeUnit.SECONDS)
+                    .connectTimeout(5, TimeUnit.SECONDS)
+                    .readTimeout(5, TimeUnit.SECONDS)
                     .build();
 
             Request request = new Request.Builder()

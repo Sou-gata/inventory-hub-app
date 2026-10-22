@@ -111,8 +111,11 @@ public interface OnlineApiService {
     );
 
     @GET("api/v1/buyers")
-    Call<ApiResponse<List<OnlineBuyerDto>>> getBuyers(
-            @Query("search") String search
+    Call<ApiResponse<PagedData<OnlineBuyerDto>>> getBuyers(
+            @Query("page") int page,
+            @Query("limit") int limit,
+            @Query("search") String search,
+            @Query("status") String status
     );
 
     @GET("api/v1/buyers/{id}")
@@ -137,8 +140,11 @@ public interface OnlineApiService {
     );
 
     @GET("api/v1/suppliers")
-    Call<ApiResponse<List<OnlineSupplierDto>>> getSuppliers(
-            @Query("search") String search
+    Call<ApiResponse<PagedData<OnlineSupplierDto>>> getSuppliers(
+            @Query("page") int page,
+            @Query("limit") int limit,
+            @Query("search") String search,
+            @Query("status") String status
     );
 
     @GET("api/v1/suppliers/{id}")
@@ -193,10 +199,13 @@ public interface OnlineApiService {
     );
 
     @GET("api/v1/purchases")
-    Call<ApiResponse<List<OnlinePurchaseDto>>> getPurchases(
+    Call<ApiResponse<PagedData<OnlinePurchaseDto>>> getPurchases(
+            @Query("page") int page,
+            @Query("limit") int limit,
             @Query("search") String search,
             @Query("startDate") String startDate,
-            @Query("endDate") String endDate
+            @Query("endDate") String endDate,
+            @Query("status") String status
     );
 
     @GET("api/v1/purchases/pending-receive")

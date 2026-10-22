@@ -34,6 +34,8 @@ import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import org.json.JSONObject;
 
 import java.text.NumberFormat;
 import java.text.ParseException;
@@ -46,6 +48,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 
 import in.gbtsolutions.inventoryhub.Database;
 import in.gbtsolutions.inventoryhub.GlobalStore;
@@ -353,7 +356,7 @@ public class HomeActivity extends BaseActivity {
 
     private void showReportsSelectionDialog() {
         String[] options = {"GSTR-1 Summary Report", "Sales Register", "Purchase Register", "User Wise Report", "Audit Trail"};
-        new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+        new MaterialAlertDialogBuilder(this)
                 .setTitle("Select Report")
                 .setItems(options, (dialog, which) -> {
                     if (which == 0) {
@@ -931,7 +934,7 @@ public class HomeActivity extends BaseActivity {
             // 2. Try JSON payload if scanned code is JSON
             if (product == null && scanResult.startsWith("{") && scanResult.endsWith("}")) {
                 try {
-                    org.json.JSONObject obj = new org.json.JSONObject(scanResult);
+                    JSONObject obj = new JSONObject(scanResult);
                     if (obj.has("productId")) {
                         product = db.productDao().getProductById(obj.getInt("productId"));
                     } else if (obj.has("product_id")) {
@@ -1293,7 +1296,7 @@ public class HomeActivity extends BaseActivity {
 
         if (isBatchMode && containerBatch != null) {
             containerBatch.setVisibility(View.VISIBLE);
-            java.util.function.Consumer<List<ProductBatch>> batchUiPopulator = batches -> {
+            Consumer<List<ProductBatch>> batchUiPopulator = batches -> {
                 batchList.clear();
                 if (batches != null) {
                     batchList.addAll(batches);

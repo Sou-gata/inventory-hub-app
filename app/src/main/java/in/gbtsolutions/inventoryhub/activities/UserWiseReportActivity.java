@@ -57,6 +57,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 import java.util.concurrent.Executors;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import in.gbtsolutions.inventoryhub.GlobalStore;
 import in.gbtsolutions.inventoryhub.R;
@@ -333,7 +335,7 @@ public class UserWiseReportActivity extends BaseActivity {
         UserHelper.getAllUsersAsync(this, users -> {
             if (isFinishing() || isDestroyed()) return;
 
-            java.util.LinkedHashMap<Long, String> userOptions = new java.util.LinkedHashMap<>();
+            LinkedHashMap<Long, String> userOptions = new LinkedHashMap<>();
             if (users != null) {
                 for (User u : users) {
                     if (u != null && u.id > 0) {
@@ -361,7 +363,7 @@ public class UserWiseReportActivity extends BaseActivity {
 
             int checkedIndex = 0;
             int idx = 1;
-            for (java.util.Map.Entry<Long, String> entry : userOptions.entrySet()) {
+            for (Map.Entry<Long, String> entry : userOptions.entrySet()) {
                 idList.add(entry.getKey());
                 labelList.add(entry.getValue());
                 if (selectedUserId == entry.getKey()) {

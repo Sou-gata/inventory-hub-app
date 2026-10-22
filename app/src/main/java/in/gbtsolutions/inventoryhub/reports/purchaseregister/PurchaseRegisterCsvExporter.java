@@ -49,56 +49,15 @@ public class PurchaseRegisterCsvExporter {
 
             // Table Data
             writer.writeNext(new String[]{"--- PURCHASE REGISTER (INWARD TAX DETAILS) ---"});
-            writer.writeNext(new String[]{
-                    "#", "Invoice / PO #", "Date", "Supplier Name", "Supplier Phone",
-                    "Supplier GSTIN", "Type", "Place of Supply", "Taxable Value",
-                    "CGST", "SGST", "IGST", "Cess", "Total Tax",
-                    "Bill Total", "Payment Terms", "Status"
-            });
+            writer.writeNext(new String[]{"#", "Invoice / PO #", "Date", "Supplier Name", "Supplier Phone", "Supplier GSTIN", "Type", "Place of Supply", "Taxable Value", "CGST", "SGST", "IGST", "Cess", "Total Tax", "Bill Total", "Payment Terms", "Status"});
 
             int slNo = 1;
             for (PurchaseRegisterModels.PurchaseRegisterRow row : report.rows) {
-                writer.writeNext(new String[]{
-                        String.valueOf(slNo++),
-                        row.invoiceId,
-                        row.formattedDate,
-                        row.supplierName,
-                        row.supplierPhone != null ? row.supplierPhone : "",
-                        row.supplierGstin != null ? row.supplierGstin : "",
-                        row.isB2B ? "Registered" : "Unregistered",
-                        row.placeOfSupply,
-                        row.taxableValue.toPlainString(),
-                        row.cgstAmount.toPlainString(),
-                        row.sgstAmount.toPlainString(),
-                        row.igstAmount.toPlainString(),
-                        row.cessAmount.toPlainString(),
-                        row.totalTax.toPlainString(),
-                        row.totalAmount.toPlainString(),
-                        row.paymentMethod,
-                        row.status
-                });
+                writer.writeNext(new String[]{String.valueOf(slNo++), row.invoiceId, row.formattedDate, row.supplierName, row.supplierPhone != null ? row.supplierPhone : "", row.supplierGstin != null ? row.supplierGstin : "", row.isB2B ? "Registered" : "Unregistered", row.placeOfSupply, row.taxableValue.toPlainString(), row.cgstAmount.toPlainString(), row.sgstAmount.toPlainString(), row.igstAmount.toPlainString(), row.cessAmount.toPlainString(), row.totalTax.toPlainString(), row.totalAmount.toPlainString(), row.paymentMethod, row.status});
             }
 
             // Total Row
-            writer.writeNext(new String[]{
-                    "TOTAL",
-                    "",
-                    "",
-                    "",
-                    "",
-                    "",
-                    "",
-                    "",
-                    report.summary.taxableValue.toPlainString(),
-                    report.summary.cgst.toPlainString(),
-                    report.summary.sgst.toPlainString(),
-                    report.summary.igst.toPlainString(),
-                    report.summary.cess.toPlainString(),
-                    report.summary.totalTax.toPlainString(),
-                    report.summary.grossPurchases.toPlainString(),
-                    "",
-                    ""
-            });
+            writer.writeNext(new String[]{"TOTAL", "", "", "", "", "", "", "", report.summary.taxableValue.toPlainString(), report.summary.cgst.toPlainString(), report.summary.sgst.toPlainString(), report.summary.igst.toPlainString(), report.summary.cess.toPlainString(), report.summary.totalTax.toPlainString(), report.summary.grossPurchases.toPlainString(), "", ""});
         }
 
         return outputFile;

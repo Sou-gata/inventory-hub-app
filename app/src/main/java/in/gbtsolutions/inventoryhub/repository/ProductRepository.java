@@ -2,6 +2,8 @@ package in.gbtsolutions.inventoryhub.repository;
 
 import android.app.Application;
 import android.database.Cursor;
+import android.os.Handler;
+import android.os.Looper;
 
 import androidx.lifecycle.LiveData;
 
@@ -15,6 +17,8 @@ import in.gbtsolutions.inventoryhub.models.Product;
 
 import in.gbtsolutions.inventoryhub.online.config.AppModeManager;
 import in.gbtsolutions.inventoryhub.online.repository.OnlineProductRepository;
+import in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper;
+import in.gbtsolutions.inventoryhub.models.AuditTrail;
 
 public class ProductRepository {
 
@@ -49,6 +53,7 @@ public class ProductRepository {
 
     public interface ProductInsertCallback {
         void onSuccess(long rowId);
+
         void onError(String message);
     }
 
@@ -58,10 +63,7 @@ public class ProductRepository {
         } else {
             executorService.execute(() -> {
                 long id = productDao.insert(product);
-                in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper.logAddition(application,
-                        in.gbtsolutions.inventoryhub.models.AuditTrail.MODULE_PRODUCT,
-                        product.sku != null && !product.sku.isEmpty() ? product.sku : ("ID:" + id),
-                        "Added product: " + product.productName + " (Price: ₹" + product.sellingPrice + ", Qty: " + product.quantity + ")");
+                AuditTrailHelper.logAddition(application, AuditTrail.MODULE_PRODUCT, product.sku != null && !product.sku.isEmpty() ? product.sku : ("ID:" + id), "Added product: " + product.productName + " (Price: ₹" + product.sellingPrice + ", Qty: " + product.quantity + ")");
             });
         }
     }
@@ -92,25 +94,19 @@ public class ProductRepository {
                     Product existing = productDao.getProductBySku(product.sku.trim());
                     if (existing != null) {
                         if (callback != null) {
-                            new android.os.Handler(android.os.Looper.getMainLooper()).post(() ->
-                                    callback.onError("A product with SKU '" + product.sku.trim() + "' already exists."));
+                            new Handler(Looper.getMainLooper()).post(() -> callback.onError("A product with SKU '" + product.sku.trim() + "' already exists."));
                         }
                         return;
                     }
                 }
                 long id = productDao.insert(product);
-                in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper.logAddition(application,
-                        in.gbtsolutions.inventoryhub.models.AuditTrail.MODULE_PRODUCT,
-                        product.sku != null && !product.sku.isEmpty() ? product.sku : ("ID:" + id),
-                        "Added product: " + product.productName + " (Price: ₹" + product.sellingPrice + ", Qty: " + product.quantity + ")");
+                AuditTrailHelper.logAddition(application, AuditTrail.MODULE_PRODUCT, product.sku != null && !product.sku.isEmpty() ? product.sku : ("ID:" + id), "Added product: " + product.productName + " (Price: ₹" + product.sellingPrice + ", Qty: " + product.quantity + ")");
                 if (callback != null) {
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() ->
-                            callback.onSuccess(id));
+                    new Handler(Looper.getMainLooper()).post(() -> callback.onSuccess(id));
                 }
             } catch (Exception e) {
                 if (callback != null) {
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() ->
-                            callback.onError(e.getMessage() != null ? e.getMessage() : "Failed to save product."));
+                    new Handler(Looper.getMainLooper()).post(() -> callback.onError(e.getMessage() != null ? e.getMessage() : "Failed to save product."));
                 }
             }
         });
@@ -118,6 +114,7 @@ public class ProductRepository {
 
     public interface ProductUpdateCallback {
         void onSuccess();
+
         void onError(String message);
     }
 
@@ -127,10 +124,7 @@ public class ProductRepository {
         } else {
             executorService.execute(() -> {
                 productDao.update(product);
-                in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper.logEdit(application,
-                        in.gbtsolutions.inventoryhub.models.AuditTrail.MODULE_PRODUCT,
-                        product.sku != null && !product.sku.isEmpty() ? product.sku : ("ID:" + product.productId),
-                        "Updated product: " + product.productName + " (Price: ₹" + product.sellingPrice + ", Qty: " + product.quantity + ")");
+                AuditTrailHelper.logEdit(application, AuditTrail.MODULE_PRODUCT, product.sku != null && !product.sku.isEmpty() ? product.sku : ("ID:" + product.productId), "Updated product: " + product.productName + " (Price: ₹" + product.sellingPrice + ", Qty: " + product.quantity + ")");
             });
         }
     }
@@ -161,24 +155,19 @@ public class ProductRepository {
                     Product existing = productDao.getProductBySku(product.sku.trim());
                     if (existing != null && existing.productId != product.productId) {
                         if (callback != null) {
-                            new android.os.Handler(android.os.Looper.getMainLooper()).post(() ->
-                                    callback.onError("Another product with SKU '" + product.sku.trim() + "' already exists."));
+                            new Handler(Looper.getMainLooper()).post(() -> callback.onError("Another product with SKU '" + product.sku.trim() + "' already exists."));
                         }
                         return;
                     }
                 }
                 productDao.update(product);
-                in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper.logEdit(application,
-                        in.gbtsolutions.inventoryhub.models.AuditTrail.MODULE_PRODUCT,
-                        product.sku != null && !product.sku.isEmpty() ? product.sku : ("ID:" + product.productId),
-                        "Updated product: " + product.productName + " (Price: ₹" + product.sellingPrice + ", Qty: " + product.quantity + ")");
+                AuditTrailHelper.logEdit(application, AuditTrail.MODULE_PRODUCT, product.sku != null && !product.sku.isEmpty() ? product.sku : ("ID:" + product.productId), "Updated product: " + product.productName + " (Price: ₹" + product.sellingPrice + ", Qty: " + product.quantity + ")");
                 if (callback != null) {
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(callback::onSuccess);
+                    new Handler(Looper.getMainLooper()).post(callback::onSuccess);
                 }
             } catch (Exception e) {
                 if (callback != null) {
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() ->
-                            callback.onError(e.getMessage() != null ? e.getMessage() : "Failed to update product."));
+                    new Handler(Looper.getMainLooper()).post(() -> callback.onError(e.getMessage() != null ? e.getMessage() : "Failed to update product."));
                 }
             }
         });
@@ -186,6 +175,7 @@ public class ProductRepository {
 
     public interface ProductDeleteCallback {
         void onSuccess();
+
         void onError(String message);
     }
 
@@ -216,24 +206,19 @@ public class ProductRepository {
         executorService.execute(() -> {
             try {
                 productDao.delete(product);
-                in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper.logDeletion(application,
-                        in.gbtsolutions.inventoryhub.models.AuditTrail.MODULE_PRODUCT,
-                        product.sku != null && !product.sku.isEmpty() ? product.sku : ("ID:" + product.productId),
-                        "Deleted product: " + product.productName);
+                AuditTrailHelper.logDeletion(application, AuditTrail.MODULE_PRODUCT, product.sku != null && !product.sku.isEmpty() ? product.sku : ("ID:" + product.productId), "Deleted product: " + product.productName);
                 if (callback != null) {
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(callback::onSuccess);
+                    new Handler(Looper.getMainLooper()).post(callback::onSuccess);
                 }
             } catch (Exception e) {
                 if (callback != null) {
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() ->
-                            callback.onError(e.getMessage() != null ? e.getMessage() : "Failed to delete product."));
+                    new Handler(Looper.getMainLooper()).post(() -> callback.onError(e.getMessage() != null ? e.getMessage() : "Failed to delete product."));
                 }
             }
         });
     }
 
-    public void fetchProductsPaged(int page, int limit, String search, String stockStatus,
-                                   Integer categoryId, OnlineProductRepository.PagedProductCallback callback) {
+    public void fetchProductsPaged(int page, int limit, String search, String stockStatus, Integer categoryId, OnlineProductRepository.PagedProductCallback callback) {
         if (appModeManager.isOnlineMode()) {
             onlineProductRepository.fetchProducts(page, limit, search, stockStatus, categoryId, callback);
         }
@@ -245,7 +230,7 @@ public class ProductRepository {
         } else {
             executorService.execute(() -> {
                 Product product = productDao.getProductById(productId);
-                new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                new Handler(Looper.getMainLooper()).post(() -> {
                     if (callback != null) {
                         if (product != null) {
                             callback.onSuccess(product);

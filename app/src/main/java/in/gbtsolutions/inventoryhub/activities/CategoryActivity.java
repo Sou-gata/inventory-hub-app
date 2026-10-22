@@ -13,6 +13,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.widget.Toolbar;
@@ -188,7 +189,7 @@ public class CategoryActivity extends BaseActivity {
 
             @Override
             public void onError(String errorMessage) {
-                android.widget.Toast.makeText(CategoryActivity.this, "Failed to load categories: " + errorMessage, android.widget.Toast.LENGTH_LONG).show();
+                Toast.makeText(CategoryActivity.this, "Failed to load categories: " + errorMessage, Toast.LENGTH_LONG).show();
             }
         });
     }

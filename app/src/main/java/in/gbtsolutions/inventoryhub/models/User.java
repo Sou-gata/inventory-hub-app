@@ -4,11 +4,9 @@ import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.Index;
 import androidx.room.PrimaryKey;
+import androidx.room.Ignore;
 
-@Entity(tableName = "users", indices = {
-        @Index(value = "contact", unique = true),
-        @Index(value = "email", unique = true),
-})
+@Entity(tableName = "users", indices = {@Index(value = "contact", unique = true), @Index(value = "email", unique = true),})
 public class User {
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "id")
@@ -35,7 +33,7 @@ public class User {
     @ColumnInfo(name = "is_active")
     public boolean isActive;
 
-    @androidx.room.Ignore
+    @Ignore
     public User() {
     }
 

@@ -7,6 +7,7 @@ import androidx.room.Insert;
 import androidx.room.Query;
 import androidx.room.Transaction;
 import androidx.room.Update;
+import androidx.room.OnConflictStrategy;
 
 import java.util.List;
 
@@ -52,15 +53,15 @@ public interface SaleItemDao {
 
     @Transaction
     @Query("SELECT * FROM sale_items WHERE sale_id = :saleId")
-    List<in.gbtsolutions.inventoryhub.models.SaleItemWithProduct> getSaleItemsWithProductSync(int saleId);
+    List<SaleItemWithProduct> getSaleItemsWithProductSync(int saleId);
 
     @Query("SELECT * FROM sale_items WHERE sale_id IN (:saleIds)")
     List<SaleItem> getItemsBySaleIds(List<Integer> saleIds);
 
     @Transaction
     @Query("SELECT * FROM sale_items")
-    List<in.gbtsolutions.inventoryhub.models.SaleItemWithProduct> getAllSaleItemsWithProductSync();
+    List<SaleItemWithProduct> getAllSaleItemsWithProductSync();
 
-    @Insert(onConflict = androidx.room.OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     void upsert(SaleItem item);
 }

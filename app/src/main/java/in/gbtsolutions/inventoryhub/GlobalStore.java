@@ -10,6 +10,8 @@ import java.util.Map;
 import in.gbtsolutions.inventoryhub.helpers.Mode;
 import in.gbtsolutions.inventoryhub.models.Config;
 import in.gbtsolutions.inventoryhub.models.User;
+import in.gbtsolutions.inventoryhub.online.config.AppMode;
+import in.gbtsolutions.inventoryhub.online.config.AppModeManager;
 
 public class GlobalStore {
     private static GlobalStore instance;
@@ -50,7 +52,9 @@ public class GlobalStore {
         loggedInUser = null;
     }
 
-    /** Loads all available settings from SharedPreferences and caches them in GlobalStore. */
+    /**
+     * Loads all available settings from SharedPreferences and caches them in GlobalStore.
+     */
     public synchronized void loadSettings(Context context) {
         if (context == null) return;
         SharedPreferences prefs = context.getApplicationContext().getSharedPreferences(Configurations.PREF_NAME, Context.MODE_PRIVATE);
@@ -92,8 +96,7 @@ public class GlobalStore {
                             } else if (Configurations.KEY_MODE.equalsIgnoreCase(c.getConfigKey())) {
                                 this.mode = c.getConfigValue();
                                 try {
-                                    in.gbtsolutions.inventoryhub.online.config.AppModeManager.getInstance(context)
-                                            .setAppMode(in.gbtsolutions.inventoryhub.online.config.AppMode.fromKey(c.getConfigValue()));
+                                    AppModeManager.getInstance(context).setAppMode(AppMode.fromKey(c.getConfigValue()));
                                 } catch (Exception ignored) {
                                 }
                             } else if (Configurations.KEY_TIER.equalsIgnoreCase(c.getConfigKey()) || "tire".equalsIgnoreCase(c.getConfigKey())) {
@@ -144,7 +147,6 @@ public class GlobalStore {
         this.upiId = upiId != null ? upiId : "";
         settingsMap.put(Configurations.KEY_UPI_ID, this.upiId);
     }
-
 
 
     public boolean isAllowOutOfStockSell() {

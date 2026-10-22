@@ -6,11 +6,7 @@ import androidx.room.Ignore;
 import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
-@Entity(tableName = "buyers", indices = {
-        @Index(value = "phone"),
-        @Index(value = "email"),
-        @Index(value = "gst")
-})
+@Entity(tableName = "buyers", indices = {@Index(value = "phone"), @Index(value = "email"), @Index(value = "gst")})
 public class Buyer {
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "buyer_id")
@@ -69,6 +65,7 @@ public class Buyer {
 
     @ColumnInfo(name = "updated_at")
     public long updatedAt;
+
     public Buyer() {
         this.isActive = true;
         this.createdAt = System.currentTimeMillis();

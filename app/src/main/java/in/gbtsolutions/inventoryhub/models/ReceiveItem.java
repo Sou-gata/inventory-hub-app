@@ -40,19 +40,47 @@ public class ReceiveItem {
         this(receiveRecordId, purchaseItemId, productId, (double) quantityReceived);
     }
 
-    public int getReceiveItemId() { return receiveItemId; }
-    public void setReceiveItemId(int receiveItemId) { this.receiveItemId = receiveItemId; }
+    public int getReceiveItemId() {
+        return receiveItemId;
+    }
 
-    public int getReceiveRecordId() { return receiveRecordId; }
-    public void setReceiveRecordId(int receiveRecordId) { this.receiveRecordId = receiveRecordId; }
+    public void setReceiveItemId(int receiveItemId) {
+        this.receiveItemId = receiveItemId;
+    }
 
-    public int getPurchaseItemId() { return purchaseItemId; }
-    public void setPurchaseItemId(int purchaseItemId) { this.purchaseItemId = purchaseItemId; }
+    public int getReceiveRecordId() {
+        return receiveRecordId;
+    }
 
-    public int getProductId() { return productId; }
-    public void setProductId(int productId) { this.productId = productId; }
+    public void setReceiveRecordId(int receiveRecordId) {
+        this.receiveRecordId = receiveRecordId;
+    }
 
-    public double getQuantityReceived() { return quantityReceived; }
-    public void setQuantityReceived(double quantityReceived) { this.quantityReceived = quantityReceived; }
-    public void setQuantityReceived(int quantityReceived) { this.quantityReceived = (double) quantityReceived; }
+    public int getPurchaseItemId() {
+        return purchaseItemId;
+    }
+
+    public void setPurchaseItemId(int purchaseItemId) {
+        this.purchaseItemId = purchaseItemId;
+    }
+
+    public int getProductId() {
+        return productId;
+    }
+
+    public void setProductId(int productId) {
+        this.productId = productId;
+    }
+
+    public double getQuantityReceived() {
+        return quantityReceived;
+    }
+
+    public void setQuantityReceived(double quantityReceived) {
+        this.quantityReceived = quantityReceived;
+    }
+
+    public void setQuantityReceived(int quantityReceived) {
+        this.quantityReceived = (double) quantityReceived;
+    }
 }

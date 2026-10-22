@@ -45,8 +45,7 @@ public class BatchEntryBottomSheet extends BottomSheetDialogFragment {
     private MaterialButton btnSave, btnCancel;
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
 
-    public static BatchEntryBottomSheet newInstance(@Nullable ProductBatch batch, int position,
-                                                    double defaultUnitCost, double defaultSellPrice) {
+    public static BatchEntryBottomSheet newInstance(@Nullable ProductBatch batch, int position, double defaultUnitCost, double defaultSellPrice) {
         BatchEntryBottomSheet fragment = new BatchEntryBottomSheet();
         fragment.existingBatch = batch;
         fragment.editPosition = position;
@@ -99,7 +98,8 @@ public class BatchEntryBottomSheet extends BottomSheetDialogFragment {
             tvTitle.setText("Add Batch");
             btnSave.setText("Add Batch");
             if (defaultUnitPrice > 0) etPurchasePrice.setText(String.valueOf(defaultUnitPrice));
-            if (defaultSellingPrice > 0) etSellingPrice.setText(String.valueOf(defaultSellingPrice));
+            if (defaultSellingPrice > 0)
+                etSellingPrice.setText(String.valueOf(defaultSellingPrice));
 
             // Auto-generate batch number BN-YYDDD-NNN
             BatchNumberGenerator.generate(repository, generatedNo -> {
@@ -150,14 +150,16 @@ public class BatchEntryBottomSheet extends BottomSheetDialogFragment {
         if (!TextUtils.isEmpty(costStr)) {
             try {
                 cost = Double.parseDouble(costStr);
-            } catch (NumberFormatException ignored) {}
+            } catch (NumberFormatException ignored) {
+            }
         }
 
         double sell = 0;
         if (!TextUtils.isEmpty(sellStr)) {
             try {
                 sell = Double.parseDouble(sellStr);
-            } catch (NumberFormatException ignored) {}
+            } catch (NumberFormatException ignored) {
+            }
         }
 
         ProductBatch batch;

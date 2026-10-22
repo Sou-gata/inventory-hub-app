@@ -24,17 +24,11 @@ public class UnitOfMeasureRepository {
 
     public interface ActionCallback {
         void onSuccess();
+
         void onError(String message);
     }
 
-    public static final String[][] DEFAULT_UNITS = new String[][]{
-            {"KG", "Kilogram (Standard unit of weight)"},
-            {"Gram", "Gram (Weight measurement)"},
-            {"Liter", "Liter (Liquid volume measurement)"},
-            {"Mililiter", "Milliliter (Liquid volume measurement)"},
-            {"Pics", "Pieces / Count units"},
-            {"Packet", "Packet packaging unit"}
-    };
+    public static final String[][] DEFAULT_UNITS = new String[][]{{"KG", "Kilogram (Standard unit of weight)"}, {"Gram", "Gram (Weight measurement)"}, {"Liter", "Liter (Liquid volume measurement)"}, {"Mililiter", "Milliliter (Liquid volume measurement)"}, {"Pics", "Pieces / Count units"}, {"Packet", "Packet packaging unit"}};
 
     private final Application application;
     private final UnitOfMeasureDao unitOfMeasureDao;
@@ -146,12 +140,7 @@ public class UnitOfMeasureRepository {
                     return;
                 }
 
-                AuditTrailHelper.logAddition(
-                        application,
-                        AuditTrail.MODULE_UNIT_OF_MEASURE,
-                        name,
-                        "Added unit of measure: " + name
-                );
+                AuditTrailHelper.logAddition(application, AuditTrail.MODULE_UNIT_OF_MEASURE, name, "Added unit of measure: " + name);
 
                 postSuccess(callback);
             } catch (Exception e) {
@@ -206,12 +195,7 @@ public class UnitOfMeasureRepository {
                 uom.updatedAt = System.currentTimeMillis();
                 unitOfMeasureDao.update(uom);
 
-                AuditTrailHelper.logEdit(
-                        application,
-                        AuditTrail.MODULE_UNIT_OF_MEASURE,
-                        name,
-                        "Updated unit of measure: " + name
-                );
+                AuditTrailHelper.logEdit(application, AuditTrail.MODULE_UNIT_OF_MEASURE, name, "Updated unit of measure: " + name);
 
                 postSuccess(callback);
             } catch (Exception e) {
@@ -255,12 +239,7 @@ public class UnitOfMeasureRepository {
                     return;
                 }
 
-                AuditTrailHelper.logDeletion(
-                        application,
-                        AuditTrail.MODULE_UNIT_OF_MEASURE,
-                        existing.name,
-                        "Deleted unit of measure: " + existing.name
-                );
+                AuditTrailHelper.logDeletion(application, AuditTrail.MODULE_UNIT_OF_MEASURE, existing.name, "Deleted unit of measure: " + existing.name);
 
                 postSuccess(callback);
             } catch (Exception e) {

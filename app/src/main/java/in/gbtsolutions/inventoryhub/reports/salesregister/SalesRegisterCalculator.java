@@ -130,15 +130,12 @@ public class SalesRegisterCalculator {
                 for (SaleItemWithProduct iw : itemWraps) {
                     if (iw.saleItem == null) continue;
                     SalesRegisterModels.ItemDetail itemDetail = new SalesRegisterModels.ItemDetail();
-                    itemDetail.productName = iw.product != null && !TextUtils.isEmpty(iw.product.productName)
-                            ? iw.product.productName : "Product #" + iw.saleItem.productId;
+                    itemDetail.productName = iw.product != null && !TextUtils.isEmpty(iw.product.productName) ? iw.product.productName : "Product #" + iw.saleItem.productId;
                     itemDetail.sku = iw.product != null && iw.product.sku != null ? iw.product.sku : "";
-                    itemDetail.hsnCode = iw.saleItem.hsnCode != null ? iw.saleItem.hsnCode
-                            : (iw.product != null && iw.product.hsnCode != null ? iw.product.hsnCode : "");
+                    itemDetail.hsnCode = iw.saleItem.hsnCode != null ? iw.saleItem.hsnCode : (iw.product != null && iw.product.hsnCode != null ? iw.product.hsnCode : "");
                     itemDetail.quantity = iw.saleItem.quantity;
                     itemDetail.unitPrice = iw.saleItem.unitPrice;
-                    itemDetail.gstRate = iw.saleItem.gstRate > 0 ? iw.saleItem.gstRate
-                            : (iw.product != null ? iw.product.gstPercent : 0.0);
+                    itemDetail.gstRate = iw.saleItem.gstRate > 0 ? iw.saleItem.gstRate : (iw.product != null ? iw.product.gstPercent : 0.0);
                     itemDetail.taxableValue = SalesRegisterModels.toMoney(iw.saleItem.subtotal);
                     itemDetail.cgstAmount = SalesRegisterModels.toMoney(iw.saleItem.cgstAmount);
                     itemDetail.sgstAmount = SalesRegisterModels.toMoney(iw.saleItem.sgstAmount);
@@ -181,7 +178,8 @@ public class SalesRegisterCalculator {
             if (d != null) {
                 return DISPLAY_DATE_FORMAT.format(d);
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         return dateStr;
     }
 }

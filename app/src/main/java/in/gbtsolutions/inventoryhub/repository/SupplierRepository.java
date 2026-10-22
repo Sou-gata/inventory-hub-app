@@ -1,6 +1,9 @@
 package in.gbtsolutions.inventoryhub.repository;
 
 import android.app.Application;
+import android.database.sqlite.SQLiteConstraintException;
+import android.os.Handler;
+import android.os.Looper;
 
 import androidx.lifecycle.LiveData;
 
@@ -13,6 +16,8 @@ import in.gbtsolutions.inventoryhub.dao.SupplierDao;
 import in.gbtsolutions.inventoryhub.models.Suppliers;
 import in.gbtsolutions.inventoryhub.online.config.AppModeManager;
 import in.gbtsolutions.inventoryhub.online.repository.OnlineSupplierRepository;
+import in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper;
+import in.gbtsolutions.inventoryhub.models.AuditTrail;
 
 public class SupplierRepository {
     private final SupplierDao supplierDao;
@@ -24,6 +29,7 @@ public class SupplierRepository {
 
     public interface SupplierActionCallback {
         void onSuccess();
+
         void onError(String message);
     }
 
@@ -67,6 +73,12 @@ public class SupplierRepository {
         }
     }
 
+    public void fetchSuppliersPaged(int page, int limit, String search, String status, OnlineSupplierRepository.PagedSupplierCallback callback) {
+        if (appModeManager.isOnlineMode()) {
+            onlineSupplierRepository.fetchSuppliersPaged(page, limit, search, status, callback);
+        }
+    }
+
     public void insert(Suppliers supplier) {
         insert(supplier, null);
     }
@@ -90,18 +102,15 @@ public class SupplierRepository {
         executorService.execute(() -> {
             try {
                 long id = supplierDao.insert(supplier);
-                in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper.logAddition(application,
-                        in.gbtsolutions.inventoryhub.models.AuditTrail.MODULE_SUPPLIER,
-                        supplier.supplierName,
-                        "Added supplier: " + supplier.supplierName + " (Phone: " + (supplier.phone != null ? supplier.phone : "N/A") + ")");
+                AuditTrailHelper.logAddition(application, AuditTrail.MODULE_SUPPLIER, supplier.supplierName, "Added supplier: " + supplier.supplierName + " (Phone: " + (supplier.phone != null ? supplier.phone : "N/A") + ")");
                 if (callback != null) {
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(callback::onSuccess);
+                    new Handler(Looper.getMainLooper()).post(callback::onSuccess);
                 }
             } catch (Exception e) {
                 if (callback != null) {
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                    new Handler(Looper.getMainLooper()).post(() -> {
                         String msg = e.getMessage() != null ? e.getMessage() : "Failed to add supplier.";
-                        if (e instanceof android.database.sqlite.SQLiteConstraintException) {
+                        if (e instanceof SQLiteConstraintException) {
                             msg = "A supplier with this phone number, email, or GST already exists.";
                         }
                         callback.onError(msg);
@@ -134,18 +143,15 @@ public class SupplierRepository {
         executorService.execute(() -> {
             try {
                 supplierDao.update(supplier);
-                in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper.logEdit(application,
-                        in.gbtsolutions.inventoryhub.models.AuditTrail.MODULE_SUPPLIER,
-                        supplier.supplierName,
-                        "Updated supplier: " + supplier.supplierName + " (Phone: " + (supplier.phone != null ? supplier.phone : "N/A") + ")");
+                AuditTrailHelper.logEdit(application, AuditTrail.MODULE_SUPPLIER, supplier.supplierName, "Updated supplier: " + supplier.supplierName + " (Phone: " + (supplier.phone != null ? supplier.phone : "N/A") + ")");
                 if (callback != null) {
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(callback::onSuccess);
+                    new Handler(Looper.getMainLooper()).post(callback::onSuccess);
                 }
             } catch (Exception e) {
                 if (callback != null) {
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                    new Handler(Looper.getMainLooper()).post(() -> {
                         String msg = e.getMessage() != null ? e.getMessage() : "Failed to update supplier.";
-                        if (e instanceof android.database.sqlite.SQLiteConstraintException) {
+                        if (e instanceof SQLiteConstraintException) {
                             msg = "A supplier with this phone number, email, or GST already exists.";
                         }
                         callback.onError(msg);
@@ -178,12 +184,11 @@ public class SupplierRepository {
                     supplierDao.delete(s);
                 }
                 if (callback != null) {
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(callback::onSuccess);
+                    new Handler(Looper.getMainLooper()).post(callback::onSuccess);
                 }
             } catch (Exception e) {
                 if (callback != null) {
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() ->
-                            callback.onError(e.getMessage() != null ? e.getMessage() : "Failed to delete supplier."));
+                    new Handler(Looper.getMainLooper()).post(() -> callback.onError(e.getMessage() != null ? e.getMessage() : "Failed to delete supplier."));
                 }
             }
         });
@@ -217,17 +222,13 @@ public class SupplierRepository {
                 supplierDao.updateStatus(supplierId, isActive, System.currentTimeMillis());
                 Suppliers s = supplierDao.getSupplierById(supplierId);
                 String name = s != null ? s.supplierName : ("ID:" + supplierId);
-                in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper.logEdit(application,
-                        in.gbtsolutions.inventoryhub.models.AuditTrail.MODULE_SUPPLIER,
-                        name,
-                        (isActive ? "Activated" : "Deactivated") + " supplier: " + name);
+                AuditTrailHelper.logEdit(application, AuditTrail.MODULE_SUPPLIER, name, (isActive ? "Activated" : "Deactivated") + " supplier: " + name);
                 if (callback != null) {
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(callback::onSuccess);
+                    new Handler(Looper.getMainLooper()).post(callback::onSuccess);
                 }
             } catch (Exception e) {
                 if (callback != null) {
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() ->
-                            callback.onError(e.getMessage() != null ? e.getMessage() : "Failed to update supplier status."));
+                    new Handler(Looper.getMainLooper()).post(() -> callback.onError(e.getMessage() != null ? e.getMessage() : "Failed to update supplier status."));
                 }
             }
         });

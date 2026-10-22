@@ -31,6 +31,7 @@ import in.gbtsolutions.inventoryhub.models.ProductBatch;
 import in.gbtsolutions.inventoryhub.online.config.AppModeManager;
 import in.gbtsolutions.inventoryhub.online.repository.OnlineProductRepository;
 import in.gbtsolutions.inventoryhub.repository.ProductBatchRepository;
+import in.gbtsolutions.inventoryhub.helpers.CommonFunctions;
 
 public class BatchSelectDialog extends BottomSheetDialogFragment {
 
@@ -240,7 +241,7 @@ public class BatchSelectDialog extends BottomSheetDialogFragment {
         int batchCount = adapter.getSelectedBatchCount();
         if (tvSummaryQty != null) {
             String uom = (product != null && !TextUtils.isEmpty(product.unitOfMeasure)) ? " " + product.unitOfMeasure.trim() : "";
-            tvSummaryQty.setText("Total Qty: " + in.gbtsolutions.inventoryhub.helpers.CommonFunctions.formatQuantity(totalQty) + uom);
+            tvSummaryQty.setText("Total Qty: " + CommonFunctions.formatQuantity(totalQty) + uom);
         }
         if (tvSummaryBatches != null) {
             tvSummaryBatches.setText(batchCount + " batch(es) selected");

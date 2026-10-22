@@ -1,6 +1,8 @@
 package in.gbtsolutions.inventoryhub.repository;
 
 import android.app.Application;
+import android.os.Handler;
+import android.os.Looper;
 
 import androidx.lifecycle.LiveData;
 
@@ -13,6 +15,8 @@ import in.gbtsolutions.inventoryhub.dao.CategoryDao;
 import in.gbtsolutions.inventoryhub.models.Category;
 import in.gbtsolutions.inventoryhub.online.config.AppModeManager;
 import in.gbtsolutions.inventoryhub.online.repository.OnlineCategoryRepository;
+import in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper;
+import in.gbtsolutions.inventoryhub.models.AuditTrail;
 
 public class CategoryRepository {
     private final CategoryDao categoryDao;
@@ -24,6 +28,7 @@ public class CategoryRepository {
 
     public interface CategoryActionCallback {
         void onSuccess();
+
         void onError(String message);
     }
 
@@ -78,17 +83,13 @@ public class CategoryRepository {
         executorService.execute(() -> {
             try {
                 long id = categoryDao.insert(category);
-                in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper.logAddition(application,
-                        in.gbtsolutions.inventoryhub.models.AuditTrail.MODULE_CATEGORY,
-                        category.categoryName,
-                        "Added category: " + category.categoryName);
+                AuditTrailHelper.logAddition(application, AuditTrail.MODULE_CATEGORY, category.categoryName, "Added category: " + category.categoryName);
                 if (callback != null) {
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(callback::onSuccess);
+                    new Handler(Looper.getMainLooper()).post(callback::onSuccess);
                 }
             } catch (Exception e) {
                 if (callback != null) {
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() ->
-                            callback.onError(e.getMessage() != null ? e.getMessage() : "Failed to add category."));
+                    new Handler(Looper.getMainLooper()).post(() -> callback.onError(e.getMessage() != null ? e.getMessage() : "Failed to add category."));
                 }
             }
         });
@@ -117,17 +118,13 @@ public class CategoryRepository {
         executorService.execute(() -> {
             try {
                 categoryDao.update(category);
-                in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper.logEdit(application,
-                        in.gbtsolutions.inventoryhub.models.AuditTrail.MODULE_CATEGORY,
-                        category.categoryName,
-                        "Updated category: " + category.categoryName);
+                AuditTrailHelper.logEdit(application, AuditTrail.MODULE_CATEGORY, category.categoryName, "Updated category: " + category.categoryName);
                 if (callback != null) {
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(callback::onSuccess);
+                    new Handler(Looper.getMainLooper()).post(callback::onSuccess);
                 }
             } catch (Exception e) {
                 if (callback != null) {
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() ->
-                            callback.onError(e.getMessage() != null ? e.getMessage() : "Failed to update category."));
+                    new Handler(Looper.getMainLooper()).post(() -> callback.onError(e.getMessage() != null ? e.getMessage() : "Failed to update category."));
                 }
             }
         });
@@ -156,17 +153,13 @@ public class CategoryRepository {
         executorService.execute(() -> {
             try {
                 categoryDao.delete(category);
-                in.gbtsolutions.inventoryhub.helpers.AuditTrailHelper.logDeletion(application,
-                        in.gbtsolutions.inventoryhub.models.AuditTrail.MODULE_CATEGORY,
-                        category.categoryName,
-                        "Deleted category: " + category.categoryName);
+                AuditTrailHelper.logDeletion(application, AuditTrail.MODULE_CATEGORY, category.categoryName, "Deleted category: " + category.categoryName);
                 if (callback != null) {
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(callback::onSuccess);
+                    new Handler(Looper.getMainLooper()).post(callback::onSuccess);
                 }
             } catch (Exception e) {
                 if (callback != null) {
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() ->
-                            callback.onError(e.getMessage() != null ? e.getMessage() : "Failed to delete category."));
+                    new Handler(Looper.getMainLooper()).post(() -> callback.onError(e.getMessage() != null ? e.getMessage() : "Failed to delete category."));
                 }
             }
         });

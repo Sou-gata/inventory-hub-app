@@ -38,11 +38,8 @@ public class ScannerOverlayView extends View {
 
         overlayPath = new Path();
 
-        cornerRadius = TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP,
-                16f, // Change this value to make corners rounder or sharper
-                context.getResources().getDisplayMetrics()
-        );
+        cornerRadius = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16f, // Change this value to make corners rounder or sharper
+                context.getResources().getDisplayMetrics());
     }
 
     @Override

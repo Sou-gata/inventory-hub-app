@@ -215,18 +215,7 @@ public class AuditTrailExcelExporter {
         s2h2.setCellStyle(headerStyle);
 
         AuditTrailReportModels.AuditTrailSummary sm = report.summary;
-        String[][] summaryData = {
-                {"Total Events", String.valueOf(sm.totalEvents)},
-                {"Create Events", String.valueOf(sm.creates)},
-                {"Update Events", String.valueOf(sm.updates)},
-                {"Delete Events", String.valueOf(sm.deletes)},
-                {"Receive Events", String.valueOf(sm.receives)},
-                {"Cancel Events", String.valueOf(sm.cancels)},
-                {"Unique Users", String.valueOf(sm.uniqueUsers)},
-                {"Unique Modules", String.valueOf(sm.uniqueModules)},
-                {"First Event At", sm.firstEventAt},
-                {"Last Event At", sm.lastEventAt}
-        };
+        String[][] summaryData = {{"Total Events", String.valueOf(sm.totalEvents)}, {"Create Events", String.valueOf(sm.creates)}, {"Update Events", String.valueOf(sm.updates)}, {"Delete Events", String.valueOf(sm.deletes)}, {"Receive Events", String.valueOf(sm.receives)}, {"Cancel Events", String.valueOf(sm.cancels)}, {"Unique Users", String.valueOf(sm.uniqueUsers)}, {"Unique Modules", String.valueOf(sm.uniqueModules)}, {"First Event At", sm.firstEventAt}, {"Last Event At", sm.lastEventAt}};
 
         int s2Idx = 5;
         for (String[] pair : summaryData) {

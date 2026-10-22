@@ -48,20 +48,7 @@ public class GSTR1CsvExporter {
             writer.writeNext(new String[]{"--- 1. B2B SUPPLIES ---"});
             writer.writeNext(new String[]{"Customer GSTIN", "Customer Name", "Place of Supply", "Rate (%)", "Invoices", "Taxable Value", "CGST", "SGST", "IGST", "CESS", "Total Tax", "Invoice Value"});
             for (GSTR1Models.B2BRow row : report.b2bList) {
-                writer.writeNext(new String[]{
-                        row.customerGstin,
-                        row.customerName,
-                        row.placeOfSupply,
-                        String.valueOf(row.taxRate),
-                        String.valueOf(row.invoiceCount),
-                        row.taxableValue.toPlainString(),
-                        row.cgst.toPlainString(),
-                        row.sgst.toPlainString(),
-                        row.igst.toPlainString(),
-                        row.cess.toPlainString(),
-                        row.totalTax.toPlainString(),
-                        row.invoiceValue.toPlainString()
-                });
+                writer.writeNext(new String[]{row.customerGstin, row.customerName, row.placeOfSupply, String.valueOf(row.taxRate), String.valueOf(row.invoiceCount), row.taxableValue.toPlainString(), row.cgst.toPlainString(), row.sgst.toPlainString(), row.igst.toPlainString(), row.cess.toPlainString(), row.totalTax.toPlainString(), row.invoiceValue.toPlainString()});
             }
             writer.writeNext(new String[]{""});
 
@@ -69,34 +56,10 @@ public class GSTR1CsvExporter {
             writer.writeNext(new String[]{"--- 2. B2C SUPPLIES ---"});
             writer.writeNext(new String[]{"Category", "Place of Supply", "Rate (%)", "Invoices", "Taxable Value", "CGST", "SGST", "IGST", "CESS", "Total Tax", "Invoice Value"});
             for (GSTR1Models.B2CRow row : report.b2cOthersList) {
-                writer.writeNext(new String[]{
-                        row.supplyCategory,
-                        row.placeOfSupply,
-                        String.valueOf(row.taxRate),
-                        String.valueOf(row.invoiceCount),
-                        row.taxableValue.toPlainString(),
-                        row.cgst.toPlainString(),
-                        row.sgst.toPlainString(),
-                        row.igst.toPlainString(),
-                        row.cess.toPlainString(),
-                        row.totalTax.toPlainString(),
-                        row.invoiceValue.toPlainString()
-                });
+                writer.writeNext(new String[]{row.supplyCategory, row.placeOfSupply, String.valueOf(row.taxRate), String.valueOf(row.invoiceCount), row.taxableValue.toPlainString(), row.cgst.toPlainString(), row.sgst.toPlainString(), row.igst.toPlainString(), row.cess.toPlainString(), row.totalTax.toPlainString(), row.invoiceValue.toPlainString()});
             }
             for (GSTR1Models.B2CRow row : report.b2cLargeList) {
-                writer.writeNext(new String[]{
-                        row.supplyCategory,
-                        row.placeOfSupply,
-                        String.valueOf(row.taxRate),
-                        String.valueOf(row.invoiceCount),
-                        row.taxableValue.toPlainString(),
-                        row.cgst.toPlainString(),
-                        row.sgst.toPlainString(),
-                        row.igst.toPlainString(),
-                        row.cess.toPlainString(),
-                        row.totalTax.toPlainString(),
-                        row.invoiceValue.toPlainString()
-                });
+                writer.writeNext(new String[]{row.supplyCategory, row.placeOfSupply, String.valueOf(row.taxRate), String.valueOf(row.invoiceCount), row.taxableValue.toPlainString(), row.cgst.toPlainString(), row.sgst.toPlainString(), row.igst.toPlainString(), row.cess.toPlainString(), row.totalTax.toPlainString(), row.invoiceValue.toPlainString()});
             }
             writer.writeNext(new String[]{""});
 
@@ -104,18 +67,10 @@ public class GSTR1CsvExporter {
             writer.writeNext(new String[]{"--- 6. HSN / SAC SUMMARY ---"});
             writer.writeNext(new String[]{"HSN/SAC", "Description", "UQC", "Quantity", "Rate (%)", "Supply Type", "Taxable Value", "CGST", "SGST", "IGST", "CESS", "Total Tax", "Total Value"});
             for (GSTR1Models.HsnRow row : report.hsnB2bList) {
-                writer.writeNext(new String[]{
-                        row.hsnCode, row.description, row.uqc, String.valueOf(row.quantity), String.valueOf(row.taxRate), row.supplyType,
-                        row.taxableValue.toPlainString(), row.cgst.toPlainString(), row.sgst.toPlainString(), row.igst.toPlainString(),
-                        row.cess.toPlainString(), row.totalTax.toPlainString(), row.totalValue.toPlainString()
-                });
+                writer.writeNext(new String[]{row.hsnCode, row.description, row.uqc, String.valueOf(row.quantity), String.valueOf(row.taxRate), row.supplyType, row.taxableValue.toPlainString(), row.cgst.toPlainString(), row.sgst.toPlainString(), row.igst.toPlainString(), row.cess.toPlainString(), row.totalTax.toPlainString(), row.totalValue.toPlainString()});
             }
             for (GSTR1Models.HsnRow row : report.hsnB2cList) {
-                writer.writeNext(new String[]{
-                        row.hsnCode, row.description, row.uqc, String.valueOf(row.quantity), String.valueOf(row.taxRate), row.supplyType,
-                        row.taxableValue.toPlainString(), row.cgst.toPlainString(), row.sgst.toPlainString(), row.igst.toPlainString(),
-                        row.cess.toPlainString(), row.totalTax.toPlainString(), row.totalValue.toPlainString()
-                });
+                writer.writeNext(new String[]{row.hsnCode, row.description, row.uqc, String.valueOf(row.quantity), String.valueOf(row.taxRate), row.supplyType, row.taxableValue.toPlainString(), row.cgst.toPlainString(), row.sgst.toPlainString(), row.igst.toPlainString(), row.cess.toPlainString(), row.totalTax.toPlainString(), row.totalValue.toPlainString()});
             }
         }
 
