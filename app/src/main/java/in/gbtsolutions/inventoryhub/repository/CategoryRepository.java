@@ -37,7 +37,7 @@ public class CategoryRepository {
         Database db = Database.getInstance(application);
         categoryDao = db.categoryDao();
         allCategory = categoryDao.getAllCategories();
-        executorService = Executors.newFixedThreadPool(4);
+        executorService = in.gbtsolutions.inventoryhub.helpers.AppExecutors.getInstance().diskIO();
         onlineCategoryRepository = new OnlineCategoryRepository(application);
         appModeManager = AppModeManager.getInstance(application);
     }

@@ -1,14 +1,12 @@
 package in.gbtsolutions.inventoryhub.helpers;
 
-
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.util.Log;
-import android.util.Size;
-import android.widget.Toast;
 import android.graphics.Color;
+import android.util.Log;
+import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -29,18 +27,19 @@ import com.google.zxing.BarcodeFormat;
 import com.google.zxing.BinaryBitmap;
 import com.google.zxing.DecodeHintType;
 import com.google.zxing.EncodeHintType;
+import com.google.zxing.MultiFormatReader;
 import com.google.zxing.NotFoundException;
 import com.google.zxing.RGBLuminanceSource;
 import com.google.zxing.Result;
 import com.google.zxing.WriterException;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.common.HybridBinarizer;
-import com.google.zxing.qrcode.QRCodeReader;
 import com.google.zxing.qrcode.QRCodeWriter;
 
 import java.net.URLEncoder;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -50,8 +49,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class QRCodeHelper {
 
     private static final String TAG = "QRCodeHelper";
+
+    public static final int MODE_QR = 0;
+    public static final int MODE_BARCODE = 1;
+    public static final int MODE_AUTO = 2;
+
     private Camera camera;
     private boolean shouldEnableFlash = false;
+    private int scanMode = MODE_QR;
 
     public static Bitmap createQRCode(String content, int size) {
         return createQRCode(content, size, 0);
@@ -105,7 +110,7 @@ public class QRCodeHelper {
     private ProcessCameraProvider cameraProvider;
     private ExecutorService cameraExecutor;
 
-    private QRCodeReader qrCodeReader;
+    private MultiFormatReader multiFormatReader;
     private Map<DecodeHintType, Object> decodeHints;
 
     private ActivityResultLauncher<String> requestPermissionLauncher;
@@ -122,10 +127,9 @@ public class QRCodeHelper {
         cameraExecutor = Executors.newSingleThreadExecutor();
         cameraProviderFuture = ProcessCameraProvider.getInstance(activity);
 
-        qrCodeReader = new QRCodeReader();
+        multiFormatReader = new MultiFormatReader();
         decodeHints = new HashMap<>();
-        decodeHints.put(DecodeHintType.POSSIBLE_FORMATS, Collections.singletonList(BarcodeFormat.QR_CODE));
-        decodeHints.put(DecodeHintType.TRY_HARDER, Boolean.TRUE);
+        updateReaderFormats();
 
         requestPermissionLauncher = activity.registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
             if (isGranted) {
@@ -135,6 +139,53 @@ public class QRCodeHelper {
                 callback.onScanCancelled();
             }
         });
+    }
+
+    public void setScanMode(int mode) {
+        this.scanMode = mode;
+        updateReaderFormats();
+    }
+
+    public int getScanMode() {
+        return scanMode;
+    }
+
+    private void updateReaderFormats() {
+        List<BarcodeFormat> formats = new ArrayList<>();
+        if (scanMode == MODE_BARCODE) {
+            formats.add(BarcodeFormat.CODE_128);
+            formats.add(BarcodeFormat.CODE_39);
+            formats.add(BarcodeFormat.CODE_93);
+            formats.add(BarcodeFormat.EAN_13);
+            formats.add(BarcodeFormat.EAN_8);
+            formats.add(BarcodeFormat.UPC_A);
+            formats.add(BarcodeFormat.UPC_E);
+            formats.add(BarcodeFormat.ITF);
+            formats.add(BarcodeFormat.CODABAR);
+            formats.add(BarcodeFormat.QR_CODE);
+        } else if (scanMode == MODE_QR) {
+            formats.add(BarcodeFormat.QR_CODE);
+            formats.add(BarcodeFormat.CODE_128);
+            formats.add(BarcodeFormat.EAN_13);
+        } else {
+            formats.add(BarcodeFormat.QR_CODE);
+            formats.add(BarcodeFormat.CODE_128);
+            formats.add(BarcodeFormat.CODE_39);
+            formats.add(BarcodeFormat.CODE_93);
+            formats.add(BarcodeFormat.EAN_13);
+            formats.add(BarcodeFormat.EAN_8);
+            formats.add(BarcodeFormat.UPC_A);
+            formats.add(BarcodeFormat.UPC_E);
+            formats.add(BarcodeFormat.ITF);
+            formats.add(BarcodeFormat.CODABAR);
+        }
+
+        decodeHints.put(DecodeHintType.POSSIBLE_FORMATS, formats);
+        decodeHints.put(DecodeHintType.TRY_HARDER, Boolean.TRUE);
+
+        if (multiFormatReader != null) {
+            multiFormatReader.setHints(decodeHints);
+        }
     }
 
     public void startScanning() {
@@ -169,11 +220,14 @@ public class QRCodeHelper {
                 Preview preview = new Preview.Builder().build();
                 preview.setSurfaceProvider(previewView.getSurfaceProvider());
 
-                Size targetResolution = new Size(640, 480);
+                android.util.Size targetResolution = new android.util.Size(640, 480);
                 ResolutionStrategy strategy = new ResolutionStrategy(targetResolution, ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER);
                 ResolutionSelector resolutionSelector = new ResolutionSelector.Builder().setResolutionStrategy(strategy).build();
 
-                ImageAnalysis imageAnalysis = new ImageAnalysis.Builder().setResolutionSelector(resolutionSelector).setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST).build();
+                ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
+                        .setResolutionSelector(resolutionSelector)
+                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                        .build();
 
                 imageAnalysis.setAnalyzer(cameraExecutor, this::processImageProxy);
 
@@ -206,22 +260,32 @@ public class QRCodeHelper {
             int fullWidth = bitmap.getWidth();
             int fullHeight = bitmap.getHeight();
 
-            int boxSize = (int) (Math.min(fullWidth, fullHeight) * 0.70);
-            int left = (fullWidth - boxSize) / 2;
-            int top = (fullHeight - boxSize) / 2;
+            int cropWidth;
+            int cropHeight;
 
-            int[] pixels = new int[boxSize * boxSize];
+            if (scanMode == MODE_BARCODE) {
+                cropWidth = (int) (fullWidth * 0.90);
+                cropHeight = (int) (fullHeight * 0.52);
+            } else {
+                int boxSize = (int) (Math.min(fullWidth, fullHeight) * 0.75);
+                cropWidth = boxSize;
+                cropHeight = boxSize;
+            }
 
-            bitmap.getPixels(pixels, 0, boxSize, left, top, boxSize, boxSize);
+            int left = Math.max(0, (fullWidth - cropWidth) / 2);
+            int top = Math.max(0, (fullHeight - cropHeight) / 2);
 
-            RGBLuminanceSource source = new RGBLuminanceSource(boxSize, boxSize, pixels);
+            int[] pixels = new int[cropWidth * cropHeight];
+            bitmap.getPixels(pixels, 0, cropWidth, left, top, cropWidth, cropHeight);
+
+            RGBLuminanceSource source = new RGBLuminanceSource(cropWidth, cropHeight, pixels);
             BinaryBitmap binaryBitmap = new BinaryBitmap(new HybridBinarizer(source));
 
-            Result result = qrCodeReader.decode(binaryBitmap, decodeHints);
+            Result result = multiFormatReader.decodeWithState(binaryBitmap);
 
-            if (result.getText() != null) {
+            if (result != null && result.getText() != null) {
                 isProcessing.set(true);
-                Log.i(TAG, "Barcode found: " + result.getText());
+                Log.i(TAG, "Scanned code found: " + result.getText());
 
                 activity.runOnUiThread(() -> {
                     stopScanning();
@@ -229,11 +293,14 @@ public class QRCodeHelper {
                 });
             }
 
+        } catch (NotFoundException ignored) {
+            // Normal when frame does not contain a recognizable code
         } catch (Exception e) {
             Log.e(TAG, "ZXing scanning failed: " + e.getMessage(), e);
-            isProcessing.set(false);
         } finally {
-            qrCodeReader.reset();
+            if (multiFormatReader != null) {
+                multiFormatReader.reset();
+            }
         }
     }
 

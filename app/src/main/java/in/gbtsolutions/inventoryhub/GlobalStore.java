@@ -27,6 +27,7 @@ public class GlobalStore {
     private String mode = Mode.OFFLINE.name();
     private String tier = Mode.OfflineTier.STANDARD.name();
     private String migrationCompleted = "0/0";
+    private String codeFormat = Configurations.CODE_FORMAT_QR;
     private final Map<String, Object> settingsMap = new HashMap<>();
     public static final String KEY_ALLOW_OUT_OF_STOCK_SELL = "allow_out_of_stock_sell";
 
@@ -66,6 +67,7 @@ public class GlobalStore {
         this.saveBillToGallery = prefs.getBoolean(Configurations.KEY_SAVE_BILL_TO_GALLERY, true);
         this.printBill = prefs.getBoolean(Configurations.KEY_PRINT_BILL, false);
         this.migrationCompleted = prefs.getString(Configurations.KEY_MIGRATION_COMPLETED, "0/0");
+        this.codeFormat = prefs.getString(Configurations.KEY_CODE_FORMAT, Configurations.CODE_FORMAT_QR);
 
         settingsMap.clear();
         Map<String, ?> all = prefs.getAll();
@@ -79,6 +81,7 @@ public class GlobalStore {
         settingsMap.put(Configurations.KEY_SAVE_BILL_TO_GALLERY, this.saveBillToGallery);
         settingsMap.put(Configurations.KEY_PRINT_BILL, this.printBill);
         settingsMap.put(Configurations.KEY_MIGRATION_COMPLETED, this.migrationCompleted);
+        settingsMap.put(Configurations.KEY_CODE_FORMAT, this.codeFormat);
 
         new Thread(() -> {
             try {
@@ -103,6 +106,8 @@ public class GlobalStore {
                                 this.tier = c.getConfigValue();
                             } else if (Configurations.KEY_MIGRATION_COMPLETED.equalsIgnoreCase(c.getConfigKey())) {
                                 this.migrationCompleted = c.getConfigValue();
+                            } else if (Configurations.KEY_CODE_FORMAT.equalsIgnoreCase(c.getConfigKey())) {
+                                this.codeFormat = c.getConfigValue();
                             }
                         }
                     }
@@ -110,6 +115,15 @@ public class GlobalStore {
             } catch (Exception ignored) {
             }
         }).start();
+    }
+
+    public String getCodeFormat() {
+        return codeFormat != null ? codeFormat : Configurations.CODE_FORMAT_QR;
+    }
+
+    public void setCodeFormat(String codeFormat) {
+        this.codeFormat = (codeFormat != null && !codeFormat.trim().isEmpty()) ? codeFormat.trim().toLowerCase() : Configurations.CODE_FORMAT_QR;
+        settingsMap.put(Configurations.KEY_CODE_FORMAT, this.codeFormat);
     }
 
     public boolean isSaveBillToGallery() {

@@ -58,6 +58,29 @@ public class SalesRegisterCalculator {
             salesWithBuyers = new ArrayList<>();
         }
 
+        // Batch load all sale items in one query to eliminate N+1 DB bottleneck
+        Map<Integer, List<SaleItemWithProduct>> itemsMap = new HashMap<>();
+        if (!salesWithBuyers.isEmpty()) {
+            List<Integer> allSaleIds = new ArrayList<>(salesWithBuyers.size());
+            for (SaleWithBuyer swb : salesWithBuyers) {
+                if (swb.sale != null) {
+                    allSaleIds.add(swb.sale.saleId);
+                }
+            }
+            int chunkSize = 500;
+            for (int i = 0; i < allSaleIds.size(); i += chunkSize) {
+                List<Integer> chunk = allSaleIds.subList(i, Math.min(i + chunkSize, allSaleIds.size()));
+                List<SaleItemWithProduct> chunkItems = db.saleItemDao().getSaleItemsWithProductBySaleIdsSync(chunk);
+                if (chunkItems != null) {
+                    for (SaleItemWithProduct iw : chunkItems) {
+                        if (iw.saleItem != null) {
+                            itemsMap.computeIfAbsent(iw.saleItem.saleId, k -> new ArrayList<>()).add(iw);
+                        }
+                    }
+                }
+            }
+        }
+
         SalesRegisterModels.SalesRegisterSummary summary = report.summary;
 
         for (SaleWithBuyer swb : salesWithBuyers) {
@@ -123,8 +146,8 @@ public class SalesRegisterCalculator {
             row.otherCharges = SalesRegisterModels.toMoney(sale.otherCharges);
             row.totalAmount = SalesRegisterModels.toMoney(sale.totalAmount);
 
-            // Fetch Items
-            List<SaleItemWithProduct> itemWraps = db.saleItemDao().getSaleItemsWithProductSync(sale.saleId);
+            // Fetch Items from batch map
+            List<SaleItemWithProduct> itemWraps = itemsMap.get(sale.saleId);
             if (itemWraps != null) {
                 row.itemCount = itemWraps.size();
                 for (SaleItemWithProduct iw : itemWraps) {

@@ -55,6 +55,10 @@ public interface SaleItemDao {
     @Query("SELECT * FROM sale_items WHERE sale_id = :saleId")
     List<SaleItemWithProduct> getSaleItemsWithProductSync(int saleId);
 
+    @Transaction
+    @Query("SELECT * FROM sale_items WHERE sale_id IN (:saleIds)")
+    List<SaleItemWithProduct> getSaleItemsWithProductBySaleIdsSync(List<Integer> saleIds);
+
     @Query("SELECT * FROM sale_items WHERE sale_id IN (:saleIds)")
     List<SaleItem> getItemsBySaleIds(List<Integer> saleIds);
 

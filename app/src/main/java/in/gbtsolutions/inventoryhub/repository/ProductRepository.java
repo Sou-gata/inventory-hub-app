@@ -34,7 +34,7 @@ public class ProductRepository {
         Database db = Database.getInstance(application);
         productDao = db.productDao();
         allProducts = productDao.getAllProducts();
-        executorService = Executors.newFixedThreadPool(4);
+        executorService = in.gbtsolutions.inventoryhub.helpers.AppExecutors.getInstance().diskIO();
         onlineProductRepository = new OnlineProductRepository(application);
         appModeManager = AppModeManager.getInstance(application);
     }

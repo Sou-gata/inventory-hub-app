@@ -50,7 +50,7 @@ public class ProductBatchRepository {
         this.db = Database.getInstance(application);
         this.productBatchDao = db.productBatchDao();
         this.productDao = db.productDao();
-        this.executorService = Executors.newFixedThreadPool(4);
+        this.executorService = in.gbtsolutions.inventoryhub.helpers.AppExecutors.getInstance().diskIO();
     }
 
     public LiveData<List<ProductBatch>> getAllBatchesForProduct(int productId) {

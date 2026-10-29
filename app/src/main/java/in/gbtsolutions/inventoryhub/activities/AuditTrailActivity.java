@@ -150,6 +150,11 @@ public class AuditTrailActivity extends BaseActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_audit_trail);
+        if (!isCurrentUserAdmin()) {
+            Toast.makeText(this, "Access denied: Administrator privileges required.", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
 
         repository = new AuditTrailRepository(getApplication());
         appModeManager = AppModeManager.getInstance(this);

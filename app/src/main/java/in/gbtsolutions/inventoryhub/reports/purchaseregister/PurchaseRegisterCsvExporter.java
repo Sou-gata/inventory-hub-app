@@ -12,6 +12,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+import in.gbtsolutions.inventoryhub.helpers.HelperMethods;
+
 public class PurchaseRegisterCsvExporter {
 
     public static File exportToCsv(Context context, PurchaseRegisterModels.ReportData report) throws IOException {
@@ -53,7 +55,25 @@ public class PurchaseRegisterCsvExporter {
 
             int slNo = 1;
             for (PurchaseRegisterModels.PurchaseRegisterRow row : report.rows) {
-                writer.writeNext(new String[]{String.valueOf(slNo++), row.invoiceId, row.formattedDate, row.supplierName, row.supplierPhone != null ? row.supplierPhone : "", row.supplierGstin != null ? row.supplierGstin : "", row.isB2B ? "Registered" : "Unregistered", row.placeOfSupply, row.taxableValue.toPlainString(), row.cgstAmount.toPlainString(), row.sgstAmount.toPlainString(), row.igstAmount.toPlainString(), row.cessAmount.toPlainString(), row.totalTax.toPlainString(), row.totalAmount.toPlainString(), row.paymentMethod, row.status});
+                writer.writeNext(new String[]{
+                        String.valueOf(slNo++),
+                        HelperMethods.sanitizeForCsv(row.invoiceId),
+                        HelperMethods.sanitizeForCsv(row.formattedDate),
+                        HelperMethods.sanitizeForCsv(row.supplierName),
+                        HelperMethods.sanitizeForCsv(row.supplierPhone),
+                        HelperMethods.sanitizeForCsv(row.supplierGstin),
+                        row.isB2B ? "Registered" : "Unregistered",
+                        HelperMethods.sanitizeForCsv(row.placeOfSupply),
+                        row.taxableValue.toPlainString(),
+                        row.cgstAmount.toPlainString(),
+                        row.sgstAmount.toPlainString(),
+                        row.igstAmount.toPlainString(),
+                        row.cessAmount.toPlainString(),
+                        row.totalTax.toPlainString(),
+                        row.totalAmount.toPlainString(),
+                        HelperMethods.sanitizeForCsv(row.paymentMethod),
+                        HelperMethods.sanitizeForCsv(row.status)
+                });
             }
 
             // Total Row

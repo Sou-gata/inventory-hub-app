@@ -81,3 +81,6 @@ scripts
 model_capabilities.yaml
 ONLINE_MODE_IMPLEMENTATION_PLAN.md
 SERVER_API_SPECIFICATION.md
+.venv
+graphify-out
+Security And Optimization Audit.md

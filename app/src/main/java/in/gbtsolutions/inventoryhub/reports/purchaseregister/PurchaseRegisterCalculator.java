@@ -58,6 +58,29 @@ public class PurchaseRegisterCalculator {
             purchasesWithSuppliers = new ArrayList<>();
         }
 
+        // Batch load all purchase items in one query to eliminate N+1 DB bottleneck
+        Map<Integer, List<PurchaseItemWithProduct>> itemsMap = new HashMap<>();
+        if (!purchasesWithSuppliers.isEmpty()) {
+            List<Integer> allPurchaseIds = new ArrayList<>(purchasesWithSuppliers.size());
+            for (PurchaseWithSupplier pws : purchasesWithSuppliers) {
+                if (pws.purchase != null) {
+                    allPurchaseIds.add(pws.purchase.purchaseId);
+                }
+            }
+            int chunkSize = 500;
+            for (int i = 0; i < allPurchaseIds.size(); i += chunkSize) {
+                List<Integer> chunk = allPurchaseIds.subList(i, Math.min(i + chunkSize, allPurchaseIds.size()));
+                List<PurchaseItemWithProduct> chunkItems = db.purchaseItemDao().getPurchaseItemsWithProductByPurchaseIdsSync(chunk);
+                if (chunkItems != null) {
+                    for (PurchaseItemWithProduct piw : chunkItems) {
+                        if (piw.purchaseItem != null) {
+                            itemsMap.computeIfAbsent(piw.purchaseItem.purchaseId, k -> new ArrayList<>()).add(piw);
+                        }
+                    }
+                }
+            }
+        }
+
         PurchaseRegisterModels.PurchaseRegisterSummary summary = report.summary;
 
         for (PurchaseWithSupplier pws : purchasesWithSuppliers) {
@@ -114,8 +137,8 @@ public class PurchaseRegisterCalculator {
             row.otherCharges = PurchaseRegisterModels.toMoney(purchase.otherCharges);
             row.totalAmount = PurchaseRegisterModels.toMoney(purchase.totalAmount);
 
-            // Fetch Items
-            List<PurchaseItemWithProduct> itemWraps = db.purchaseItemDao().getPurchaseItemsWithProductSync(purchase.purchaseId);
+            // Fetch Items from batch map
+            List<PurchaseItemWithProduct> itemWraps = itemsMap.get(purchase.purchaseId);
             if (itemWraps != null) {
                 row.itemCount = itemWraps.size();
                 for (PurchaseItemWithProduct piw : itemWraps) {

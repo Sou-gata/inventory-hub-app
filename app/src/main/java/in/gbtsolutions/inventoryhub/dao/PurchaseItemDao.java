@@ -45,6 +45,10 @@ public interface PurchaseItemDao {
     List<PurchaseItem> getItemsByPurchaseIds(List<Integer> purchaseIds);
 
     @Transaction
+    @Query("SELECT * FROM purchase_items WHERE purchase_id IN (:purchaseIds)")
+    List<PurchaseItemWithProduct> getPurchaseItemsWithProductByPurchaseIdsSync(List<Integer> purchaseIds);
+
+    @Transaction
     @Query("SELECT * FROM purchase_items")
     List<PurchaseItemWithProduct> getAllPurchaseItemsWithProductSync();
 

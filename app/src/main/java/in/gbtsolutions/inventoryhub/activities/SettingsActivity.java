@@ -48,6 +48,11 @@ public class SettingsActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
+        if (!isCurrentUserAdmin()) {
+            Toast.makeText(this, "Access denied: Administrator privileges required.", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
 
         configRepository = new ConfigRepository(getApplication());
         sharedPreferences = getSharedPreferences(Configurations.PREF_NAME, MODE_PRIVATE);
@@ -69,6 +74,7 @@ public class SettingsActivity extends BaseActivity {
         GlobalStore.getInstance().loadSettings(this);
 
         setupMandatoryFieldSetting();
+        setupCodeFormatSetting();
         setupPaymentSettings();
         setupBillPrintSettings();
         setupAppearanceSetting();
@@ -133,6 +139,68 @@ public class SettingsActivity extends BaseActivity {
                 sharedPreferences.edit().putString(Configurations.KEY_CSV_MANDATORY_FIELD, selectedVal).apply();
                 GlobalStore.getInstance().setCsvMandatoryField(selectedVal);
                 configRepository.set(Configurations.KEY_CSV_MANDATORY_FIELD, selectedVal);
+            }
+        });
+    }
+
+    private void setupCodeFormatSetting() {
+        AutoCompleteTextView dropdownCodeFormat = findViewById(R.id.dropdown_code_format);
+        View containerCodeFormat = findViewById(R.id.container_code_format);
+        View rowCodeFormat = findViewById(R.id.row_code_format);
+
+        String[] formatOptions = getResources().getStringArray(R.array.code_format_options);
+        String[] formatValues = getResources().getStringArray(R.array.code_format_values);
+
+        NoFilterArrayAdapter<String> formatAdapter = new NoFilterArrayAdapter<>(this, R.layout.item_dropdown, formatOptions);
+        dropdownCodeFormat.setAdapter(formatAdapter);
+        dropdownCodeFormat.setDropDownBackgroundResource(R.drawable.bg_card);
+        dropdownCodeFormat.setDropDownAnchor(R.id.container_code_format);
+
+        int dropdownWidthPx = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 150, getResources().getDisplayMetrics());
+        dropdownCodeFormat.setDropDownWidth(dropdownWidthPx);
+
+        // Initial selection
+        String currentFormat = GlobalStore.getInstance().getCodeFormat();
+        String currentLabel = getOptionLabel(currentFormat, formatValues, formatOptions);
+        dropdownCodeFormat.setText(currentLabel, false);
+
+        configRepository.getValueLiveData(Configurations.KEY_CODE_FORMAT).observe(this, val -> {
+            if (val != null && !val.trim().isEmpty()) {
+                String normalized = val.trim().toLowerCase();
+                String label = getOptionLabel(normalized, formatValues, formatOptions);
+                if (!dropdownCodeFormat.getText().toString().equals(label)) {
+                    dropdownCodeFormat.setText(label, false);
+                }
+                GlobalStore.getInstance().setCodeFormat(normalized);
+                if (!normalized.equals(sharedPreferences.getString(Configurations.KEY_CODE_FORMAT, Configurations.CODE_FORMAT_QR))) {
+                    sharedPreferences.edit().putString(Configurations.KEY_CODE_FORMAT, normalized).apply();
+                }
+            }
+        });
+
+        View.OnClickListener showDropdown = v -> {
+            if (dropdownCodeFormat.isPopupShowing()) {
+                dropdownCodeFormat.dismissDropDown();
+            } else {
+                dropdownCodeFormat.showDropDown();
+            }
+        };
+        dropdownCodeFormat.setOnClickListener(showDropdown);
+        if (containerCodeFormat != null) {
+            containerCodeFormat.setOnClickListener(showDropdown);
+        }
+        if (rowCodeFormat != null) {
+            rowCodeFormat.setOnClickListener(showDropdown);
+        }
+
+        dropdownCodeFormat.setOnItemClickListener((parent, view, position, id) -> {
+            if (position >= 0 && position < formatValues.length) {
+                String selectedVal = formatValues[position];
+                String selectedLabel = formatOptions[position];
+                dropdownCodeFormat.setText(selectedLabel, false);
+                sharedPreferences.edit().putString(Configurations.KEY_CODE_FORMAT, selectedVal).apply();
+                GlobalStore.getInstance().setCodeFormat(selectedVal);
+                configRepository.set(Configurations.KEY_CODE_FORMAT, selectedVal);
             }
         });
     }

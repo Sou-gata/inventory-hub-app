@@ -23,6 +23,10 @@ public class Configurations {
     public static final String KEY_TIER = "tier";
     public static final String KEY_MIGRATION_COMPLETED = "migration_completed";
 
+    public static final String KEY_CODE_FORMAT = "code_format";
+    public static final String CODE_FORMAT_QR = "qr";
+    public static final String CODE_FORMAT_BARCODE = "barcode";
+
      public static final String DEFAULT_ONLINE_SERVER_URL = "https://imgbt.gbtsolutions.in/";
 //    public static final String DEFAULT_ONLINE_SERVER_URL = "http://192.168.0.181:3000/";
 }

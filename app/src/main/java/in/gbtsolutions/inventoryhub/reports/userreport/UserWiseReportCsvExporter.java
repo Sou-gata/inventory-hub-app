@@ -12,6 +12,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+import in.gbtsolutions.inventoryhub.helpers.HelperMethods;
+
 public class UserWiseReportCsvExporter {
 
     public static File exportToCsv(Context context, UserWiseReportModels.ReportData report) throws IOException {
@@ -55,7 +57,29 @@ public class UserWiseReportCsvExporter {
 
             int slNo = 1;
             for (UserWiseReportModels.UserWiseReportRow row : report.rows) {
-                writer.writeNext(new String[]{String.valueOf(slNo++), String.valueOf(row.userId), row.userName, row.username != null ? row.username : "", row.role, String.valueOf(row.salesCount), row.salesTaxable.toPlainString(), row.salesCgst.toPlainString(), row.salesSgst.toPlainString(), row.salesIgst.toPlainString(), row.salesTotalGst.toPlainString(), row.salesGrossTotal.toPlainString(), String.valueOf(row.purchaseCount), row.purchaseTaxable.toPlainString(), row.purchaseCgst.toPlainString(), row.purchaseSgst.toPlainString(), row.purchaseIgst.toPlainString(), row.purchaseTotalGst.toPlainString(), row.purchaseGrossTotal.toPlainString(), row.totalCombinedGst.toPlainString(), row.netTurnover.toPlainString()});
+                writer.writeNext(new String[]{
+                        String.valueOf(slNo++),
+                        String.valueOf(row.userId),
+                        HelperMethods.sanitizeForCsv(row.userName),
+                        HelperMethods.sanitizeForCsv(row.username),
+                        HelperMethods.sanitizeForCsv(row.role),
+                        String.valueOf(row.salesCount),
+                        row.salesTaxable.toPlainString(),
+                        row.salesCgst.toPlainString(),
+                        row.salesSgst.toPlainString(),
+                        row.salesIgst.toPlainString(),
+                        row.salesTotalGst.toPlainString(),
+                        row.salesGrossTotal.toPlainString(),
+                        String.valueOf(row.purchaseCount),
+                        row.purchaseTaxable.toPlainString(),
+                        row.purchaseCgst.toPlainString(),
+                        row.purchaseSgst.toPlainString(),
+                        row.purchaseIgst.toPlainString(),
+                        row.purchaseTotalGst.toPlainString(),
+                        row.purchaseGrossTotal.toPlainString(),
+                        row.totalCombinedGst.toPlainString(),
+                        row.netTurnover.toPlainString()
+                });
             }
 
             // Total Row

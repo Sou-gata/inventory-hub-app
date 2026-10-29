@@ -12,6 +12,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+import in.gbtsolutions.inventoryhub.helpers.HelperMethods;
+
 public class AuditTrailCsvExporter {
 
     public static File exportToCsv(Context context, AuditTrailReportModels.ReportData report) throws IOException {
@@ -37,7 +39,15 @@ public class AuditTrailCsvExporter {
             writer.writeNext(new String[]{"ID", "Action", "Module", "Record ID", "Performed By", "Date & Time", "Details"});
 
             for (AuditTrailReportModels.AuditTrailRow row : report.rows) {
-                writer.writeNext(new String[]{String.valueOf(row.id), row.actionType != null ? row.actionType : "", row.module != null ? row.module : "", row.recordId != null ? row.recordId : "", row.performedBy != null ? row.performedBy : "", row.formattedDateTime != null ? row.formattedDateTime : "", row.details != null ? row.details : ""});
+                writer.writeNext(new String[]{
+                        String.valueOf(row.id),
+                        HelperMethods.sanitizeForCsv(row.actionType),
+                        HelperMethods.sanitizeForCsv(row.module),
+                        HelperMethods.sanitizeForCsv(row.recordId),
+                        HelperMethods.sanitizeForCsv(row.performedBy),
+                        HelperMethods.sanitizeForCsv(row.formattedDateTime),
+                        HelperMethods.sanitizeForCsv(row.details)
+                });
             }
         }
 

@@ -48,6 +48,7 @@ import com.google.gson.JsonObject;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -122,6 +123,14 @@ public class LoginActivity extends AppCompatActivity {
         setupSignInButton();
         setupMenu();
 
+        String rememberedUsername = sharedPreferences.getString("remembered_username", "");
+        if (!TextUtils.isEmpty(rememberedUsername)) {
+            emailInput.setText(rememberedUsername);
+            emailInput.setSelection(rememberedUsername.length());
+            rememberMe = true;
+            updateRememberMeUi();
+        }
+
         serialNo = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
         if (serialNo != null && !serialNo.trim().isEmpty()) {
             AppModeManager.getInstance(this).setDeviceId(serialNo.trim());
@@ -150,23 +159,53 @@ public class LoginActivity extends AppCompatActivity {
 
     private void checkAutoLogin() {
         long userId = sharedPreferences.getLong("user_id", -1);
-        if (userId > 0) {
-            executorService.execute(() -> {
-                Database db = Database.getInstance(getApplicationContext());
-                User user = db.userDao().getUserById(userId);
-                if (user != null) {
-                    UserHelper.saveLoggedInUser(LoginActivity.this, user);
-                    runOnUiThread(() -> {
-                        if (!isFinishing() && !isDestroyed()) {
-                            onLoginSuccess();
-                        }
-                    });
-                } else {
-                    // Stale user ID from wiped database, clear it
-                    sharedPreferences.edit().remove("user_id").apply();
-                }
-            });
+        if (userId <= 0) {
+            return;
         }
+
+        AppModeManager modeManager = AppModeManager.getInstance(getApplicationContext());
+        if (modeManager.isOnlineMode()) {
+            if (!modeManager.hasAuthToken()) {
+                sharedPreferences.edit().remove("user_id").remove("isAdmin").apply();
+                return;
+            }
+        }
+
+        executorService.execute(() -> {
+            Database db = Database.getInstance(getApplicationContext());
+            User user = db.userDao().getUserById(userId);
+
+            if (user == null) {
+                // Fallback to cached user JSON (online mode user)
+                String userJson = sharedPreferences.getString(UserHelper.KEY_CURRENT_USER_JSON, null);
+                if (userJson != null && !userJson.trim().isEmpty()) {
+                    try {
+                        User prefUser = new Gson().fromJson(userJson, User.class);
+                        if (prefUser != null && prefUser.id == userId) {
+                            user = prefUser;
+                            try {
+                                db.userDao().insertAll(Collections.singletonList(user));
+                            } catch (Exception ignored) {
+                            }
+                        }
+                    } catch (Exception ignored) {
+                    }
+                }
+            }
+
+            if (user != null) {
+                final User resolvedUser = user;
+                UserHelper.saveLoggedInUser(LoginActivity.this, resolvedUser);
+                runOnUiThread(() -> {
+                    if (!isFinishing() && !isDestroyed()) {
+                        navigateToHome();
+                    }
+                });
+            } else {
+                // Stale user ID from wiped database or unresolvable user, clear it
+                sharedPreferences.edit().remove("user_id").remove("isAdmin").apply();
+            }
+        });
     }
 
     private void bindViews() {
@@ -224,13 +263,25 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void setupRememberMe() {
-        rememberMeRow.setOnClickListener(v -> {
+        View.OnClickListener toggleListener = v -> {
             rememberMe = !rememberMe;
+            updateRememberMeUi();
+        };
+        rememberMeRow.setOnClickListener(toggleListener);
+        if (checkboxBox != null) {
+            checkboxBox.setOnClickListener(toggleListener);
+        }
+    }
+
+    private void updateRememberMeUi() {
+        if (checkboxBox != null) {
             checkboxBox.setBackgroundResource(rememberMe
                     ? R.drawable.bg_checkbox_checked
                     : R.drawable.bg_checkbox_unchecked);
+        }
+        if (checkboxTick != null) {
             checkboxTick.setVisibility(rememberMe ? View.VISIBLE : View.GONE);
-        });
+        }
     }
 
     private void setupSignInButton() {
@@ -290,14 +341,52 @@ public class LoginActivity extends AppCompatActivity {
                             user.name = uObj.has("name") && !uObj.get("name").isJsonNull() ? uObj.get("name").getAsString() : email;
                             user.username = uObj.has("username") && !uObj.get("username").isJsonNull() ? uObj.get("username").getAsString() : email;
                             user.role = uObj.has("role") && !uObj.get("role").isJsonNull() ? uObj.get("role").getAsString() : "admin";
+                            if (uObj.has("email") && !uObj.get("email").isJsonNull() && !uObj.get("email").getAsString().trim().isEmpty()) {
+                                user.email = uObj.get("email").getAsString().trim();
+                            } else {
+                                user.email = email;
+                            }
+                            if (uObj.has("mobile") && !uObj.get("mobile").isJsonNull() && !uObj.get("mobile").getAsString().trim().isEmpty()) {
+                                user.contact = uObj.get("mobile").getAsString().trim();
+                            } else if (uObj.has("contact") && !uObj.get("contact").isJsonNull() && !uObj.get("contact").getAsString().trim().isEmpty()) {
+                                user.contact = uObj.get("contact").getAsString().trim();
+                            }
+                            user.isActive = !uObj.has("is_active") || uObj.get("is_active").getAsInt() == 1;
                         } else {
                             user.id = data.has("user_id") ? data.get("user_id").getAsInt() : 1;
                             user.name = data.has("name") && !data.get("name").isJsonNull() ? data.get("name").getAsString() : email;
                             user.username = email;
+                            user.email = email;
                             user.role = data.has("role") && !data.get("role").isJsonNull() ? data.get("role").getAsString() : "admin";
+                            user.isActive = true;
                         }
 
-                        GlobalStore.getInstance().setLoggedInUser(user);
+                        user.password = HelperMethods.hashPassword(password);
+
+                        final User finalUser = user;
+                        executorService.execute(() -> {
+                            try {
+                                Database db = Database.getInstance(getApplicationContext());
+                                if (finalUser.email != null) {
+                                    User existing = db.userDao().getUserForLogin(finalUser.email);
+                                    if (existing != null && existing.id != finalUser.id) {
+                                        existing.email = null;
+                                        db.userDao().update(existing);
+                                    }
+                                }
+                                if (finalUser.contact != null) {
+                                    User existingContact = db.userDao().getUserForLogin(finalUser.contact);
+                                    if (existingContact != null && existingContact.id != finalUser.id) {
+                                        existingContact.contact = null;
+                                        db.userDao().update(existingContact);
+                                    }
+                                }
+                                db.userDao().insertAll(Collections.singletonList(finalUser));
+                            } catch (Exception ignored) {
+                            }
+                        });
+
+                        UserHelper.saveLoggedInUser(LoginActivity.this, user);
                         setLoading(false);
                         onLoginSuccess();
                     } else {
@@ -345,7 +434,7 @@ public class LoginActivity extends AppCompatActivity {
                     return;
                 }
 
-                GlobalStore.getInstance().setLoggedInUser(user);
+                UserHelper.saveLoggedInUser(LoginActivity.this, user);
                 setLoading(false);
                 onLoginSuccess();
             });
@@ -373,21 +462,32 @@ public class LoginActivity extends AppCompatActivity {
 
     private void onLoginSuccess() {
         User user = GlobalStore.getInstance().getLoggedInUser();
+        if (user == null) {
+            user = UserHelper.getCurrentUser(this);
+        }
         if (user == null) return;
         UserHelper.saveLoggedInUser(this, user);
-        GlobalStore.getInstance().loadSettings(this);
+
+        SharedPreferences.Editor editor = sharedPreferences.edit();
         if (rememberMe) {
-            SharedPreferences.Editor editor = sharedPreferences.edit();
             editor.putLong("user_id", user.id);
             editor.putBoolean("isAdmin", user.role != null && user.role.equalsIgnoreCase("admin"));
-            editor.apply();
+            String savedLoginId = emailInput.getText() != null ? emailInput.getText().toString().trim() : "";
+            if (!TextUtils.isEmpty(savedLoginId)) {
+                editor.putString("remembered_username", savedLoginId);
+            }
         } else {
-            SharedPreferences.Editor editor = sharedPreferences.edit();
             editor.remove("user_id");
             editor.remove("isAdmin");
-            editor.apply();
+            editor.remove("remembered_username");
         }
+        editor.apply();
 
+        navigateToHome();
+    }
+
+    private void navigateToHome() {
+        GlobalStore.getInstance().loadSettings(this);
         Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
         startActivity(intent);
         BaseActivity.applyOpenTransition(this);

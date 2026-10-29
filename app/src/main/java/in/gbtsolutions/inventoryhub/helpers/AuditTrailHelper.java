@@ -19,7 +19,9 @@ public class AuditTrailHelper {
     public static final long RETENTION_DAYS = 30L;
     public static final long RETENTION_MILLIS = RETENTION_DAYS * 24L * 60L * 60L * 1000L;
 
-    private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
+    private static ExecutorService getExecutor() {
+        return AppExecutors.getInstance().diskIO();
+    }
 
     public static void logAddition(Context context, String module, String recordId, String details) {
         log(context, AuditTrail.ACTION_ADD, module, recordId, details);
@@ -37,7 +39,7 @@ public class AuditTrailHelper {
         if (context == null) return;
         final Context appContext = context.getApplicationContext();
 
-        EXECUTOR.execute(() -> {
+        getExecutor().execute(() -> {
             try {
                 String performedBy = resolveCurrentUserName(appContext);
                 long now = System.currentTimeMillis();
@@ -64,7 +66,7 @@ public class AuditTrailHelper {
         if (context == null) return;
         final Context appContext = context.getApplicationContext();
 
-        EXECUTOR.execute(() -> {
+        getExecutor().execute(() -> {
             try {
                 Database db = Database.getInstance(appContext);
                 long cutoffTimestamp = System.currentTimeMillis() - RETENTION_MILLIS;

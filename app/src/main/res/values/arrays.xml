@@ -20,4 +20,12 @@
         <item>hsn</item>
         <item>both</item>
     </string-array>
+    <string-array name="code_format_options">
+        <item>QR Code</item>
+        <item>Barcode</item>
+    </string-array>
+    <string-array name="code_format_values">
+        <item>qr</item>
+        <item>barcode</item>
+    </string-array>
 </resources>

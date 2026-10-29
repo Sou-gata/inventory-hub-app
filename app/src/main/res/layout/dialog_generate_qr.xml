@@ -20,22 +20,62 @@
 
     <!-- Dialog Header -->
     <TextView
+        android:id="@+id/tv_dialog_gen_code_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:fontFamily="sans-serif-black"
-        android:text="Generate QR Code"
+        android:text="Generate Code"
         android:textColor="@color/fg"
         android:textSize="19sp" />
 
     <TextView
+        android:id="@+id/tv_dialog_gen_code_subtitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
-        android:layout_marginBottom="14dp"
+        android:layout_marginBottom="12dp"
         android:fontFamily="sans-serif"
-        android:text="Select number of copies and batch to encode"
+        android:text="Select code format, number of copies and batch"
         android:textColor="@color/fg_dim"
         android:textSize="12sp" />
+
+    <!-- Code Format Switcher (QR Code / Barcode) -->
+    <LinearLayout
+        android:id="@+id/container_gen_code_tabs"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_marginBottom="14dp"
+        android:background="@drawable/bg_field_normal"
+        android:orientation="horizontal"
+        android:padding="3dp">
+
+        <TextView
+            android:id="@+id/btn_gen_toggle_qr"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/bg_status_chip"
+            android:clickable="true"
+            android:focusable="true"
+            android:fontFamily="sans-serif-bold"
+            android:gravity="center"
+            android:text="QR Code"
+            android:textColor="@color/material_blue"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/btn_gen_toggle_barcode"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:clickable="true"
+            android:focusable="true"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center"
+            android:text="Barcode"
+            android:textColor="@color/fg_muted"
+            android:textSize="13sp" />
+    </LinearLayout>
 
     <!-- Product Summary Card -->
     <LinearLayout

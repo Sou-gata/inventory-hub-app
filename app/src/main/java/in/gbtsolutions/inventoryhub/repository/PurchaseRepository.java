@@ -62,7 +62,7 @@ public class PurchaseRepository {
         this.productBatchDao = db.productBatchDao();
         this.receiveRecordDao = db.receiveRecordDao();
         this.receiveItemDao = db.receiveItemDao();
-        this.executorService = Executors.newFixedThreadPool(4);
+        this.executorService = in.gbtsolutions.inventoryhub.helpers.AppExecutors.getInstance().diskIO();
         this.onlinePurchaseRepository = new OnlinePurchaseRepository(application);
         this.appModeManager = AppModeManager.getInstance(application);
     }

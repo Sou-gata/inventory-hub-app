@@ -29,7 +29,7 @@ public class SaleItemRepository {
     public SaleItemRepository(Application application) {
         Database db = Database.getInstance(application);
         this.saleItemDao = db.saleItemDao();
-        this.executorService = Executors.newFixedThreadPool(4);
+        this.executorService = in.gbtsolutions.inventoryhub.helpers.AppExecutors.getInstance().diskIO();
     }
 
     public LiveData<List<SaleItem>> getItemsBySaleId(int saleId) {

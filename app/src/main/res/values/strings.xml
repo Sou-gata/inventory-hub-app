@@ -91,6 +91,16 @@
     <string name="setting_mandatory_field_title">Mandatory Product Identifier</string>
     <string name="setting_mandatory_field_desc">Choose whether SKU, HSN, or both are mandatory for products (manual &amp; import)</string>
     <string name="settings_active_identifier_format">Active requirement: %s enforced for products</string>
+    <string name="setting_code_format_title">Barcode &amp; QR Code Format</string>
+    <string name="setting_code_format_desc">Choose default format for generating product labels and scanning</string>
+    <string name="code_format_qr">QR Code</string>
+    <string name="code_format_barcode">Barcode</string>
+    <string name="scan_qr_code">Scan QR Code</string>
+    <string name="scan_barcode">Scan Barcode</string>
+    <string name="align_qr_hint">Align QR Code within the frame</string>
+    <string name="align_barcode_hint">Align Barcode within the frame</string>
+    <string name="generate_qr_code">Generate QR Code</string>
+    <string name="generate_barcode">Generate Barcode</string>
 
     <!-- Payment & Billing Settings -->
     <string name="settings_section_payments">PAYMENTS &amp; BILLING</string>

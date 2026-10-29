@@ -49,6 +49,11 @@ public class BackupRestoreActivity extends BaseActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_backup_restore);
+        if (!isCurrentUserAdmin()) {
+            Toast.makeText(this, "Access denied: Administrator privileges required.", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setupToolbar(toolbar, getString(R.string.backup_restore), true);

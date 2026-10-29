@@ -168,6 +168,108 @@
                                 app:tint="@color/material_blue" />
                         </LinearLayout>
                     </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginHorizontal="16dp"
+                        android:background="@color/border" />
+
+                    <!-- Setting: Barcode & QR Code Format -->
+                    <LinearLayout
+                        android:id="@+id/row_code_format"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="16dp"
+                        android:paddingVertical="14dp">
+
+                        <FrameLayout
+                            android:layout_width="38dp"
+                            android:layout_height="38dp"
+                            android:background="@drawable/bg_status_chip">
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_gravity="center"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_barcode"
+                                app:tint="@color/material_blue" />
+                        </FrameLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="14dp"
+                            android:layout_marginEnd="12dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/setting_code_format_title"
+                                android:textColor="@color/fg"
+                                android:textSize="15sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:fontFamily="sans-serif"
+                                android:text="@string/setting_code_format_desc"
+                                android:textColor="@color/fg_muted"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+
+                        <!-- Right aligned dropdown selector in same line like switches -->
+                        <LinearLayout
+                            android:id="@+id/container_code_format"
+                            android:layout_width="wrap_content"
+                            android:layout_height="38dp"
+                            android:background="@drawable/bg_field_normal"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:minWidth="104dp"
+                            android:paddingHorizontal="12dp">
+
+                            <AutoCompleteTextView
+                                android:id="@+id/dropdown_code_format"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:layout_weight="1"
+                                android:background="@android:color/transparent"
+                                android:clickable="true"
+                                android:cursorVisible="false"
+                                android:dropDownAnchor="@id/container_code_format"
+                                android:dropDownWidth="150dp"
+                                android:dropDownVerticalOffset="4dp"
+                                android:focusable="false"
+                                android:gravity="center"
+                                android:hint="Select"
+                                android:inputType="none"
+                                android:popupBackground="@drawable/bg_card"
+                                android:textColor="@color/material_blue"
+                                android:textColorHint="@color/fg_dim"
+                                android:textSize="13sp"
+                                android:textStyle="bold" />
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:layout_marginStart="4dp"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_arrow_drop_down"
+                                app:tint="@color/material_blue" />
+                        </LinearLayout>
+                    </LinearLayout>
                 </LinearLayout>
 
                 <!-- 2. Section: PAYMENTS & BILLING -->

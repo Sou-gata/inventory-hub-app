@@ -22,7 +22,7 @@ public class AuditTrailRepository {
         Database db = Database.getInstance(application);
         auditTrailDao = db.auditTrailDao();
         allAuditTrails = auditTrailDao.getAllAuditTrails();
-        executorService = Executors.newFixedThreadPool(2);
+        executorService = in.gbtsolutions.inventoryhub.helpers.AppExecutors.getInstance().diskIO();
     }
 
     public LiveData<List<AuditTrail>> getAllAuditTrails() {

@@ -69,7 +69,7 @@ public class SaleRepository {
         this.productDao = db.productDao();
         this.productBatchDao = db.productBatchDao();
         this.allSales = saleDao.getAllSales();
-        this.executorService = Executors.newFixedThreadPool(4);
+        this.executorService = in.gbtsolutions.inventoryhub.helpers.AppExecutors.getInstance().diskIO();
         this.onlineSaleRepository = new OnlineSaleRepository(application);
         this.appModeManager = AppModeManager.getInstance(application);
     }

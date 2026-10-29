@@ -38,7 +38,7 @@ public class SupplierRepository {
         Database db = Database.getInstance(application);
         supplierDao = db.supplierDao();
         allSuppliers = supplierDao.getAllSuppliers();
-        executorService = Executors.newFixedThreadPool(4);
+        executorService = in.gbtsolutions.inventoryhub.helpers.AppExecutors.getInstance().diskIO();
         onlineSupplierRepository = new OnlineSupplierRepository(application);
         appModeManager = AppModeManager.getInstance(application);
     }

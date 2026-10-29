@@ -41,7 +41,7 @@ public class ConfigRepository {
         Database db = Database.getInstance(application);
         this.configDao = db.configDao();
         this.allConfigs = configDao.getAllConfigs();
-        this.executorService = Executors.newFixedThreadPool(4);
+        this.executorService = in.gbtsolutions.inventoryhub.helpers.AppExecutors.getInstance().diskIO();
     }
 
     public LiveData<List<Config>> getAllConfigs() {

@@ -48,6 +48,9 @@ public class GSTR1ReportCalculator {
         List<Sale> sales = db.saleDao().getSalesForExport(startDate, endDate);
         if (sales == null) sales = new ArrayList<>();
 
+        // Batch load all items for sales in one query to eliminate N+1 DB bottleneck
+        Map<Integer, List<SaleItemWithProduct>> itemsMap = loadItemsMap(db, sales);
+
         // Group accumulators for B2B, B2C, Export, Nil/Exempt, HSN
         Map<String, B2BAccumulator> b2bMap = new LinkedHashMap<>();
         Map<String, B2CAccumulator> b2cLargeMap = new LinkedHashMap<>();
@@ -75,7 +78,7 @@ public class GSTR1ReportCalculator {
             BigDecimal invoiceTotal = GSTR1Models.toMoney(sale.totalAmount);
             totalGross = totalGross.add(invoiceTotal);
 
-            List<SaleItemWithProduct> items = db.saleItemDao().getSaleItemsWithProductSync(sale.saleId);
+            List<SaleItemWithProduct> items = itemsMap.get(sale.saleId);
             if (items == null) items = new ArrayList<>();
 
             // Determine recipient details
@@ -308,16 +311,43 @@ public class GSTR1ReportCalculator {
         report.kpi.totalInvoices = activeInvoicesCount;
 
         // Run Validation & Reconciliation
-        report.validationIssues = GSTR1Validator.validateReport(sales, itemsList(db, sales));
+        report.validationIssues = GSTR1Validator.validateReport(sales, itemsList(itemsMap, sales));
         report.reconciliation = GSTR1Reconciler.reconcile(report);
 
         return report;
     }
 
-    private static List<SaleItemWithProduct> itemsList(Database db, List<Sale> sales) {
-        List<SaleItemWithProduct> list = new ArrayList<>();
+    private static Map<Integer, List<SaleItemWithProduct>> loadItemsMap(Database db, List<Sale> sales) {
+        Map<Integer, List<SaleItemWithProduct>> map = new HashMap<>();
+        if (sales == null || sales.isEmpty()) {
+            return map;
+        }
+
+        List<Integer> allSaleIds = new ArrayList<>(sales.size());
         for (Sale s : sales) {
-            List<SaleItemWithProduct> items = db.saleItemDao().getSaleItemsWithProductSync(s.saleId);
+            allSaleIds.add(s.saleId);
+        }
+
+        int chunkSize = 500;
+        for (int i = 0; i < allSaleIds.size(); i += chunkSize) {
+            List<Integer> chunk = allSaleIds.subList(i, Math.min(i + chunkSize, allSaleIds.size()));
+            List<SaleItemWithProduct> chunkItems = db.saleItemDao().getSaleItemsWithProductBySaleIdsSync(chunk);
+            if (chunkItems != null) {
+                for (SaleItemWithProduct iw : chunkItems) {
+                    if (iw.saleItem != null) {
+                        map.computeIfAbsent(iw.saleItem.saleId, k -> new ArrayList<>()).add(iw);
+                    }
+                }
+            }
+        }
+        return map;
+    }
+
+    private static List<SaleItemWithProduct> itemsList(Map<Integer, List<SaleItemWithProduct>> itemsMap, List<Sale> sales) {
+        List<SaleItemWithProduct> list = new ArrayList<>();
+        if (itemsMap == null || sales == null) return list;
+        for (Sale s : sales) {
+            List<SaleItemWithProduct> items = itemsMap.get(s.saleId);
             if (items != null) list.addAll(items);
         }
         return list;

@@ -38,7 +38,7 @@ public class BuyerRepository {
         Database db = Database.getInstance(application);
         buyerDao = db.buyerDao();
         allBuyers = buyerDao.getAllBuyers();
-        executorService = Executors.newFixedThreadPool(4);
+        executorService = in.gbtsolutions.inventoryhub.helpers.AppExecutors.getInstance().diskIO();
         onlineBuyerRepository = new OnlineBuyerRepository(application);
         appModeManager = AppModeManager.getInstance(application);
     }

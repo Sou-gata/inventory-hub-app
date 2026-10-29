@@ -138,7 +138,7 @@ public class ProductCsvExporter {
 
         String value = cursor.getString(index);
 
-        return value == null ? "" : value.trim();
+        return value == null ? "" : HelperMethods.sanitizeForCsv(value.trim());
     }
 
     private static String getInt(Cursor cursor, int index) {

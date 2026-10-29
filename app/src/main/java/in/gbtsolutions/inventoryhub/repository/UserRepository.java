@@ -25,7 +25,7 @@ public class UserRepository {
         Database database = Database.getInstance(application);
         userDao = database.userDao();
         allUsers = userDao.getAllUsers();
-        executorService = Executors.newFixedThreadPool(4);
+        executorService = in.gbtsolutions.inventoryhub.helpers.AppExecutors.getInstance().diskIO();
     }
 
     public LiveData<List<User>> getAllUsers() {

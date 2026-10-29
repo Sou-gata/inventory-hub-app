@@ -35,6 +35,10 @@ public class AppModeManager {
     }
 
     private static volatile AppModeManager instance;
+    private static final OkHttpClient HEALTH_CHECK_CLIENT = new OkHttpClient.Builder()
+            .connectTimeout(5, TimeUnit.SECONDS)
+            .readTimeout(5, TimeUnit.SECONDS)
+            .build();
     private final Context appContext;
     private final SharedPreferences preferences;
     private final CopyOnWriteArrayList<OnModeChangeListener> listeners = new CopyOnWriteArrayList<>();
@@ -346,10 +350,7 @@ public class AppModeManager {
             // append health check or ping
             String fullUrl = testUrl + "api/v1/health";
 
-            OkHttpClient client = new OkHttpClient.Builder()
-                    .connectTimeout(5, TimeUnit.SECONDS)
-                    .readTimeout(5, TimeUnit.SECONDS)
-                    .build();
+            OkHttpClient client = HEALTH_CHECK_CLIENT;
 
             Request request = new Request.Builder()
                     .url(fullUrl)

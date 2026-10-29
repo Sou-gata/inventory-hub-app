@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -56,6 +57,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Executors;
 
+import in.gbtsolutions.inventoryhub.Configurations;
 import in.gbtsolutions.inventoryhub.Database;
 import in.gbtsolutions.inventoryhub.GlobalStore;
 import in.gbtsolutions.inventoryhub.R;
@@ -934,15 +936,62 @@ public class InventoryActivity extends BaseActivity {
         TextView tvProdName = dialogView.findViewById(R.id.tv_gen_qr_product_name);
         TextView tvProdSku = dialogView.findViewById(R.id.tv_gen_qr_product_sku);
         TextView tvProdPrice = dialogView.findViewById(R.id.tv_gen_qr_product_price);
+        TextView tvDialogTitle = dialogView.findViewById(R.id.tv_dialog_gen_code_title);
+        TextView btnToggleQr = dialogView.findViewById(R.id.btn_gen_toggle_qr);
+        TextView btnToggleBarcode = dialogView.findViewById(R.id.btn_gen_toggle_barcode);
 
         if (tvProdName != null) {
             tvProdName.setText(product.productName != null ? product.productName : "Product");
         }
         if (tvProdSku != null) {
-            tvProdSku.setText(!TextUtils.isEmpty(product.sku) ? product.sku : "No SKU");
+            tvProdSku.setText(!TextUtils.isEmpty(product.sku) ? product.sku : ("#" + product.productId));
         }
         if (tvProdPrice != null) {
             tvProdPrice.setText(String.format(Locale.getDefault(), "₹ %,.2f", product.sellingPrice));
+        }
+
+        String defaultFormat = GlobalStore.getInstance().getCodeFormat();
+        final boolean[] isBarcodeSelected = new boolean[]{Configurations.CODE_FORMAT_BARCODE.equalsIgnoreCase(defaultFormat)};
+
+        Runnable updateToggleUI = () -> {
+            boolean isBarcode = isBarcodeSelected[0];
+            if (btnToggleQr != null && btnToggleBarcode != null) {
+                if (isBarcode) {
+                    btnToggleBarcode.setBackgroundResource(R.drawable.bg_status_chip);
+                    btnToggleBarcode.setTextColor(ContextCompat.getColor(this, R.color.material_blue));
+                    btnToggleBarcode.setTypeface(null, Typeface.BOLD);
+
+                    btnToggleQr.setBackground(null);
+                    btnToggleQr.setTextColor(ContextCompat.getColor(this, R.color.fg_muted));
+                    btnToggleQr.setTypeface(null, Typeface.NORMAL);
+                } else {
+                    btnToggleQr.setBackgroundResource(R.drawable.bg_status_chip);
+                    btnToggleQr.setTextColor(ContextCompat.getColor(this, R.color.material_blue));
+                    btnToggleQr.setTypeface(null, Typeface.BOLD);
+
+                    btnToggleBarcode.setBackground(null);
+                    btnToggleBarcode.setTextColor(ContextCompat.getColor(this, R.color.fg_muted));
+                    btnToggleBarcode.setTypeface(null, Typeface.NORMAL);
+                }
+            }
+            if (tvDialogTitle != null) {
+                tvDialogTitle.setText(isBarcode ? "Generate Barcode" : "Generate QR Code");
+            }
+        };
+
+        updateToggleUI.run();
+
+        if (btnToggleQr != null) {
+            btnToggleQr.setOnClickListener(v -> {
+                isBarcodeSelected[0] = false;
+                updateToggleUI.run();
+            });
+        }
+        if (btnToggleBarcode != null) {
+            btnToggleBarcode.setOnClickListener(v -> {
+                isBarcodeSelected[0] = true;
+                updateToggleUI.run();
+            });
         }
 
         TextInputEditText etCopies = dialogView.findViewById(R.id.et_copies);
@@ -1080,22 +1129,33 @@ public class InventoryActivity extends BaseActivity {
                     prodForQr.setBatch(null);
                 }
 
-                Bitmap qrBitmap;
+                boolean isBarcode = isBarcodeSelected[0];
+                Bitmap codeBitmap;
                 try {
-                    qrBitmap = ProductQRHelper.generateProductQR(prodForQr, 512);
+                    if (isBarcode) {
+                        codeBitmap = ProductQRHelper.generateProductBarcode(prodForQr, 600, 200);
+                    } else {
+                        codeBitmap = ProductQRHelper.generateProductQR(prodForQr, 512);
+                    }
                 } catch (Exception e) {
-                    Toast.makeText(this, "Failed to generate QR: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Failed to generate code: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     return;
                 }
 
-                // Inflate custom XML layout to generate the full printable QR code card/label
+                // Inflate custom XML layout to generate the full printable code card/label
                 View labelView = getLayoutInflater().inflate(R.layout.layout_product_qr_label, null);
 
                 TextView tvLabelName = labelView.findViewById(R.id.tv_label_product_name);
                 TextView tvLabelSku = labelView.findViewById(R.id.tv_label_product_sku);
                 TextView tvLabelPrice = labelView.findViewById(R.id.tv_label_product_price);
                 TextView tvLabelDate = labelView.findViewById(R.id.tv_label_date);
+
+                View containerLabelQr = labelView.findViewById(R.id.container_label_qr);
                 ImageView ivLabelQr = labelView.findViewById(R.id.iv_label_qr_code);
+
+                View containerLabelBarcode = labelView.findViewById(R.id.container_label_barcode);
+                ImageView ivLabelBarcode = labelView.findViewById(R.id.iv_label_barcode);
+                TextView tvLabelBarcodeSku = labelView.findViewById(R.id.tv_label_barcode_sku);
 
                 View containerLabelBatch = labelView.findViewById(R.id.container_label_batch);
                 TextView tvLabelBatchNo = labelView.findViewById(R.id.tv_label_batch_no);
@@ -1109,13 +1169,24 @@ public class InventoryActivity extends BaseActivity {
                     tvLabelName.setText(product.productName != null ? product.productName : "Product");
                 }
                 if (tvLabelSku != null) {
-                    tvLabelSku.setText(!TextUtils.isEmpty(product.sku) ? product.sku : "No SKU");
+                    tvLabelSku.setText(!TextUtils.isEmpty(product.sku) ? product.sku : ("#" + product.productId));
                 }
                 if (tvLabelPrice != null) {
                     tvLabelPrice.setText(String.format(Locale.getDefault(), "₹ %,.2f", prodForQr.sellingPrice));
                 }
-                if (ivLabelQr != null) {
-                    ivLabelQr.setImageBitmap(qrBitmap);
+
+                if (isBarcode) {
+                    if (containerLabelQr != null) containerLabelQr.setVisibility(View.GONE);
+                    if (containerLabelBarcode != null) containerLabelBarcode.setVisibility(View.VISIBLE);
+                    if (ivLabelBarcode != null) ivLabelBarcode.setImageBitmap(codeBitmap);
+                    if (tvLabelBarcodeSku != null) {
+                        String barcodeText = ProductQRHelper.buildBarcodePayload(prodForQr);
+                        tvLabelBarcodeSku.setText(barcodeText);
+                    }
+                } else {
+                    if (containerLabelQr != null) containerLabelQr.setVisibility(View.VISIBLE);
+                    if (containerLabelBarcode != null) containerLabelBarcode.setVisibility(View.GONE);
+                    if (ivLabelQr != null) ivLabelQr.setImageBitmap(codeBitmap);
                 }
 
                 // Show batch row ONLY if batch is present
@@ -1148,13 +1219,14 @@ public class InventoryActivity extends BaseActivity {
                 String batchClean = (batchToUse != null && !TextUtils.isEmpty(batchToUse.batchNo))
                         ? batchToUse.batchNo.replaceAll("[^a-zA-Z0-9_-]", "") : "NOBATCH";
 
+                String codePrefix = isBarcode ? "BARCODE" : "QR";
                 int savedCount = 0;
                 for (int i = 1; i <= copies; i++) {
                     String fileName;
                     if (copies == 1) {
-                        fileName = String.format(Locale.US, "QR_%s_%s_%s.png", skuClean, batchClean, timeStamp);
+                        fileName = String.format(Locale.US, "%s_%s_%s_%s.png", codePrefix, skuClean, batchClean, timeStamp);
                     } else {
-                        fileName = String.format(Locale.US, "QR_%s_%s_%s_copy%d.png", skuClean, batchClean, timeStamp, i);
+                        fileName = String.format(Locale.US, "%s_%s_%s_%s_copy%d.png", codePrefix, skuClean, batchClean, timeStamp, i);
                     }
                     Uri uri = BitmapHelper.saveBitmapToDownloads(customLayoutBitmap, this, fileName);
                     if (uri != null) {
@@ -1164,21 +1236,21 @@ public class InventoryActivity extends BaseActivity {
 
                 if (savedCount > 0) {
                     Toast.makeText(this,
-                            String.format(Locale.US, "Saved %d QR label%s to Downloads folder", savedCount, savedCount > 1 ? "s" : ""),
+                            String.format(Locale.US, "Saved %d %s label%s to Downloads folder", savedCount, codePrefix, savedCount > 1 ? "s" : ""),
                             Toast.LENGTH_LONG).show();
                 } else {
-                    Toast.makeText(this, "Failed to save QR label(s) to Downloads", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Failed to save " + codePrefix + " label(s) to Downloads", Toast.LENGTH_SHORT).show();
                 }
 
                 dialog.dismiss();
-                showQrPreviewDialog(prodForQr, batchToUse, customLayoutBitmap, copies);
+                showQrPreviewDialog(prodForQr, batchToUse, customLayoutBitmap, copies, isBarcode);
             });
         }
 
         dialog.show();
     }
 
-    private void showQrPreviewDialog(Product product, ProductBatch batch, Bitmap labelBitmap, int copies) {
+    private void showQrPreviewDialog(Product product, ProductBatch batch, Bitmap labelBitmap, int copies, boolean isBarcode) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_qr_preview, null);
         builder.setView(dialogView);
@@ -1187,6 +1259,7 @@ public class InventoryActivity extends BaseActivity {
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
         }
 
+        TextView tvTitle = dialogView.findViewById(R.id.tv_preview_title);
         TextView tvSub = dialogView.findViewById(R.id.tv_preview_subtitle);
         TextView tvName = dialogView.findViewById(R.id.tv_preview_product_name);
         TextView tvSku = dialogView.findViewById(R.id.tv_preview_product_sku);
@@ -1195,6 +1268,10 @@ public class InventoryActivity extends BaseActivity {
         TextView tvBatch = dialogView.findViewById(R.id.tv_preview_batch_details);
         TextView tvCopies = dialogView.findViewById(R.id.tv_preview_copies_count);
 
+        if (tvTitle != null) {
+            tvTitle.setText(isBarcode ? "Barcode Generated" : "QR Code Generated");
+        }
+
         if (tvSub != null) {
             tvSub.setText(String.format(Locale.getDefault(), "Saved %d copy%s to Downloads folder", copies, copies > 1 ? "ies" : ""));
         }
@@ -1202,7 +1279,7 @@ public class InventoryActivity extends BaseActivity {
             tvName.setText(product.productName != null ? product.productName : "Product");
         }
         if (tvSku != null) {
-            tvSku.setText(!TextUtils.isEmpty(product.sku) ? product.sku : "No SKU");
+            tvSku.setText(!TextUtils.isEmpty(product.sku) ? product.sku : ("#" + product.productId));
         }
         if (tvPrice != null) {
             tvPrice.setText(String.format(Locale.getDefault(), "₹ %,.2f", product.sellingPrice));
@@ -1232,7 +1309,9 @@ public class InventoryActivity extends BaseActivity {
         View btnDone = dialogView.findViewById(R.id.btn_done_qr);
 
         if (btnShare != null) {
-            btnShare.setOnClickListener(v -> BitmapHelper.shareBitmap(this, labelBitmap, "Share QR Code", "QR Code for " + product.productName));
+            String title = isBarcode ? "Share Barcode" : "Share QR Code";
+            String msg = (isBarcode ? "Barcode" : "QR Code") + " for " + product.productName;
+            btnShare.setOnClickListener(v -> BitmapHelper.shareBitmap(this, labelBitmap, title, msg));
         }
         if (btnDone != null) {
             btnDone.setOnClickListener(v -> dialog.dismiss());

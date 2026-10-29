@@ -43,7 +43,7 @@ public class UnitOfMeasureRepository {
         Database db = Database.getInstance(application);
         this.unitOfMeasureDao = db.unitOfMeasureDao();
         this.allUnits = unitOfMeasureDao.getAllUnitsOfMeasure();
-        this.executorService = Executors.newFixedThreadPool(3);
+        this.executorService = in.gbtsolutions.inventoryhub.helpers.AppExecutors.getInstance().diskIO();
         this.mainHandler = new Handler(Looper.getMainLooper());
         this.onlineUnitOfMeasureRepository = new OnlineUnitOfMeasureRepository(application);
         this.appModeManager = AppModeManager.getInstance(application);

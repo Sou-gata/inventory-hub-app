@@ -17,6 +17,7 @@ import java.util.concurrent.Executors;
 import java.util.Locale;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.gson.Gson;
 
 import in.gbtsolutions.inventoryhub.Configurations;
 import in.gbtsolutions.inventoryhub.Database;
@@ -26,6 +27,7 @@ import in.gbtsolutions.inventoryhub.models.User;
 public class UserHelper {
 
     public static final String KEY_CURRENT_USER_ID = "current_session_user_id";
+    public static final String KEY_CURRENT_USER_JSON = "current_session_user_json";
 
     /**
      * Resolves the active user ID:
@@ -64,7 +66,10 @@ public class UserHelper {
         if (context != null) {
             try {
                 SharedPreferences prefs = context.getApplicationContext().getSharedPreferences(Configurations.PREF_NAME, Context.MODE_PRIVATE);
-                prefs.edit().putLong(KEY_CURRENT_USER_ID, user.id).apply();
+                prefs.edit()
+                        .putLong(KEY_CURRENT_USER_ID, user.id)
+                        .putString(KEY_CURRENT_USER_JSON, new Gson().toJson(user))
+                        .apply();
             } catch (Exception ignored) {
             }
         }
@@ -72,10 +77,14 @@ public class UserHelper {
 
     public static void clearLoggedInUser(@Nullable Context context) {
         GlobalStore.getInstance().clearLoggedInUser();
+        USER_CACHE.clear();
         if (context != null) {
             try {
                 SharedPreferences prefs = context.getApplicationContext().getSharedPreferences(Configurations.PREF_NAME, Context.MODE_PRIVATE);
-                prefs.edit().remove(KEY_CURRENT_USER_ID).apply();
+                prefs.edit()
+                        .remove(KEY_CURRENT_USER_ID)
+                        .remove(KEY_CURRENT_USER_JSON)
+                        .apply();
             } catch (Exception ignored) {
             }
         }
@@ -94,6 +103,19 @@ public class UserHelper {
                 if (cached != null) {
                     GlobalStore.getInstance().setLoggedInUser(cached);
                     return cached;
+                }
+                try {
+                    SharedPreferences prefs = context.getApplicationContext().getSharedPreferences(Configurations.PREF_NAME, Context.MODE_PRIVATE);
+                    String userJson = prefs.getString(KEY_CURRENT_USER_JSON, null);
+                    if (userJson != null && !userJson.trim().isEmpty()) {
+                        User prefUser = new Gson().fromJson(userJson, User.class);
+                        if (prefUser != null && prefUser.id == uid) {
+                            GlobalStore.getInstance().setLoggedInUser(prefUser);
+                            USER_CACHE.put(uid, prefUser);
+                            return prefUser;
+                        }
+                    }
+                } catch (Exception ignored) {
                 }
                 try {
                     User dbUser = Database.getInstance(context.getApplicationContext()).userDao().getUserById(uid);
@@ -125,7 +147,7 @@ public class UserHelper {
             return;
         }
         final Context appContext = context.getApplicationContext();
-        Executors.newSingleThreadExecutor().execute(() -> {
+        AppExecutors.getInstance().diskIO().execute(() -> {
             List<User> users = null;
             try {
                 users = Database.getInstance(appContext).userDao().getAllUsersSync();
@@ -153,8 +175,14 @@ public class UserHelper {
             callback.onUserLoaded(cached);
             return;
         }
+        User current = GlobalStore.getInstance().getLoggedInUser();
+        if (current != null && current.id == userId) {
+            USER_CACHE.put(userId, current);
+            callback.onUserLoaded(current);
+            return;
+        }
         final Context appContext = context.getApplicationContext();
-        Executors.newSingleThreadExecutor().execute(() -> {
+        AppExecutors.getInstance().diskIO().execute(() -> {
             User user = null;
             try {
                 user = Database.getInstance(appContext).userDao().getUserById(userId);
